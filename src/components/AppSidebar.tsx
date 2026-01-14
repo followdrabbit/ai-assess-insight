@@ -19,7 +19,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
+import { Home } from 'lucide-react';
+
 const mainNavItems = [
+  { path: '/', label: 'Home', icon: Home },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/assessment', label: 'Avaliação', icon: ClipboardCheck },
   { path: '/reports', label: 'Relatórios', icon: FileText },

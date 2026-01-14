@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useAnswersStore } from "@/lib/stores";
 import Layout from "./components/Layout";
+import Home from "./pages/Home";
 import Assessment from "./pages/Assessment";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
@@ -24,7 +25,8 @@ function AppContent() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
+          <Route index element={<Home />} />
+          <Route path="home" element={<Home />} />
           <Route path="assessment" element={<Assessment />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="reports" element={<Reports />} />

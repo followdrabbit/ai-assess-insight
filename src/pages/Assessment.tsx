@@ -359,9 +359,17 @@ export default function Assessment() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium leading-relaxed">{q.questionText}</p>
-                                <span className="text-xs font-mono text-muted-foreground mt-1 block">
-                                  {q.questionId}
-                                </span>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                  <span className="text-xs font-mono text-muted-foreground">
+                                    {q.questionId}
+                                  </span>
+                                  <span className="text-muted-foreground">•</span>
+                                  {q.frameworks.map((fw, i) => (
+                                    <Badge key={i} variant="outline" className="text-[10px] font-normal">
+                                      {fw}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </div>
                             </div>
 

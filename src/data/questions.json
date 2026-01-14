@@ -78,6 +78,17 @@
       "ownershipType": "Executive"
     },
     {
+      "questionId": "GOVERN-02-Q04",
+      "subcatId": "GOVERN-02",
+      "domainId": "GOVERN",
+      "questionText": "Existe processo formal de comunicação de riscos de IA para stakeholders internos e externos?",
+      "expectedEvidence": "Plano de comunicação de riscos com públicos-alvo, frequência, canais e templates; registros de comunicações realizadas",
+      "imperativeChecks": "Verificar clareza das mensagens, adequação ao público e feedback recebido",
+      "riskSummary": "Stakeholders não informados sobre riscos não podem tomar decisões adequadas ou preparar-se",
+      "frameworks": ["ISO/IEC 23894 7.1", "ISO 31000 6.2", "NIST AI RMF GOVERN 4.1"],
+      "ownershipType": "GRC"
+    },
+    {
       "questionId": "GOVERN-03-Q01",
       "subcatId": "GOVERN-03",
       "domainId": "GOVERN",
@@ -141,6 +152,28 @@
       "imperativeChecks": "Verificar gatilhos de revisão e ajustes realizados conforme contexto",
       "riskSummary": "Limiares desatualizados não refletem mudanças no ambiente de risco",
       "frameworks": ["NIST AI RMF GOVERN 1.3", "ISO 31000 6.4"],
+      "ownershipType": "Executive"
+    },
+    {
+      "questionId": "GOVERN-04-Q04",
+      "subcatId": "GOVERN-04",
+      "domainId": "GOVERN",
+      "questionText": "Existe registro formal de riscos de IA (Risk Register) centralizado e atualizado?",
+      "expectedEvidence": "Risk register com identificação, descrição, impacto, probabilidade, owner, status de tratamento e data de atualização para cada risco",
+      "imperativeChecks": "Verificar completude, atualização periódica e uso efetivo em decisões de gestão",
+      "riskSummary": "Sem registro centralizado, riscos são geridos de forma inconsistente e sem visibilidade executiva",
+      "frameworks": ["ISO/IEC 23894 7.2", "ISO 31000 6.7", "NIST AI RMF GOVERN 1.5"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "GOVERN-04-Q05",
+      "subcatId": "GOVERN-04",
+      "domainId": "GOVERN",
+      "questionText": "Os riscos de IA estão integrados à gestão de riscos corporativa (ERM)?",
+      "expectedEvidence": "Evidência de integração do risk register de IA com ERM corporativo; reporte consolidado para comitê de riscos",
+      "imperativeChecks": "Verificar que riscos de IA são considerados no apetite de risco corporativo e reportados à alta gestão",
+      "riskSummary": "Riscos de IA isolados do ERM não recebem visibilidade e recursos adequados",
+      "frameworks": ["ISO/IEC 23894 7.3", "ISO 31000", "COSO ERM"],
       "ownershipType": "Executive"
     },
     {
@@ -240,6 +273,17 @@
       "imperativeChecks": "Verificar execução dos planos e evidência de eficácia das mitigações",
       "riskSummary": "Riscos identificados sem tratamento permanecem como vulnerabilidades ativas",
       "frameworks": ["ISO 31000", "NIST AI RMF MANAGE 1.1"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MAP-02-Q04",
+      "subcatId": "MAP-02",
+      "domainId": "MAP",
+      "questionText": "Existe processo para identificar e monitorar riscos emergentes de IA?",
+      "expectedEvidence": "Processo de horizon scanning para novos riscos de IA; acompanhamento de pesquisas, incidentes do setor e novas técnicas de ataque",
+      "imperativeChecks": "Verificar fontes monitoradas, frequência de atualização e integração com avaliação de riscos",
+      "riskSummary": "Riscos emergentes não identificados podem materializar-se antes de controles serem implementados",
+      "frameworks": ["ISO/IEC 23894 8.2", "ISO 31000 6.3", "NIST AI RMF GOVERN 1.4"],
       "ownershipType": "GRC"
     },
     {

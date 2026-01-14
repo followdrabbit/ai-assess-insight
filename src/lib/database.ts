@@ -1,5 +1,6 @@
-import Dexie, { Table } from 'dexie';
+import { supabase } from '@/integrations/supabase/client';
 
+// ============ TYPES ============
 export interface Answer {
   questionId: string;
   frameworkId: string;
@@ -10,17 +11,6 @@ export interface Answer {
   updatedAt: string;
 }
 
-export interface AssessmentMeta {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  version: string;
-  enabledFrameworks: string[];
-  selectedFrameworks: string[];
-}
-
-// Custom Framework (user-created)
 export interface CustomFramework {
   frameworkId: string;
   frameworkName: string;
@@ -37,7 +27,6 @@ export interface CustomFramework {
   updatedAt: string;
 }
 
-// Custom Question (user-created)
 export interface CustomQuestion {
   questionId: string;
   subcatId: string;
@@ -55,257 +44,410 @@ export interface CustomQuestion {
   updatedAt: string;
 }
 
-// Disabled default questions (to track which defaults are disabled)
-export interface DisabledQuestion {
-  questionId: string;
-  disabledAt: string;
-}
-
-// Change log for audit trail
 export interface ChangeLog {
   id?: number;
-  entityType: 'framework' | 'question' | 'setting';
+  entityType: 'framework' | 'question' | 'setting' | 'answer';
   entityId: string;
   action: 'create' | 'update' | 'delete' | 'disable' | 'enable';
   changes: Record<string, any>;
-  timestamp: string;
+  createdAt: string;
 }
 
-class AssessmentDatabase extends Dexie {
-  answers!: Table<Answer, string>;
-  meta!: Table<AssessmentMeta, string>;
-  customFrameworks!: Table<CustomFramework, string>;
-  customQuestions!: Table<CustomQuestion, string>;
-  disabledQuestions!: Table<DisabledQuestion, string>;
-  changeLogs!: Table<ChangeLog, number>;
-
-  constructor() {
-    super('AISecurityAssessmentDB');
-    
-    // Version 3: Added custom frameworks, questions, and change logs
-    this.version(3).stores({
-      answers: 'questionId, frameworkId, response, updatedAt',
-      meta: 'id',
-      customFrameworks: 'frameworkId, category, createdAt',
-      customQuestions: 'questionId, domainId, subcatId, createdAt',
-      disabledQuestions: 'questionId',
-      changeLogs: '++id, entityType, entityId, timestamp'
-    });
-
-    // Version 2: Added frameworkId to answers and selectedFrameworks to meta
-    this.version(2).stores({
-      answers: 'questionId, frameworkId, response, updatedAt',
-      meta: 'id'
-    }).upgrade(tx => {
-      return tx.table('answers').toCollection().modify(answer => {
-        if (!answer.frameworkId) {
-          answer.frameworkId = 'NIST_AI_RMF';
-        }
-      });
-    });
-
-    this.version(1).stores({
-      answers: 'questionId, response, updatedAt',
-      meta: 'id'
-    });
-  }
-}
-
-export const db = new AssessmentDatabase();
-
-// Initialize database with default meta if needed
-export async function initializeDatabase() {
-  const metaCount = await db.meta.count();
-  if (metaCount === 0) {
-    await db.meta.add({
+// ============ INITIALIZATION ============
+export async function initializeDatabase(): Promise<void> {
+  // Check if meta exists, if not it was created by migration
+  const { data } = await supabase
+    .from('assessment_meta')
+    .select('id')
+    .eq('id', 'current')
+    .single();
+  
+  if (!data) {
+    await supabase.from('assessment_meta').insert({
       id: 'current',
       name: 'Avaliação de Maturidade em Segurança de IA',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      version: '2.0.0',
-      enabledFrameworks: ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'],
-      selectedFrameworks: []
+      enabled_frameworks: ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'],
+      selected_frameworks: [],
+      version: '2.0.0'
     });
-  } else {
-    const meta = await db.meta.get('current');
-    if (meta) {
-      const updates: Partial<AssessmentMeta> = {};
-      if (!meta.enabledFrameworks) {
-        updates.enabledFrameworks = meta.selectedFrameworks || ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
-      }
-      if (!meta.selectedFrameworks) {
-        updates.selectedFrameworks = [];
-      }
-      if (Object.keys(updates).length > 0) {
-        await db.meta.update('current', updates);
-      }
-    }
   }
 }
 
 // ============ ANSWERS ============
 export async function saveAnswer(answer: Answer): Promise<void> {
-  await db.answers.put({
-    ...answer,
-    updatedAt: new Date().toISOString()
-  });
-  await db.meta.update('current', { updatedAt: new Date().toISOString() });
+  const { error } = await supabase
+    .from('answers')
+    .upsert({
+      question_id: answer.questionId,
+      framework_id: answer.frameworkId,
+      response: answer.response,
+      evidence_ok: answer.evidenceOk,
+      notes: answer.notes,
+      evidence_links: answer.evidenceLinks
+    }, { onConflict: 'question_id' });
+  
+  if (error) throw error;
 }
 
 export async function getAllAnswers(): Promise<Answer[]> {
-  return await db.answers.toArray();
+  const { data, error } = await supabase
+    .from('answers')
+    .select('*');
+  
+  if (error) throw error;
+  
+  return (data || []).map(row => ({
+    questionId: row.question_id,
+    frameworkId: row.framework_id || '',
+    response: row.response as Answer['response'],
+    evidenceOk: row.evidence_ok as Answer['evidenceOk'],
+    notes: row.notes || '',
+    evidenceLinks: row.evidence_links || [],
+    updatedAt: row.updated_at
+  }));
 }
 
 export async function getAnswer(questionId: string): Promise<Answer | undefined> {
-  return await db.answers.get(questionId);
-}
-
-export async function getAnswersByFramework(frameworkId: string): Promise<Answer[]> {
-  return await db.answers.where('frameworkId').equals(frameworkId).toArray();
+  const { data, error } = await supabase
+    .from('answers')
+    .select('*')
+    .eq('question_id', questionId)
+    .single();
+  
+  if (error || !data) return undefined;
+  
+  return {
+    questionId: data.question_id,
+    frameworkId: data.framework_id || '',
+    response: data.response as Answer['response'],
+    evidenceOk: data.evidence_ok as Answer['evidenceOk'],
+    notes: data.notes || '',
+    evidenceLinks: data.evidence_links || [],
+    updatedAt: data.updated_at
+  };
 }
 
 export async function clearAllAnswers(): Promise<void> {
-  await db.answers.clear();
-  await db.meta.update('current', { updatedAt: new Date().toISOString() });
+  const { error } = await supabase
+    .from('answers')
+    .delete()
+    .neq('question_id', '');
+  
+  if (error) throw error;
 }
 
 export async function bulkSaveAnswers(answers: Answer[]): Promise<void> {
-  await db.answers.bulkPut(answers);
-  await db.meta.update('current', { updatedAt: new Date().toISOString() });
+  const rows = answers.map(a => ({
+    question_id: a.questionId,
+    framework_id: a.frameworkId,
+    response: a.response,
+    evidence_ok: a.evidenceOk,
+    notes: a.notes,
+    evidence_links: a.evidenceLinks
+  }));
+  
+  const { error } = await supabase
+    .from('answers')
+    .upsert(rows, { onConflict: 'question_id' });
+  
+  if (error) throw error;
 }
 
 // ============ FRAMEWORKS (enabled/selected) ============
 export async function getEnabledFrameworks(): Promise<string[]> {
-  const meta = await db.meta.get('current');
-  return meta?.enabledFrameworks || [];
+  const { data, error } = await supabase
+    .from('assessment_meta')
+    .select('enabled_frameworks')
+    .eq('id', 'current')
+    .single();
+  
+  if (error || !data) return ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+  return data.enabled_frameworks || [];
 }
 
 export async function setEnabledFrameworks(frameworkIds: string[]): Promise<void> {
-  await db.meta.update('current', {
-    enabledFrameworks: frameworkIds,
-    updatedAt: new Date().toISOString()
-  });
+  const { error } = await supabase
+    .from('assessment_meta')
+    .update({ enabled_frameworks: frameworkIds })
+    .eq('id', 'current');
+  
+  if (error) throw error;
 }
 
 export async function getSelectedFrameworks(): Promise<string[]> {
-  const meta = await db.meta.get('current');
-  return meta?.selectedFrameworks || [];
+  const { data, error } = await supabase
+    .from('assessment_meta')
+    .select('selected_frameworks')
+    .eq('id', 'current')
+    .single();
+  
+  if (error || !data) return [];
+  return data.selected_frameworks || [];
 }
 
 export async function setSelectedFrameworks(frameworkIds: string[]): Promise<void> {
-  await db.meta.update('current', {
-    selectedFrameworks: frameworkIds,
-    updatedAt: new Date().toISOString()
-  });
+  const { error } = await supabase
+    .from('assessment_meta')
+    .update({ selected_frameworks: frameworkIds })
+    .eq('id', 'current');
+  
+  if (error) throw error;
 }
 
 // ============ CUSTOM FRAMEWORKS CRUD ============
 export async function getAllCustomFrameworks(): Promise<CustomFramework[]> {
-  return await db.customFrameworks.toArray();
+  const { data, error } = await supabase
+    .from('custom_frameworks')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  
+  return (data || []).map(row => ({
+    frameworkId: row.framework_id,
+    frameworkName: row.framework_name,
+    shortName: row.short_name,
+    description: row.description || '',
+    targetAudience: (row.target_audience || []) as CustomFramework['targetAudience'],
+    assessmentScope: row.assessment_scope || '',
+    defaultEnabled: row.default_enabled || false,
+    version: row.version || '1.0.0',
+    category: row.category as CustomFramework['category'],
+    references: row.reference_links || [],
+    isCustom: true as const,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
 }
 
 export async function getCustomFramework(frameworkId: string): Promise<CustomFramework | undefined> {
-  return await db.customFrameworks.get(frameworkId);
+  const { data, error } = await supabase
+    .from('custom_frameworks')
+    .select('*')
+    .eq('framework_id', frameworkId)
+    .single();
+  
+  if (error || !data) return undefined;
+  
+  return {
+    frameworkId: data.framework_id,
+    frameworkName: data.framework_name,
+    shortName: data.short_name,
+    description: data.description || '',
+    targetAudience: (data.target_audience || []) as CustomFramework['targetAudience'],
+    assessmentScope: data.assessment_scope || '',
+    defaultEnabled: data.default_enabled || false,
+    version: data.version || '1.0.0',
+    category: data.category as CustomFramework['category'],
+    references: data.reference_links || [],
+    isCustom: true as const,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
 }
 
-export async function createCustomFramework(framework: Omit<CustomFramework, 'isCustom' | 'createdAt' | 'updatedAt'>): Promise<CustomFramework> {
-  const now = new Date().toISOString();
-  const newFramework: CustomFramework = {
+export async function createCustomFramework(
+  framework: Omit<CustomFramework, 'isCustom' | 'createdAt' | 'updatedAt'>
+): Promise<CustomFramework> {
+  const { data, error } = await supabase
+    .from('custom_frameworks')
+    .insert({
+      framework_id: framework.frameworkId,
+      framework_name: framework.frameworkName,
+      short_name: framework.shortName,
+      description: framework.description,
+      target_audience: framework.targetAudience,
+      assessment_scope: framework.assessmentScope,
+      default_enabled: framework.defaultEnabled,
+      version: framework.version,
+      category: framework.category,
+      reference_links: framework.references
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  await logChange('framework', framework.frameworkId, 'create', framework);
+  
+  return {
     ...framework,
     isCustom: true,
-    createdAt: now,
-    updatedAt: now
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
   };
-  await db.customFrameworks.add(newFramework);
-  await logChange('framework', framework.frameworkId, 'create', newFramework);
-  return newFramework;
 }
 
-export async function updateCustomFramework(frameworkId: string, updates: Partial<CustomFramework>): Promise<void> {
-  const existing = await db.customFrameworks.get(frameworkId);
-  if (!existing) throw new Error('Framework não encontrado');
+export async function updateCustomFramework(
+  frameworkId: string, 
+  updates: Partial<CustomFramework>
+): Promise<void> {
+  const updateData: Record<string, any> = {};
   
-  await db.customFrameworks.update(frameworkId, {
-    ...updates,
-    updatedAt: new Date().toISOString()
-  });
+  if (updates.frameworkName !== undefined) updateData.framework_name = updates.frameworkName;
+  if (updates.shortName !== undefined) updateData.short_name = updates.shortName;
+  if (updates.description !== undefined) updateData.description = updates.description;
+  if (updates.targetAudience !== undefined) updateData.target_audience = updates.targetAudience;
+  if (updates.assessmentScope !== undefined) updateData.assessment_scope = updates.assessmentScope;
+  if (updates.defaultEnabled !== undefined) updateData.default_enabled = updates.defaultEnabled;
+  if (updates.version !== undefined) updateData.version = updates.version;
+  if (updates.category !== undefined) updateData.category = updates.category;
+  if (updates.references !== undefined) updateData.reference_links = updates.references;
+  
+  const { error } = await supabase
+    .from('custom_frameworks')
+    .update(updateData)
+    .eq('framework_id', frameworkId);
+  
+  if (error) throw error;
+  
   await logChange('framework', frameworkId, 'update', updates);
 }
 
 export async function deleteCustomFramework(frameworkId: string): Promise<void> {
-  const existing = await db.customFrameworks.get(frameworkId);
-  if (!existing) throw new Error('Framework não encontrado');
+  const { error } = await supabase
+    .from('custom_frameworks')
+    .delete()
+    .eq('framework_id', frameworkId);
   
-  await db.customFrameworks.delete(frameworkId);
+  if (error) throw error;
+  
   await logChange('framework', frameworkId, 'delete', { frameworkId });
   
   // Also remove from enabled frameworks if present
-  const meta = await db.meta.get('current');
-  if (meta?.enabledFrameworks.includes(frameworkId)) {
-    await setEnabledFrameworks(meta.enabledFrameworks.filter(id => id !== frameworkId));
+  const enabledFrameworks = await getEnabledFrameworks();
+  if (enabledFrameworks.includes(frameworkId)) {
+    await setEnabledFrameworks(enabledFrameworks.filter(id => id !== frameworkId));
   }
 }
 
 // ============ CUSTOM QUESTIONS CRUD ============
 export async function getAllCustomQuestions(): Promise<CustomQuestion[]> {
-  return await db.customQuestions.toArray();
+  const { data, error } = await supabase
+    .from('custom_questions')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  
+  return (data || []).map(row => ({
+    questionId: row.question_id,
+    subcatId: row.subcat_id || '',
+    domainId: row.domain_id,
+    questionText: row.question_text,
+    expectedEvidence: row.expected_evidence || '',
+    imperativeChecks: row.imperative_checks || '',
+    riskSummary: row.risk_summary || '',
+    frameworks: row.frameworks || [],
+    ownershipType: row.ownership_type as CustomQuestion['ownershipType'],
+    criticality: row.criticality as CustomQuestion['criticality'],
+    isCustom: true as const,
+    isDisabled: row.is_disabled || false,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
 }
 
-export async function getCustomQuestion(questionId: string): Promise<CustomQuestion | undefined> {
-  return await db.customQuestions.get(questionId);
-}
-
-export async function createCustomQuestion(question: Omit<CustomQuestion, 'isCustom' | 'createdAt' | 'updatedAt'>): Promise<CustomQuestion> {
-  const now = new Date().toISOString();
-  const newQuestion: CustomQuestion = {
+export async function createCustomQuestion(
+  question: Omit<CustomQuestion, 'isCustom' | 'createdAt' | 'updatedAt'>
+): Promise<CustomQuestion> {
+  const { data, error } = await supabase
+    .from('custom_questions')
+    .insert({
+      question_id: question.questionId,
+      subcat_id: question.subcatId,
+      domain_id: question.domainId,
+      question_text: question.questionText,
+      expected_evidence: question.expectedEvidence,
+      imperative_checks: question.imperativeChecks,
+      risk_summary: question.riskSummary,
+      frameworks: question.frameworks,
+      ownership_type: question.ownershipType,
+      criticality: question.criticality,
+      is_disabled: question.isDisabled
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  await logChange('question', question.questionId, 'create', question);
+  
+  return {
     ...question,
     isCustom: true,
-    createdAt: now,
-    updatedAt: now
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
   };
-  await db.customQuestions.add(newQuestion);
-  await logChange('question', question.questionId, 'create', newQuestion);
-  return newQuestion;
 }
 
-export async function updateCustomQuestion(questionId: string, updates: Partial<CustomQuestion>): Promise<void> {
-  const existing = await db.customQuestions.get(questionId);
-  if (!existing) throw new Error('Pergunta não encontrada');
+export async function updateCustomQuestion(
+  questionId: string, 
+  updates: Partial<CustomQuestion>
+): Promise<void> {
+  const updateData: Record<string, any> = {};
   
-  await db.customQuestions.update(questionId, {
-    ...updates,
-    updatedAt: new Date().toISOString()
-  });
+  if (updates.subcatId !== undefined) updateData.subcat_id = updates.subcatId;
+  if (updates.domainId !== undefined) updateData.domain_id = updates.domainId;
+  if (updates.questionText !== undefined) updateData.question_text = updates.questionText;
+  if (updates.expectedEvidence !== undefined) updateData.expected_evidence = updates.expectedEvidence;
+  if (updates.imperativeChecks !== undefined) updateData.imperative_checks = updates.imperativeChecks;
+  if (updates.riskSummary !== undefined) updateData.risk_summary = updates.riskSummary;
+  if (updates.frameworks !== undefined) updateData.frameworks = updates.frameworks;
+  if (updates.ownershipType !== undefined) updateData.ownership_type = updates.ownershipType;
+  if (updates.criticality !== undefined) updateData.criticality = updates.criticality;
+  if (updates.isDisabled !== undefined) updateData.is_disabled = updates.isDisabled;
+  
+  const { error } = await supabase
+    .from('custom_questions')
+    .update(updateData)
+    .eq('question_id', questionId);
+  
+  if (error) throw error;
+  
   await logChange('question', questionId, 'update', updates);
 }
 
 export async function deleteCustomQuestion(questionId: string): Promise<void> {
-  const existing = await db.customQuestions.get(questionId);
-  if (!existing) throw new Error('Pergunta não encontrada');
+  const { error } = await supabase
+    .from('custom_questions')
+    .delete()
+    .eq('question_id', questionId);
   
-  await db.customQuestions.delete(questionId);
+  if (error) throw error;
+  
   await logChange('question', questionId, 'delete', { questionId });
   
   // Also delete any answers for this question
-  await db.answers.delete(questionId);
+  await supabase.from('answers').delete().eq('question_id', questionId);
 }
 
 // ============ DISABLED DEFAULT QUESTIONS ============
 export async function getDisabledQuestions(): Promise<string[]> {
-  const disabled = await db.disabledQuestions.toArray();
-  return disabled.map(d => d.questionId);
+  const { data, error } = await supabase
+    .from('disabled_questions')
+    .select('question_id');
+  
+  if (error) throw error;
+  return (data || []).map(d => d.question_id);
 }
 
 export async function disableDefaultQuestion(questionId: string): Promise<void> {
-  await db.disabledQuestions.put({
-    questionId,
-    disabledAt: new Date().toISOString()
-  });
+  const { error } = await supabase
+    .from('disabled_questions')
+    .upsert({ question_id: questionId });
+  
+  if (error) throw error;
   await logChange('question', questionId, 'disable', { questionId });
 }
 
 export async function enableDefaultQuestion(questionId: string): Promise<void> {
-  await db.disabledQuestions.delete(questionId);
+  const { error } = await supabase
+    .from('disabled_questions')
+    .delete()
+    .eq('question_id', questionId);
+  
+  if (error) throw error;
   await logChange('question', questionId, 'enable', { questionId });
 }
 
@@ -316,22 +458,29 @@ export async function logChange(
   action: ChangeLog['action'],
   changes: Record<string, any>
 ): Promise<void> {
-  await db.changeLogs.add({
-    entityType,
-    entityId,
+  await supabase.from('change_logs').insert({
+    entity_type: entityType,
+    entity_id: entityId,
     action,
-    changes,
-    timestamp: new Date().toISOString()
+    changes
   });
 }
 
 export async function getChangeLogs(limit: number = 100): Promise<ChangeLog[]> {
-  return await db.changeLogs.orderBy('timestamp').reverse().limit(limit).toArray();
-}
-
-export async function getChangeLogsForEntity(entityType: ChangeLog['entityType'], entityId: string): Promise<ChangeLog[]> {
-  return await db.changeLogs
-    .where({ entityType, entityId })
-    .reverse()
-    .toArray();
+  const { data, error } = await supabase
+    .from('change_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  
+  if (error) throw error;
+  
+  return (data || []).map(row => ({
+    id: row.id,
+    entityType: row.entity_type as ChangeLog['entityType'],
+    entityId: row.entity_id,
+    action: row.action as ChangeLog['action'],
+    changes: row.changes as Record<string, any>,
+    createdAt: row.created_at
+  }));
 }

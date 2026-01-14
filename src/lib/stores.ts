@@ -1,6 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Answer, saveAnswer, getAllAnswers, clearAllAnswers, bulkSaveAnswers, initializeDatabase, getSelectedFrameworks, setSelectedFrameworks as dbSetSelectedFrameworks, getEnabledFrameworks, setEnabledFrameworks as dbSetEnabledFrameworks } from './database';
+import { 
+  Answer, 
+  saveAnswer, 
+  getAllAnswers, 
+  clearAllAnswers, 
+  bulkSaveAnswers, 
+  initializeDatabase, 
+  getSelectedFrameworks, 
+  setSelectedFrameworks as dbSetSelectedFrameworks,
+  getEnabledFrameworks,
+  setEnabledFrameworks as dbSetEnabledFrameworks
+} from './database';
 import { questions, getQuestionById } from './dataset';
 import { getDefaultEnabledFrameworks } from './frameworks';
 
@@ -8,21 +19,16 @@ interface AnswersState {
   answers: Map<string, Answer>;
   isLoading: boolean;
   lastUpdated: string | null;
-  // Frameworks ENABLED by admin in Settings (available for selection)
   enabledFrameworks: string[];
-  // Frameworks SELECTED by user for the current assessment
   selectedFrameworks: string[];
   
-  // Actions
   loadAnswers: () => Promise<void>;
   setAnswer: (questionId: string, updates: Partial<Omit<Answer, 'questionId' | 'frameworkId'>>) => Promise<void>;
   clearAnswers: () => Promise<void>;
   importAnswers: (newAnswers: Answer[]) => Promise<void>;
   generateDemoData: () => Promise<void>;
   getAnswer: (questionId: string) => Answer | undefined;
-  // Admin action: enable/disable frameworks in Settings
   setEnabledFrameworks: (frameworkIds: string[]) => Promise<void>;
-  // User action: select frameworks for assessment
   setSelectedFrameworks: (frameworkIds: string[]) => Promise<void>;
   getAnswersByFramework: (frameworkId: string) => Answer[];
 }
@@ -64,7 +70,6 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
     const currentAnswer = get().answers.get(questionId);
     const question = getQuestionById(questionId);
     
-    // Determine frameworkId from question or existing answer
     const frameworkId = currentAnswer?.frameworkId || (question as any)?.frameworkId || 'NIST_AI_RMF';
     
     const newAnswer: Answer = {
@@ -77,12 +82,10 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       updatedAt: new Date().toISOString(),
     };
 
-    // Update local state immediately
     const newAnswers = new Map(get().answers);
     newAnswers.set(questionId, newAnswer);
     set({ answers: newAnswers, lastUpdated: new Date().toISOString() });
 
-    // Persist to IndexedDB
     try {
       await saveAnswer(newAnswer);
     } catch (error) {
@@ -115,10 +118,8 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
 
   generateDemoData: async () => {
     const demoAnswers: Answer[] = [];
-    const selectedFw = get().selectedFrameworks;
 
     questions.forEach((q) => {
-      // Generate somewhat realistic distribution
       const rand = Math.random();
       let response: Answer['response'];
       if (rand < 0.35) response = 'Sim';
@@ -126,7 +127,6 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       else if (rand < 0.88) response = 'Não';
       else response = 'NA';
 
-      // Evidence slightly better than response
       let evidenceOk: Answer['evidenceOk'] = null;
       if (response !== 'NA') {
         const evidRand = Math.random();
@@ -191,7 +191,6 @@ interface FiltersState {
   excludeNA: boolean;
   searchQuery: string;
 
-  // Actions
   setSelectedDomains: (domains: string[]) => void;
   setSelectedSubcategories: (subcats: string[]) => void;
   setSelectedCriticalities: (criticalities: string[]) => void;

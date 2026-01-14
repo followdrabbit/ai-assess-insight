@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion } from '@/lib/scoring';
@@ -18,92 +18,114 @@ export default function DashboardExecutive() {
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
 
   // Load active questions and frameworks
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
-          getAllCustomQuestions(),
-          getDisabledQuestions(),
-          getEnabledFrameworks(),
-          getSelectedFrameworks(),
-          getAllCustomFrameworks()
-        ]);
+  const loadData = useCallback(async () => {
+    setQuestionsLoading(true);
+    try {
+      const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
+        getAllCustomQuestions(),
+        getDisabledQuestions(),
+        getEnabledFrameworks(),
+        getSelectedFrameworks(),
+        getAllCustomFrameworks()
+      ]);
 
-        // Combine default and custom questions, excluding disabled ones
-        const active: ActiveQuestion[] = [
-          ...defaultQuestions
-            .filter(q => !disabledQuestionIds.includes(q.questionId))
-            .map(q => ({
-              questionId: q.questionId,
-              questionText: q.questionText,
-              subcatId: q.subcatId,
-              domainId: q.domainId,
-              ownershipType: q.ownershipType,
-              frameworks: q.frameworks || []
-            })),
-          ...customQuestions
-            .filter(q => !q.isDisabled)
-            .map(q => ({
-              questionId: q.questionId,
-              questionText: q.questionText,
-              subcatId: q.subcatId || '',
-              domainId: q.domainId,
-              ownershipType: q.ownershipType,
-              frameworks: q.frameworks || []
-            }))
-        ];
-
-        setAllActiveQuestions(active);
-        setEnabledFrameworkIds(enabledIds);
-
-        // Combine default and custom frameworks, filter by enabled
-        const allFrameworks: Framework[] = [
-          ...defaultFrameworks,
-          ...customFrameworks.map(cf => ({
-            frameworkId: cf.frameworkId,
-            frameworkName: cf.frameworkName,
-            shortName: cf.shortName,
-            description: cf.description,
-            targetAudience: cf.targetAudience,
-            assessmentScope: cf.assessmentScope,
-            defaultEnabled: cf.defaultEnabled,
-            version: cf.version,
-            category: cf.category as 'core' | 'high-value' | 'tech-focused',
-            references: cf.references
+      // Combine default and custom questions, excluding disabled ones
+      const active: ActiveQuestion[] = [
+        ...defaultQuestions
+          .filter(q => !disabledQuestionIds.includes(q.questionId))
+          .map(q => ({
+            questionId: q.questionId,
+            questionText: q.questionText,
+            subcatId: q.subcatId,
+            domainId: q.domainId,
+            ownershipType: q.ownershipType,
+            frameworks: q.frameworks || []
+          })),
+        ...customQuestions
+          .filter(q => !q.isDisabled)
+          .map(q => ({
+            questionId: q.questionId,
+            questionText: q.questionText,
+            subcatId: q.subcatId || '',
+            domainId: q.domainId,
+            ownershipType: q.ownershipType,
+            frameworks: q.frameworks || []
           }))
-        ];
+      ];
 
-        const enabledSet = new Set(enabledIds);
-        const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
-        setEnabledFrameworks(enabled);
-        setSelectedFrameworkIds(selectedIds);
+      setAllActiveQuestions(active);
+      setEnabledFrameworkIds(enabledIds);
 
-      } catch (error) {
-        console.error('Error loading data:', error);
-        // Fallback to default questions
-        const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
-        setAllActiveQuestions(defaultQuestions.map(q => ({
-          questionId: q.questionId,
-          questionText: q.questionText,
-          subcatId: q.subcatId,
-          domainId: q.domainId,
-          ownershipType: q.ownershipType,
-          frameworks: q.frameworks || []
-        })));
-        setEnabledFrameworkIds(defaultEnabledIds);
-        setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
-      } finally {
-        setQuestionsLoading(false);
-      }
+      // Combine default and custom frameworks, filter by enabled
+      const allFrameworks: Framework[] = [
+        ...defaultFrameworks,
+        ...customFrameworks.map(cf => ({
+          frameworkId: cf.frameworkId,
+          frameworkName: cf.frameworkName,
+          shortName: cf.shortName,
+          description: cf.description,
+          targetAudience: cf.targetAudience,
+          assessmentScope: cf.assessmentScope,
+          defaultEnabled: cf.defaultEnabled,
+          version: cf.version,
+          category: cf.category as 'core' | 'high-value' | 'tech-focused',
+          references: cf.references
+        }))
+      ];
+
+      const enabledSet = new Set(enabledIds);
+      const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
+      setEnabledFrameworks(enabled);
+
+      // If some selected frameworks are no longer enabled, drop them from selection
+      const enabledIdSet = new Set(enabledIds);
+      const sanitizedSelected = (selectedIds || []).filter(id => enabledIdSet.has(id));
+      setSelectedFrameworkIds(sanitizedSelected);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      // Fallback to default questions
+      const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+      setAllActiveQuestions(defaultQuestions.map(q => ({
+        questionId: q.questionId,
+        questionText: q.questionText,
+        subcatId: q.subcatId,
+        domainId: q.domainId,
+        ownershipType: q.ownershipType,
+        frameworks: q.frameworks || []
+      })));
+      setEnabledFrameworkIds(defaultEnabledIds);
+      setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
+    } finally {
+      setQuestionsLoading(false);
     }
-
-    loadData();
   }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Refresh when the user comes back to the tab/window (covers enable/disable done elsewhere)
+  useEffect(() => {
+    const onFocus = () => loadData();
+    const onVisibility = () => {
+      if (!document.hidden) loadData();
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [loadData]);
 
   // Filter questions by enabled frameworks - this is the base set
   const questionsFilteredByEnabledFrameworks = useMemo(() => {
     if (enabledFrameworkIds.length === 0) return allActiveQuestions;
-    
+
     const enabledSet = new Set(enabledFrameworkIds);
     return allActiveQuestions.filter(q => {
       const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
@@ -111,6 +133,18 @@ export default function DashboardExecutive() {
       return questionFrameworkIds.some(id => enabledSet.has(id));
     });
   }, [allActiveQuestions, enabledFrameworkIds]);
+
+  // Apply user selection (subset) on top of enabled frameworks.
+  // When no framework is selected, treat as "all enabled".
+  const questionsForDashboard = useMemo(() => {
+    if (selectedFrameworkIds.length === 0) return questionsFilteredByEnabledFrameworks;
+
+    const selectedSet = new Set(selectedFrameworkIds);
+    return questionsFilteredByEnabledFrameworks.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      return questionFrameworkIds.some(id => selectedSet.has(id));
+    });
+  }, [questionsFilteredByEnabledFrameworks, selectedFrameworkIds]);
 
   // Handle framework selection change
   const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
@@ -122,11 +156,23 @@ export default function DashboardExecutive() {
     }
   };
 
-  // Calculate metrics using questions filtered by enabled frameworks
-  const metrics = useMemo(() => calculateOverallMetrics(answers, questionsFilteredByEnabledFrameworks.length), [answers, questionsFilteredByEnabledFrameworks]);
-  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
-  const roadmap = useMemo(() => generateRoadmap(answers, 10, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
+  // Calculate metrics using questions filtered by enabled frameworks + user selection
+  const metrics = useMemo(
+    () => calculateOverallMetrics(answers, questionsForDashboard),
+    [answers, questionsForDashboard]
+  );
+  const criticalGaps = useMemo(
+    () => getCriticalGaps(answers, 0.5, questionsForDashboard),
+    [answers, questionsForDashboard]
+  );
+  const frameworkCoverage = useMemo(
+    () => getFrameworkCoverage(answers, questionsForDashboard),
+    [answers, questionsForDashboard]
+  );
+  const roadmap = useMemo(
+    () => generateRoadmap(answers, 10, questionsForDashboard),
+    [answers, questionsForDashboard]
+  );
 
   if (isLoading || questionsLoading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
@@ -155,7 +201,7 @@ export default function DashboardExecutive() {
         enabledFrameworks={enabledFrameworks}
         selectedFrameworkIds={selectedFrameworkIds}
         onFrameworkSelectionChange={handleFrameworkSelectionChange}
-        activeQuestions={questionsFilteredByEnabledFrameworks}
+        activeQuestions={questionsForDashboard}
       />
     </div>
   );

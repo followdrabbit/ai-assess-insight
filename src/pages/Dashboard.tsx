@@ -168,10 +168,51 @@ export default function Dashboard() {
     }
   };
 
-  const metrics = useMemo(() => calculateOverallMetrics(answers, questionsFilteredByEnabledFrameworks.length), [answers, questionsFilteredByEnabledFrameworks]);
-  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
-  const roadmap = useMemo(() => generateRoadmap(answers, 10, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
+  // Base metrics (enabled frameworks) for the non-executive personas
+  const metrics = useMemo(
+    () => calculateOverallMetrics(answers, questionsFilteredByEnabledFrameworks),
+    [answers, questionsFilteredByEnabledFrameworks]
+  );
+  const criticalGaps = useMemo(
+    () => getCriticalGaps(answers, 0.5, questionsFilteredByEnabledFrameworks),
+    [answers, questionsFilteredByEnabledFrameworks]
+  );
+  const frameworkCoverage = useMemo(
+    () => getFrameworkCoverage(answers, questionsFilteredByEnabledFrameworks),
+    [answers, questionsFilteredByEnabledFrameworks]
+  );
+  const roadmap = useMemo(
+    () => generateRoadmap(answers, 10, questionsFilteredByEnabledFrameworks),
+    [answers, questionsFilteredByEnabledFrameworks]
+  );
+
+  // Executive dashboard must also respect the user's selected frameworks
+  const questionsForExecutiveDashboard = useMemo(() => {
+    if (selectedFrameworkIds.length === 0) return questionsFilteredByEnabledFrameworks;
+
+    const selectedSet = new Set(selectedFrameworkIds);
+    return questionsFilteredByEnabledFrameworks.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      return questionFrameworkIds.some(id => selectedSet.has(id));
+    });
+  }, [questionsFilteredByEnabledFrameworks, selectedFrameworkIds]);
+
+  const executiveMetrics = useMemo(
+    () => calculateOverallMetrics(answers, questionsForExecutiveDashboard),
+    [answers, questionsForExecutiveDashboard]
+  );
+  const executiveCriticalGaps = useMemo(
+    () => getCriticalGaps(answers, 0.5, questionsForExecutiveDashboard),
+    [answers, questionsForExecutiveDashboard]
+  );
+  const executiveFrameworkCoverage = useMemo(
+    () => getFrameworkCoverage(answers, questionsForExecutiveDashboard),
+    [answers, questionsForExecutiveDashboard]
+  );
+  const executiveRoadmap = useMemo(
+    () => generateRoadmap(answers, 10, questionsForExecutiveDashboard),
+    [answers, questionsForExecutiveDashboard]
+  );
 
   // Data for charts
   const domainChartData = metrics.domainMetrics.map(dm => ({
@@ -245,14 +286,14 @@ export default function Dashboard() {
       {/* Executive View */}
       {persona === 'executive' && (
         <ExecutiveDashboard 
-          metrics={metrics}
-          criticalGaps={criticalGaps}
-          roadmap={roadmap}
-          frameworkCoverage={frameworkCoverage}
+          metrics={executiveMetrics}
+          criticalGaps={executiveCriticalGaps}
+          roadmap={executiveRoadmap}
+          frameworkCoverage={executiveFrameworkCoverage}
           enabledFrameworks={enabledFrameworks}
           selectedFrameworkIds={selectedFrameworkIds}
           onFrameworkSelectionChange={handleFrameworkSelectionChange}
-          activeQuestions={questionsFilteredByEnabledFrameworks}
+          activeQuestions={questionsForExecutiveDashboard}
         />
       )}
 

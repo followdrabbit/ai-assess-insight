@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,8 +65,10 @@ const audienceLabels: Record<AudienceType, string> = {
 
 export function FrameworkManagement() {
   const [customFrameworks, setCustomFrameworks] = useState<CustomFramework[]>([]);
+  const [disabledDefaultFrameworks, setDisabledDefaultFrameworks] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFramework, setEditingFramework] = useState<CustomFramework | null>(null);
+  const [isEditingDefault, setIsEditingDefault] = useState(false);
   const [formData, setFormData] = useState<FrameworkFormData>(emptyFormData);
   const [referencesText, setReferencesText] = useState('');
 
@@ -77,17 +79,29 @@ export function FrameworkManagement() {
   const loadCustomFrameworks = async () => {
     const frameworks = await getAllCustomFrameworks();
     setCustomFrameworks(frameworks);
+    // Track which default frameworks have custom overrides
+    const overriddenIds = new Set(frameworks.map(f => f.frameworkId));
+    setDisabledDefaultFrameworks(overriddenIds);
   };
+
+  const allFrameworks = useMemo(() => [
+    ...defaultFrameworks
+      .filter(f => !disabledDefaultFrameworks.has(f.frameworkId))
+      .map(f => ({ ...f, isCustom: false as const })),
+    ...customFrameworks
+  ], [customFrameworks, disabledDefaultFrameworks]);
 
   const openNewDialog = () => {
     setEditingFramework(null);
+    setIsEditingDefault(false);
     setFormData(emptyFormData);
     setReferencesText('');
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (framework: CustomFramework) => {
-    setEditingFramework(framework);
+  const openEditDialog = (framework: typeof allFrameworks[0]) => {
+    setEditingFramework(framework.isCustom ? (framework as CustomFramework) : null);
+    setIsEditingDefault(!framework.isCustom);
     setFormData({
       frameworkId: framework.frameworkId,
       frameworkName: framework.frameworkName,
@@ -97,7 +111,7 @@ export function FrameworkManagement() {
       assessmentScope: framework.assessmentScope,
       defaultEnabled: framework.defaultEnabled,
       version: framework.version,
-      category: framework.category,
+      category: framework.category as CategoryType,
       references: framework.references
     });
     setReferencesText(framework.references.join('\n'));
@@ -123,13 +137,10 @@ export function FrameworkManagement() {
       return;
     }
 
-    // Check for duplicate ID
-    const allFrameworkIds = [
-      ...defaultFrameworks.map(f => f.frameworkId),
-      ...customFrameworks.map(f => f.frameworkId)
-    ];
-    if (!editingFramework && allFrameworkIds.includes(formData.frameworkId)) {
-      toast.error('Já existe um framework com este ID');
+    // Check for duplicate ID only when creating completely new framework
+    const customFrameworkIds = customFrameworks.map(f => f.frameworkId);
+    if (!editingFramework && !isEditingDefault && customFrameworkIds.includes(formData.frameworkId)) {
+      toast.error('Já existe um framework personalizado com este ID');
       return;
     }
 
@@ -137,12 +148,21 @@ export function FrameworkManagement() {
 
     try {
       if (editingFramework) {
+        // Editing existing custom framework
         await updateCustomFramework(editingFramework.frameworkId, {
           ...formData,
           references
         });
         toast.success('Framework atualizado com sucesso');
+      } else if (isEditingDefault) {
+        // Creating custom override for default framework
+        await createCustomFramework({
+          ...formData,
+          references
+        });
+        toast.success('Framework padrão substituído por versão personalizada');
       } else {
+        // Creating new custom framework
         await createCustomFramework({
           ...formData,
           references
@@ -151,6 +171,7 @@ export function FrameworkManagement() {
       }
       await loadCustomFrameworks();
       setIsDialogOpen(false);
+      setIsEditingDefault(false);
     } catch (error) {
       toast.error('Erro ao salvar framework');
       console.error(error);
@@ -177,10 +198,6 @@ export function FrameworkManagement() {
     }));
   };
 
-  const allFrameworks = [
-    ...defaultFrameworks.map(f => ({ ...f, isCustom: false as const })),
-    ...customFrameworks
-  ];
 
   return (
     <div className="space-y-6">
@@ -194,20 +211,22 @@ export function FrameworkManagement() {
         <Button onClick={openNewDialog}>Novo Framework</Button>
       </div>
 
-      {/* Default Frameworks (read-only) */}
+      {/* All Frameworks */}
       <div className="space-y-3">
         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-          Frameworks Padrão ({defaultFrameworks.length})
+          Todos os Frameworks ({allFrameworks.length})
         </h4>
         <div className="grid gap-3 md:grid-cols-2">
-          {defaultFrameworks.map(fw => (
-            <Card key={fw.frameworkId} className="opacity-75">
+          {allFrameworks.map(fw => (
+            <Card key={fw.frameworkId} className={cn(!fw.isCustom && "opacity-90")}>
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <CardTitle className="text-base flex items-center gap-2">
                       {fw.shortName}
-                      <Badge variant="outline" className="text-[10px]">Padrão</Badge>
+                      <Badge variant={fw.isCustom ? "secondary" : "outline"} className="text-[10px]">
+                        {fw.isCustom ? 'Personalizado' : 'Padrão'}
+                      </Badge>
                     </CardTitle>
                     <CardDescription className="text-xs mt-0.5">
                       {fw.frameworkId} • v{fw.version}
@@ -217,66 +236,22 @@ export function FrameworkManagement() {
                     "text-[10px]",
                     fw.category === 'core' && "bg-primary",
                     fw.category === 'high-value' && "bg-amber-500",
-                    fw.category === 'tech-focused' && "bg-blue-500"
+                    fw.category === 'tech-focused' && "bg-blue-500",
+                    fw.category === 'custom' && "bg-purple-500"
                   )}>
-                    {categoryLabels[fw.category]}
+                    {categoryLabels[fw.category as CategoryType]}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 space-y-3">
                 <p className="text-xs text-muted-foreground line-clamp-2">
                   {fw.description}
                 </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Custom Frameworks */}
-      <div className="space-y-3">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-          Frameworks Personalizados ({customFrameworks.length})
-        </h4>
-        {customFrameworks.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                Nenhum framework personalizado criado ainda.
-              </p>
-              <Button variant="link" onClick={openNewDialog}>
-                Criar primeiro framework
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {customFrameworks.map(fw => (
-              <Card key={fw.frameworkId}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {fw.shortName}
-                        <Badge variant="secondary" className="text-[10px]">Personalizado</Badge>
-                      </CardTitle>
-                      <CardDescription className="text-xs mt-0.5">
-                        {fw.frameworkId} • v{fw.version}
-                      </CardDescription>
-                    </div>
-                    <Badge className="text-[10px] bg-purple-500">
-                      {categoryLabels[fw.category]}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-3">
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {fw.description}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openEditDialog(fw)}>
-                      Editar
-                    </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(fw)}>
+                    Editar
+                  </Button>
+                  {fw.isCustom && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" size="sm">Excluir</Button>
@@ -287,6 +262,11 @@ export function FrameworkManagement() {
                           <AlertDialogDescription>
                             Esta ação não pode ser desfeita. O framework "{fw.shortName}" será 
                             permanentemente removido. Perguntas associadas não serão afetadas.
+                            {disabledDefaultFrameworks.has(fw.frameworkId) && (
+                              <span className="block mt-2 text-foreground">
+                                O framework padrão original será restaurado.
+                              </span>
+                            )}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -297,25 +277,28 @@ export function FrameworkManagement() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
+
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingFramework ? 'Editar Framework' : 'Novo Framework'}
+              {editingFramework ? 'Editar Framework' : isEditingDefault ? 'Editar Framework Padrão' : 'Novo Framework'}
             </DialogTitle>
             <DialogDescription>
               {editingFramework 
                 ? 'Atualize as informações do framework personalizado.'
-                : 'Crie um novo framework personalizado para sua avaliação.'
+                : isEditingDefault
+                  ? 'Crie uma versão personalizada do framework padrão. O original será substituído.'
+                  : 'Crie um novo framework personalizado para sua avaliação.'
               }
             </DialogDescription>
           </DialogHeader>
@@ -329,10 +312,10 @@ export function FrameworkManagement() {
                   value={formData.frameworkId}
                   onChange={(e) => setFormData(prev => ({ ...prev, frameworkId: e.target.value.toUpperCase().replace(/\s/g, '_') }))}
                   placeholder="MEU_FRAMEWORK"
-                  disabled={!!editingFramework}
+                  disabled={!!editingFramework || isEditingDefault}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Identificador único (não pode ser alterado depois)
+                  {isEditingDefault ? 'ID mantido para substituir o framework padrão' : 'Identificador único (não pode ser alterado depois)'}
                 </p>
               </div>
               <div className="space-y-2">

@@ -451,6 +451,16 @@ export function calculateOverallMetrics(answersMap: Map<string, Answer>): Overal
   };
 }
 
+// Question type for active questions (can be default or custom)
+export interface ActiveQuestion {
+  questionId: string;
+  questionText: string;
+  subcatId: string;
+  domainId: string;
+  ownershipType?: string;
+  frameworks: string[];
+}
+
 // Get critical gaps (questions with low score in high/critical subcategories)
 export interface CriticalGap {
   questionId: string;
@@ -469,11 +479,15 @@ export interface CriticalGap {
 
 export function getCriticalGaps(
   answersMap: Map<string, Answer>,
-  threshold: number = 0.5
+  threshold: number = 0.5,
+  activeQuestions?: ActiveQuestion[]
 ): CriticalGap[] {
   const gaps: CriticalGap[] = [];
 
-  questions.forEach(q => {
+  // Use provided active questions or fall back to default questions
+  const questionsToAnalyze = activeQuestions || questions;
+
+  questionsToAnalyze.forEach(q => {
     const subcat = subcategories.find(s => s.subcatId === q.subcatId);
     const domain = domains.find(d => d.domainId === q.domainId);
     const answer = answersMap.get(q.questionId);
@@ -537,14 +551,20 @@ const AUTHORITATIVE_FRAMEWORKS = new Set<string>([
   'OWASP API Security Top 10',
 ]);
 
-export function getFrameworkCoverage(answersMap: Map<string, Answer>): FrameworkCoverage[] {
+export function getFrameworkCoverage(
+  answersMap: Map<string, Answer>,
+  activeQuestions?: ActiveQuestion[]
+): FrameworkCoverage[] {
   const frameworkMap = new Map<string, {
     total: number;
     answered: number;
     scores: number[];
   }>();
 
-  questions.forEach(q => {
+  // Use provided active questions or fall back to default questions
+  const questionsToAnalyze = activeQuestions || questions;
+
+  questionsToAnalyze.forEach(q => {
     getFrameworkTagsForQuestion(q).forEach(fw => {
       // Normalize framework name for grouping
       const mainFw = normalizeFrameworkName(fw);
@@ -637,9 +657,10 @@ export interface RoadmapItem {
 
 export function generateRoadmap(
   answersMap: Map<string, Answer>,
-  maxItems: number = 10
+  maxItems: number = 10,
+  activeQuestions?: ActiveQuestion[]
 ): RoadmapItem[] {
-  const gaps = getCriticalGaps(answersMap, 0.5);
+  const gaps = getCriticalGaps(answersMap, 0.5, activeQuestions);
   const roadmap: RoadmapItem[] = [];
 
   // Group gaps by domain and prioritize

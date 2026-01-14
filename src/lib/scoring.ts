@@ -846,47 +846,72 @@ export function generateRoadmap(
   const gaps = getCriticalGaps(answersMap, 0.5, activeQuestions);
   const roadmap: RoadmapItem[] = [];
 
-  // Group gaps by domain and prioritize
-  const domainGaps = new Map<string, CriticalGap[]>();
+  // Group gaps by subcategory to avoid duplicates, then by domain
+  const subcatGaps = new Map<string, CriticalGap[]>();
   gaps.forEach(gap => {
-    if (!domainGaps.has(gap.domainId)) {
-      domainGaps.set(gap.domainId, []);
+    if (!subcatGaps.has(gap.subcatId)) {
+      subcatGaps.set(gap.subcatId, []);
     }
-    domainGaps.get(gap.domainId)!.push(gap);
+    subcatGaps.get(gap.subcatId)!.push(gap);
   });
 
-  let itemCount = 0;
-  domainGaps.forEach((domainGapList, domainId) => {
-    if (itemCount >= maxItems) return;
+  // Aggregate subcategory data: pick worst score and highest criticality
+  interface SubcatSummary {
+    subcatId: string;
+    subcatName: string;
+    domainId: string;
+    domainName: string;
+    criticality: string;
+    worstScore: number;
+    hasUnanswered: boolean;
+    ownershipType: string;
+  }
 
-    const domain = domains.find(d => d.domainId === domainId);
-    if (!domain) return;
+  const subcatSummaries: SubcatSummary[] = [];
+  subcatGaps.forEach((gapList, subcatId) => {
+    const first = gapList[0];
+    const worstScore = Math.min(...gapList.map(g => g.effectiveScore));
+    const hasCritical = gapList.some(g => g.criticality === 'Critical');
+    const hasUnanswered = gapList.some(g => g.response === 'Não respondido');
 
-    // Take top gaps per domain
-    const topGaps = domainGapList.slice(0, 3);
-    
-    topGaps.forEach((gap, idx) => {
-      if (itemCount >= maxItems) return;
+    subcatSummaries.push({
+      subcatId,
+      subcatName: first.subcatName,
+      domainId: first.domainId,
+      domainName: first.domainName,
+      criticality: hasCritical ? 'Critical' : first.criticality,
+      worstScore,
+      hasUnanswered,
+      ownershipType: first.ownershipType || 'GRC',
+    });
+  });
 
-      const priority: 'immediate' | 'short' | 'medium' = 
-        gap.criticality === 'Critical' && gap.effectiveScore < 0.25 ? 'immediate' :
-        gap.criticality === 'Critical' || gap.effectiveScore < 0.25 ? 'short' : 'medium';
+  // Sort summaries by criticality and score
+  subcatSummaries.sort((a, b) => {
+    if (a.criticality !== b.criticality) {
+      return a.criticality === 'Critical' ? -1 : 1;
+    }
+    return a.worstScore - b.worstScore;
+  });
 
-      const timeframe = 
-        priority === 'immediate' ? '0-30 dias' :
-        priority === 'short' ? '30-60 dias' : '60-90 dias';
+  // Generate unique roadmap items per subcategory
+  subcatSummaries.slice(0, maxItems).forEach(summary => {
+    const priority: 'immediate' | 'short' | 'medium' = 
+      summary.criticality === 'Critical' && summary.worstScore < 0.25 ? 'immediate' :
+      summary.criticality === 'Critical' || summary.worstScore < 0.25 ? 'short' : 'medium';
 
-      roadmap.push({
-        priority,
-        timeframe,
-        domain: domain.domainName,
-        action: `Implementar controle: ${gap.subcatName}`,
-        impact: gap.criticality === 'Critical' ? 'Alto impacto em risco' : 'Médio impacto em risco',
-        effort: gap.response === 'Não respondido' ? 'medium' : gap.effectiveScore < 0.25 ? 'high' : 'low',
-        ownershipType: gap.ownershipType || 'GRC',
-      });
+    const timeframe = 
+      priority === 'immediate' ? '0-30 dias' :
+      priority === 'short' ? '30-60 dias' : '60-90 dias';
 
-      itemCount++;
+    roadmap.push({
+      priority,
+      timeframe,
+      domain: summary.domainName,
+      action: `Implementar controle: ${summary.subcatName}`,
+      impact: summary.criticality === 'Critical' ? 'Alto impacto em risco' : 'Médio impacto em risco',
+      effort: summary.hasUnanswered ? 'medium' : summary.worstScore < 0.25 ? 'high' : 'low',
+      ownershipType: summary.ownershipType,
     });
   });
 

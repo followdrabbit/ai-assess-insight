@@ -73,6 +73,7 @@ export function QuestionManagement() {
   const [disabledQuestionIds, setDisabledQuestionIds] = useState<string[]>([]);
   const [customFrameworksList, setCustomFrameworksList] = useState<{ frameworkId: string; shortName: string }[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<CustomQuestion | null>(null);
   const [formData, setFormData] = useState<QuestionFormData>(emptyFormData);
   const [frameworksText, setFrameworksText] = useState('');
@@ -160,27 +161,37 @@ export function QuestionManagement() {
 
   const [isEditingDefault, setIsEditingDefault] = useState(false);
 
-  const handleSave = async () => {
-    // Validation
+  const validateForm = (): boolean => {
     if (!formData.questionId.trim()) {
       toast.error('ID da pergunta é obrigatório');
-      return;
+      return false;
     }
     if (!formData.questionText.trim()) {
       toast.error('Texto da pergunta é obrigatório');
-      return;
+      return false;
     }
     if (!formData.domainId) {
       toast.error('Selecione um domínio');
-      return;
+      return false;
     }
 
     // Check for duplicate ID only when creating new (not editing)
     const existingCustomIds = customQuestions.map(q => q.questionId);
     if (!editingQuestion && !isEditingDefault && existingCustomIds.includes(formData.questionId)) {
       toast.error('Já existe uma pergunta personalizada com este ID');
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleConfirmSave = () => {
+    if (validateForm()) {
+      setIsConfirmSaveOpen(true);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsConfirmSaveOpen(false);
 
     const frameworks = frameworksText.split('\n').filter(f => f.trim());
 
@@ -547,12 +558,40 @@ export function QuestionManagement() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
-              {editingQuestion ? 'Salvar Alterações' : 'Criar Pergunta'}
+            <Button onClick={handleConfirmSave}>
+              {editingQuestion ? 'Salvar Alterações' : isEditingDefault ? 'Substituir Pergunta' : 'Criar Pergunta'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog for Save */}
+      <AlertDialog open={isConfirmSaveOpen} onOpenChange={setIsConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {editingQuestion 
+                ? 'Confirmar alterações?' 
+                : isEditingDefault 
+                  ? 'Substituir pergunta padrão?' 
+                  : 'Criar nova pergunta?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {editingQuestion 
+                ? `Você deseja salvar as alterações na pergunta "${formData.questionId}"?`
+                : isEditingDefault 
+                  ? `Você deseja criar uma versão personalizada da pergunta "${formData.questionId}"? A pergunta padrão será desabilitada.`
+                  : `Você deseja criar a nova pergunta "${formData.questionId}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSave}>
+              Sim, Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   Briefcase,
   Scale,
   Code,
+  Settings,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -171,6 +172,18 @@ export function AppSidebar() {
                 >
                   <FileText className="h-4 w-4" />
                   <span>Relatórios</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Settings */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate('/settings')}
+                  isActive={isActive('/settings')}
+                  tooltip="Configurações"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Configurações</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

@@ -666,11 +666,16 @@ export function getCriticalGaps(
   activeQuestions?: ActiveQuestion[]
 ): CriticalGap[] {
   const gaps: CriticalGap[] = [];
+  const seenQuestionIds = new Set<string>();
 
   // Use provided active questions or fall back to default questions
   const questionsToAnalyze = activeQuestions || questions;
 
   questionsToAnalyze.forEach(q => {
+    // Skip duplicate question IDs
+    if (seenQuestionIds.has(q.questionId)) return;
+    seenQuestionIds.add(q.questionId);
+
     const subcat = subcategories.find(s => s.subcatId === q.subcatId);
     const domain = domains.find(d => d.domainId === q.domainId);
     const answer = answersMap.get(q.questionId);

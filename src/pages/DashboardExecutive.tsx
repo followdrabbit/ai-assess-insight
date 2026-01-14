@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion } from '@/lib/scoring';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
-import { questions as defaultQuestions } from '@/lib/dataset';
+import { fetchQuestions } from '@/lib/datasetData';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
+import { fetchFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworksData';
 
 export default function DashboardExecutive() {
   const { answers, isLoading } = useAnswersStore();
@@ -21,17 +21,19 @@ export default function DashboardExecutive() {
   const loadData = useCallback(async () => {
     setQuestionsLoading(true);
     try {
-      const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
+      const [dbQuestions, customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks, defaultFrameworks] = await Promise.all([
+        fetchQuestions(),
         getAllCustomQuestions(),
         getDisabledQuestions(),
         getEnabledFrameworks(),
         getSelectedFrameworks(),
-        getAllCustomFrameworks()
+        getAllCustomFrameworks(),
+        fetchFrameworks()
       ]);
 
       // Combine default and custom questions, excluding disabled ones
       const active: ActiveQuestion[] = [
-        ...defaultQuestions
+        ...dbQuestions
           .filter(q => !disabledQuestionIds.includes(q.questionId))
           .map(q => ({
             questionId: q.questionId,

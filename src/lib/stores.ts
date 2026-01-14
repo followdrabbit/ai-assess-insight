@@ -14,8 +14,8 @@ import {
   getAllCustomQuestions,
   getDisabledQuestions
 } from './database';
-import { questions as defaultQuestions, getQuestionById } from './dataset';
-import { getDefaultEnabledFrameworks, getPrimaryFrameworkId } from './frameworks';
+import { fetchQuestions, Question } from './datasetData';
+import { fetchFrameworks, getDefaultEnabledFrameworks, getPrimaryFrameworkId } from './frameworksData';
 
 interface AnswersState {
   answers: Map<string, Answer>;
@@ -35,13 +35,11 @@ interface AnswersState {
   getAnswersByFramework: (frameworkId: string) => Answer[];
 }
 
-const defaultEnabledFrameworks = getDefaultEnabledFrameworks().map(f => f.frameworkId);
-
 export const useAnswersStore = create<AnswersState>()((set, get) => ({
   answers: new Map(),
   isLoading: true,
   lastUpdated: null,
-  enabledFrameworks: defaultEnabledFrameworks,
+  enabledFrameworks: [],
   selectedFrameworks: [],
 
   loadAnswers: async () => {
@@ -55,11 +53,15 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       const enabledFw = await getEnabledFrameworks();
       const selectedFw = await getSelectedFrameworks();
       
+      // Get default enabled frameworks from database
+      const defaultEnabled = await getDefaultEnabledFrameworks();
+      const defaultEnabledIds = defaultEnabled.map(f => f.frameworkId);
+      
       set({ 
         answers: answersMap, 
         isLoading: false,
         lastUpdated: new Date().toISOString(),
-        enabledFrameworks: enabledFw.length > 0 ? enabledFw : defaultEnabledFrameworks,
+        enabledFrameworks: enabledFw.length > 0 ? enabledFw : defaultEnabledIds,
         selectedFrameworks: selectedFw
       });
     } catch (error) {
@@ -70,9 +72,13 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
 
   setAnswer: async (questionId: string, updates: Partial<Omit<Answer, 'questionId' | 'frameworkId'>>) => {
     const currentAnswer = get().answers.get(questionId);
-    const question = getQuestionById(questionId);
     
-    const frameworkId = currentAnswer?.frameworkId || (question as any)?.frameworkId || 'NIST_AI_RMF';
+    // Load questions from database to get frameworkId
+    const questions = await fetchQuestions();
+    const question = questions.find(q => q.questionId === questionId);
+    const frameworkId = currentAnswer?.frameworkId || 
+                        (question ? getPrimaryFrameworkId(question.frameworks) : null) || 
+                        'NIST_AI_RMF';
     
     const newAnswer: Answer = {
       questionId,
@@ -121,16 +127,29 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
   generateDemoData: async () => {
     const demoAnswers: Answer[] = [];
 
-    // Load custom questions and disabled questions
-    const [customQuestions, disabledQuestionIds] = await Promise.all([
+    // Load questions from database
+    const [dbQuestions, customQuestions, disabledQuestionIds] = await Promise.all([
+      fetchQuestions(),
       getAllCustomQuestions(),
       getDisabledQuestions()
     ]);
 
     // Combine default and custom questions, excluding disabled ones
-    const allQuestions = [
-      ...defaultQuestions.filter(q => !disabledQuestionIds.includes(q.questionId)),
-      ...customQuestions.filter(q => !q.isDisabled)
+    const allQuestions: Question[] = [
+      ...dbQuestions.filter(q => !disabledQuestionIds.includes(q.questionId)),
+      ...customQuestions
+        .filter(q => !q.isDisabled)
+        .map(q => ({
+          questionId: q.questionId,
+          questionText: q.questionText,
+          subcatId: q.subcatId || '',
+          domainId: q.domainId,
+          expectedEvidence: q.expectedEvidence || '',
+          imperativeChecks: q.imperativeChecks || '',
+          riskSummary: q.riskSummary || '',
+          frameworks: q.frameworks || [],
+          ownershipType: q.ownershipType as Question['ownershipType']
+        }))
     ];
 
     allQuestions.forEach((q) => {
@@ -154,9 +173,7 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       }
 
       // Get the primary framework from the question's frameworks array
-      const frameworkId = getPrimaryFrameworkId(q.frameworks) || 
-                          (q as any).frameworkId || 
-                          'NIST_AI_RMF';
+      const frameworkId = getPrimaryFrameworkId(q.frameworks) || 'NIST_AI_RMF';
 
       demoAnswers.push({
         questionId: q.questionId,

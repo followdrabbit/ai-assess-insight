@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { frameworks, Framework } from '@/lib/frameworks';
+import { useState, useMemo, useEffect } from 'react';
+import { fetchFrameworks, Framework } from '@/lib/frameworksData';
 import { useAnswersStore } from '@/lib/stores';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,16 +27,40 @@ const categoryColors: Record<string, string> = {
 export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps) {
   const { enabledFrameworks, selectedFrameworks, setSelectedFrameworks } = useAnswersStore();
   
+  const [allFrameworks, setAllFrameworks] = useState<Framework[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   // Local state for user selection
   const [localSelected, setLocalSelected] = useState<string[]>(
     // Initialize with previously selected frameworks, filtered to only enabled ones
     selectedFrameworks.filter(id => enabledFrameworks.includes(id))
   );
 
+  // Load frameworks from database
+  useEffect(() => {
+    async function loadFrameworks() {
+      setIsLoading(true);
+      try {
+        const frameworks = await fetchFrameworks();
+        setAllFrameworks(frameworks);
+      } catch (error) {
+        console.error('Error loading frameworks:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadFrameworks();
+  }, []);
+
+  // Update local selection when enabled frameworks change
+  useEffect(() => {
+    setLocalSelected(prev => prev.filter(id => enabledFrameworks.includes(id)));
+  }, [enabledFrameworks]);
+
   // Only show frameworks that are ENABLED by admin in Settings
   const availableFrameworks = useMemo(() => {
-    return frameworks.filter(f => enabledFrameworks.includes(f.frameworkId));
-  }, [enabledFrameworks]);
+    return allFrameworks.filter(f => enabledFrameworks.includes(f.frameworkId));
+  }, [allFrameworks, enabledFrameworks]);
 
   // Group available frameworks by category
   const coreFrameworks = availableFrameworks.filter(f => f.category === 'core');
@@ -67,6 +91,17 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
   const clearAll = () => {
     setLocalSelected([]);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Carregando frameworks...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If no frameworks are enabled by admin, show message to go to Settings
   if (availableFrameworks.length === 0) {

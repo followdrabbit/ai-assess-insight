@@ -164,30 +164,70 @@ export function getQuestionsByOwnership(ownershipType: OwnershipType): Question[
 export function getFrameworkCategory(framework: string): FrameworkCategoryId | null {
   const lowerFramework = framework.toLowerCase();
   
-  if (lowerFramework.includes('nist ai rmf') || lowerFramework.includes('iso/iec 42001') || 
-      lowerFramework.includes('iso/iec 23894') || lowerFramework.includes('eu ai act')) {
+  // AI Governance frameworks
+  if (lowerFramework.includes('nist ai rmf') || 
+      lowerFramework.includes('iso/iec 42001') || 
+      lowerFramework.includes('iso 42001') ||
+      lowerFramework.includes('iso/iec 23894') || 
+      lowerFramework.includes('iso 23894') ||
+      lowerFramework.includes('eu ai act') ||
+      lowerFramework.includes('ieee ead')) {
     return 'AI_GOVERNANCE';
   }
-  if (lowerFramework.includes('iso 27001') || lowerFramework.includes('nist sp 800-53') || 
-      lowerFramework.includes('nist csf') || lowerFramework.includes('cis')) {
+  
+  // Security Foundation frameworks
+  if (lowerFramework.includes('iso 27001') || 
+      lowerFramework.includes('iso/iec 27001') ||
+      lowerFramework.includes('iso 27002') ||
+      lowerFramework.includes('nist sp 800-53') || 
+      lowerFramework.includes('nist 800-53') ||
+      lowerFramework.includes('nist csf') || 
+      lowerFramework.includes('cis controls') ||
+      lowerFramework.includes('iso 22301') ||
+      lowerFramework.includes('iso 31000') ||
+      lowerFramework.includes('iso 37002') ||
+      lowerFramework.includes('iso 8000')) {
     return 'SECURITY_FOUNDATION';
   }
-  if (lowerFramework.includes('nist ssdf') || lowerFramework.includes('slsa') || 
-      lowerFramework.includes('owasp top 10') || lowerFramework.includes('owasp ml')) {
+  
+  // Engineering and DevSecOps frameworks
+  if (lowerFramework.includes('nist ssdf') || 
+      lowerFramework.includes('slsa') || 
+      lowerFramework.includes('sbom') ||
+      (lowerFramework.includes('owasp') && 
+       lowerFramework.includes('top 10') && 
+       !lowerFramework.includes('llm') && 
+       !lowerFramework.includes('api')) ||
+      lowerFramework.includes('owasp ml')) {
     return 'ENGINEERING';
   }
-  if (lowerFramework.includes('lgpd') || lowerFramework.includes('gdpr') || 
-      lowerFramework.includes('privacy')) {
+  
+  // Privacy frameworks
+  if (lowerFramework.includes('lgpd') || 
+      lowerFramework.includes('gdpr') || 
+      lowerFramework.includes('privacy framework') ||
+      lowerFramework.includes('lc 105') ||
+      lowerFramework.includes('lei complementar 105')) {
     return 'PRIVACY';
   }
-  if (lowerFramework.includes('cmn') || lowerFramework.includes('bacen') || 
-      lowerFramework.includes('lc 105')) {
+  
+  // Brazilian Financial Regulation
+  if (lowerFramework.includes('res. cmn') || 
+      lowerFramework.includes('cmn 4.') ||
+      lowerFramework.includes('cmn 5.') ||
+      lowerFramework.includes('bacen') ||
+      lowerFramework.includes('resolução cmn')) {
     return 'FINANCIAL_BR';
   }
-  if (lowerFramework.includes('mitre') || lowerFramework.includes('owasp llm') || 
+  
+  // Threat Intelligence frameworks
+  if (lowerFramework.includes('mitre atlas') || 
+      lowerFramework.includes('mitre att&ck') ||
+      lowerFramework.includes('owasp llm') ||
       lowerFramework.includes('owasp api')) {
     return 'THREAT_INTELLIGENCE';
   }
+  
   return null;
 }
 

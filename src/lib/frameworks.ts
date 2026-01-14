@@ -58,20 +58,41 @@ export function isAuthoritativeFramework(frameworkId: string): boolean {
 
 // Map question framework strings to framework IDs
 // Questions have strings like "NIST AI RMF GOVERN 1.1", "ISO 27001 A.5.1", etc.
+// Order matters - more specific patterns should come first
 const FRAMEWORK_PATTERNS: { pattern: RegExp; frameworkId: string }[] = [
+  // NIST AI RMF - primary AI governance framework
   { pattern: /NIST\s*AI\s*RMF/i, frameworkId: 'NIST_AI_RMF' },
+  
+  // ISO standards
+  { pattern: /ISO\s*\/?\s*IEC?\s*42001/i, frameworkId: 'NIST_AI_RMF' }, // Map 42001 to NIST AI RMF (AI governance)
+  { pattern: /ISO\s*\/?\s*IEC?\s*23894/i, frameworkId: 'ISO_23894' },
+  { pattern: /ISO\s*23894/i, frameworkId: 'ISO_23894' },
   { pattern: /ISO\s*\/?\s*IEC?\s*27001/i, frameworkId: 'ISO_27001_27002' },
   { pattern: /ISO\s*27001/i, frameworkId: 'ISO_27001_27002' },
   { pattern: /ISO\s*27002/i, frameworkId: 'ISO_27001_27002' },
-  { pattern: /ISO\s*\/?\s*IEC?\s*42001/i, frameworkId: 'ISO_27001_27002' }, // Map 42001 to 27001 for now
-  { pattern: /ISO\s*\/?\s*IEC?\s*23894/i, frameworkId: 'ISO_23894' },
-  { pattern: /ISO\s*23894/i, frameworkId: 'ISO_23894' },
+  
+  // Privacy/Data Protection
   { pattern: /LGPD/i, frameworkId: 'LGPD' },
+  { pattern: /GDPR/i, frameworkId: 'LGPD' }, // Map GDPR to LGPD (privacy framework)
+  { pattern: /NIST\s*Privacy/i, frameworkId: 'LGPD' }, // Privacy framework maps to LGPD
+  
+  // Development security
   { pattern: /NIST\s*SSDF/i, frameworkId: 'NIST_SSDF' },
+  { pattern: /SLSA/i, frameworkId: 'NIST_SSDF' }, // Supply chain maps to SSDF
+  
+  // Cloud/Infrastructure security
   { pattern: /CSA/i, frameworkId: 'CSA_AI' },
+  { pattern: /MITRE\s*ATLAS/i, frameworkId: 'CSA_AI' }, // MITRE ATLAS maps to CSA
+  { pattern: /NIST\s*(SP\s*)?800-53/i, frameworkId: 'CSA_AI' }, // NIST 800-53 maps to CSA
+  { pattern: /NIST\s*CSF/i, frameworkId: 'CSA_AI' }, // NIST CSF maps to CSA
+  
+  // OWASP
   { pattern: /OWASP\s*(Top\s*10\s*(for\s*)?)?LLM/i, frameworkId: 'OWASP_LLM' },
   { pattern: /OWASP\s*(Top\s*10\s*)?(for\s*)?API/i, frameworkId: 'OWASP_API' },
   { pattern: /OWASP\s*API/i, frameworkId: 'OWASP_API' },
+  
+  // EU AI Act - maps to NIST AI RMF (governance)
+  { pattern: /EU\s*AI\s*Act/i, frameworkId: 'NIST_AI_RMF' },
 ];
 
 /**
@@ -88,6 +109,20 @@ export function mapQuestionFrameworkToId(questionFramework: string): string | nu
 }
 
 /**
+ * Get all framework IDs that a question belongs to
+ */
+export function getQuestionFrameworkIds(questionFrameworks: string[]): string[] {
+  const ids = new Set<string>();
+  for (const fw of questionFrameworks) {
+    const id = mapQuestionFrameworkToId(fw);
+    if (id) {
+      ids.add(id);
+    }
+  }
+  return Array.from(ids);
+}
+
+/**
  * Check if a question belongs to any of the selected framework IDs
  */
 export function questionBelongsToFrameworks(
@@ -97,9 +132,18 @@ export function questionBelongsToFrameworks(
   if (selectedFrameworkIds.length === 0) return false;
   
   const selectedSet = new Set(selectedFrameworkIds);
+  const questionIds = getQuestionFrameworkIds(questionFrameworks);
   
-  return questionFrameworks.some(qfw => {
-    const mappedId = mapQuestionFrameworkToId(qfw);
-    return mappedId && selectedSet.has(mappedId);
-  });
+  return questionIds.some(id => selectedSet.has(id));
+}
+
+/**
+ * Get primary framework ID for a question (first matched)
+ */
+export function getPrimaryFrameworkId(questionFrameworks: string[]): string | null {
+  for (const fw of questionFrameworks) {
+    const id = mapQuestionFrameworkToId(fw);
+    if (id) return id;
+  }
+  return null;
 }

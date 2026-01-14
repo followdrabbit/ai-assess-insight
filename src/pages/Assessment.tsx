@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useCallback } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useAnswersStore, useNavigationStore } from '@/lib/stores';
 import { domains, subcategories, questions, getSubcategoriesByDomain, getQuestionsBySubcategory, responseOptions, evidenceOptions } from '@/lib/dataset';
 import { calculateOverallMetrics } from '@/lib/scoring';
@@ -9,24 +9,45 @@ import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { FrameworkSelector } from '@/components/FrameworkSelector';
+import { getFrameworkById } from '@/lib/frameworks';
 
 export default function Assessment() {
-  const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading } = useAnswersStore();
+  const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading, selectedFrameworks } = useAnswersStore();
   const { currentDomainId, currentSubcatId, setCurrentDomain, setCurrentSubcat, sidebarExpanded, toggleDomainExpanded } = useNavigationStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
+  const [showFrameworkSelector, setShowFrameworkSelector] = useState(selectedFrameworks.length === 0);
+
+  // Filter questions based on selected frameworks
+  const filteredQuestions = useMemo(() => {
+    if (selectedFrameworks.length === 0) return [];
+    return questions.filter(q => 
+      q.frameworks.some(fw => 
+        selectedFrameworks.some(selectedId => {
+          const framework = getFrameworkById(selectedId);
+          return framework && q.frameworks.some(qfw => 
+            qfw.toLowerCase().includes(framework.shortName.toLowerCase()) ||
+            framework.frameworkName.toLowerCase().includes(qfw.toLowerCase()) ||
+            qfw.toLowerCase().includes(framework.frameworkName.toLowerCase())
+          );
+        })
+      )
+    );
+  }, [selectedFrameworks]);
 
   const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
 
   const currentQuestions = useMemo(() => {
+    const baseQuestions = filteredQuestions;
     if (currentSubcatId) {
-      return getQuestionsBySubcategory(currentSubcatId);
+      return baseQuestions.filter(q => q.subcatId === currentSubcatId);
     }
     if (currentDomainId) {
-      return questions.filter(q => q.domainId === currentDomainId);
+      return baseQuestions.filter(q => q.domainId === currentDomainId);
     }
-    return questions;
-  }, [currentDomainId, currentSubcatId]);
+    return baseQuestions;
+  }, [currentDomainId, currentSubcatId, filteredQuestions]);
 
   const handleExport = () => {
     const blob = exportAnswersToXLSX(answers);
@@ -69,6 +90,15 @@ export default function Assessment() {
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
+  }
+
+  // Show framework selector if no frameworks selected or user wants to change
+  if (showFrameworkSelector) {
+    return (
+      <div className="max-w-4xl mx-auto py-8">
+        <FrameworkSelector onStartAssessment={() => setShowFrameworkSelector(false)} />
+      </div>
+    );
   }
 
   return (
@@ -145,8 +175,16 @@ export default function Assessment() {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        {/* Framework info and actions */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <div className="flex-1">
+            <span className="text-sm text-muted-foreground">
+              Avaliando {selectedFrameworks.length} framework{selectedFrameworks.length !== 1 ? 's' : ''} • {filteredQuestions.length} perguntas
+            </span>
+          </div>
+          <Button onClick={() => setShowFrameworkSelector(true)} variant="outline" size="sm">
+            Alterar Frameworks
+          </Button>
           <Button onClick={handleExport} variant="outline" size="sm">Exportar XLSX</Button>
           <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">Importar XLSX</Button>
           <Button onClick={generateDemoData} variant="outline" size="sm">Dados Demo</Button>

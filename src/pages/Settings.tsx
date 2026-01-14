@@ -1,14 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAnswersStore } from '@/lib/stores';
-import { frameworks, Framework } from '@/lib/frameworks';
-import { questions } from '@/lib/dataset';
-import { getQuestionFrameworkIds } from '@/lib/frameworks';
+import { fetchFrameworks, getQuestionFrameworkIds } from '@/lib/frameworksData';
+import { fetchQuestions } from '@/lib/datasetData';
+import type { Framework } from '@/lib/frameworksData';
+import type { Question } from '@/lib/datasetData';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
 import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
+import { DataSeedAdmin } from '@/components/settings/DataSeedAdmin';
 
 const categoryLabels: Record<string, { label: string; description: string }> = {
   core: { 
@@ -47,6 +48,31 @@ export default function Settings() {
   const [assessmentName, setAssessmentName] = useState('Avaliação de Maturidade em Segurança de IA');
   const [organizationName, setOrganizationName] = useState('');
   const [reassessmentInterval, setReassessmentInterval] = useState('quarterly');
+  
+  // Load frameworks and questions from database
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [loadedFrameworks, loadedQuestions] = await Promise.all([
+          fetchFrameworks(),
+          fetchQuestions()
+        ]);
+        setFrameworks(loadedFrameworks);
+        setQuestions(loadedQuestions);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast.error('Erro ao carregar dados do banco');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   // Count questions per framework
   const questionCountByFramework = useMemo(() => {
@@ -65,7 +91,7 @@ export default function Settings() {
     });
     
     return counts;
-  }, []);
+  }, [frameworks, questions]);
 
   // Count answered questions per framework
   const answeredCountByFramework = useMemo(() => {
@@ -87,7 +113,7 @@ export default function Settings() {
     });
     
     return counts;
-  }, [answers]);
+  }, [answers, frameworks, questions]);
 
   // Group frameworks by category
   const frameworksByCategory = useMemo(() => {
@@ -104,7 +130,7 @@ export default function Settings() {
     });
     
     return grouped;
-  }, []);
+  }, [frameworks]);
 
   const toggleFramework = (frameworkId: string) => {
     setPendingFrameworks(prev => {
@@ -157,7 +183,7 @@ export default function Settings() {
       }
     });
     return uniqueQuestions.size;
-  }, [pendingFrameworks]);
+  }, [pendingFrameworks, questions]);
 
   const totalAnswered = answers.size;
   const lastUpdated = answers.size > 0 
@@ -250,6 +276,14 @@ export default function Settings() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p>Carregando configurações...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -273,12 +307,13 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="frameworks" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+        <TabsList className="grid w-full grid-cols-7 max-w-4xl">
           <TabsTrigger value="frameworks">Habilitar</TabsTrigger>
           <TabsTrigger value="manage-frameworks">Frameworks</TabsTrigger>
           <TabsTrigger value="manage-questions">Perguntas</TabsTrigger>
           <TabsTrigger value="data">Dados</TabsTrigger>
           <TabsTrigger value="general">Geral</TabsTrigger>
+          <TabsTrigger value="admin">Admin</TabsTrigger>
           <TabsTrigger value="about">Sobre</TabsTrigger>
         </TabsList>
 
@@ -314,68 +349,83 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Frameworks by Category */}
-          <Tabs defaultValue="all" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="core">
-                Core ({frameworksByCategory.core.length})
-              </TabsTrigger>
-              <TabsTrigger value="high-value">
-                Alto Valor ({frameworksByCategory['high-value'].length})
-              </TabsTrigger>
-              <TabsTrigger value="tech-focused">
-                Técnico ({frameworksByCategory['tech-focused'].length})
-              </TabsTrigger>
-            </TabsList>
+          {frameworks.length === 0 ? (
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground mb-4">
+                Nenhum framework encontrado no banco de dados.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Vá para a aba "Admin" e execute o seed de dados para carregar os frameworks.
+              </p>
+            </Card>
+          ) : (
+            <>
+              {/* Frameworks by Category */}
+              <Tabs defaultValue="all" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="all">Todos</TabsTrigger>
+                  <TabsTrigger value="core">
+                    Core ({frameworksByCategory.core.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="high-value">
+                    Alto Valor ({frameworksByCategory['high-value'].length})
+                  </TabsTrigger>
+                  <TabsTrigger value="tech-focused">
+                    Técnico ({frameworksByCategory['tech-focused'].length})
+                  </TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="all" className="space-y-6">
-              {Object.entries(frameworksByCategory).map(([category, fws]) => (
-                <div key={category}>
-                  <div className="mb-3">
-                    <h3 className="font-semibold">{categoryLabels[category]?.label || category}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {categoryLabels[category]?.description}
-                    </p>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {fws.map(fw => (
-                      <FrameworkCard key={fw.frameworkId} fw={fw} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </TabsContent>
-
-            {Object.entries(frameworksByCategory).map(([category, fws]) => (
-              <TabsContent key={category} value={category}>
-                <div className="mb-3">
-                  <h3 className="font-semibold">{categoryLabels[category]?.label || category}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {categoryLabels[category]?.description}
-                  </p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {fws.map(fw => (
-                    <FrameworkCard key={fw.frameworkId} fw={fw} />
+                <TabsContent value="all" className="space-y-6">
+                  {Object.entries(frameworksByCategory).map(([category, fws]) => (
+                    fws.length > 0 && (
+                      <div key={category}>
+                        <div className="mb-3">
+                          <h3 className="font-semibold">{categoryLabels[category]?.label || category}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {categoryLabels[category]?.description}
+                          </p>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {fws.map(fw => (
+                            <FrameworkCard key={fw.frameworkId} fw={fw} />
+                          ))}
+                        </div>
+                      </div>
+                    )
                   ))}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+                </TabsContent>
 
-          {/* Info about framework selection */}
-          <Card className="bg-muted/50">
-            <CardContent className="pt-6">
-              <h4 className="font-medium mb-2">Sobre a seleção de frameworks</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• A seleção de frameworks afeta quais perguntas aparecem na avaliação</li>
-                <li>• Os dashboards mostrarão métricas apenas dos frameworks selecionados</li>
-                <li>• Algumas perguntas podem pertencer a múltiplos frameworks</li>
-                <li>• Frameworks "Core" são recomendados para avaliações iniciais</li>
-              </ul>
-            </CardContent>
-          </Card>
+                {Object.entries(frameworksByCategory).map(([category, fws]) => (
+                  <TabsContent key={category} value={category}>
+                    <div className="mb-3">
+                      <h3 className="font-semibold">{categoryLabels[category]?.label || category}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {categoryLabels[category]?.description}
+                      </p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {fws.map(fw => (
+                        <FrameworkCard key={fw.frameworkId} fw={fw} />
+                      ))}
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+
+              {/* Info about framework selection */}
+              <Card className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <h4 className="font-medium mb-2">Sobre a seleção de frameworks</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• A seleção de frameworks afeta quais perguntas aparecem na avaliação</li>
+                    <li>• Os dashboards mostrarão métricas apenas dos frameworks selecionados</li>
+                    <li>• Algumas perguntas podem pertencer a múltiplos frameworks</li>
+                    <li>• Frameworks "Core" são recomendados para avaliações iniciais</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         {/* MANAGE FRAMEWORKS TAB */}
@@ -648,6 +698,21 @@ export default function Settings() {
                 <li>• <strong>Seu Controle:</strong> Você pode exportar ou limpar seus dados a qualquer momento</li>
                 <li>• <strong>Persistência:</strong> Os dados são mantidos de forma permanente e sincronizados automaticamente</li>
               </ul>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ADMIN TAB */}
+        <TabsContent value="admin" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Administração do Sistema</CardTitle>
+              <CardDescription>
+                Ferramentas de administração e manutenção
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <DataSeedAdmin />
             </CardContent>
           </Card>
         </TabsContent>

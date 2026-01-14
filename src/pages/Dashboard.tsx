@@ -493,7 +493,7 @@ export default function Dashboard() {
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Cobertura por Framework</h3>
               <div className="space-y-3">
-                {frameworkCoverage.slice(0, 6).map(fw => (
+                {frameworkCoverage.slice(0, 8).map(fw => (
                   <div key={fw.framework} className="flex items-center justify-between">
                     <span className="text-sm truncate flex-1">{fw.framework}</span>
                     <div className="flex items-center gap-3">
@@ -507,6 +507,74 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Framework Category Maturity - GRC View */}
+          <div className="card-elevated p-6">
+            <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Categoria</th>
+                    <th>Perguntas</th>
+                    <th>Respondidas</th>
+                    <th>Cobertura</th>
+                    <th>Maturidade</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {frameworkCategoryData.map(fc => {
+                    const status = fc.coverage < 50 ? 'incomplete' : 
+                                   fc.score < 50 ? 'at-risk' : 'on-track';
+                    return (
+                      <tr key={fc.categoryId}>
+                        <td className="font-medium">{fc.name}</td>
+                        <td className="font-mono">{fc.totalQuestions}</td>
+                        <td className="font-mono">{fc.answeredQuestions}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-500" 
+                                style={{ width: `${fc.coverage}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs">{fc.coverage}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full" 
+                                style={{ 
+                                  width: `${fc.score}%`,
+                                  backgroundColor: fc.maturityLevel.color 
+                                }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs">{fc.score}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={cn(
+                            "text-xs px-2 py-1 rounded",
+                            status === 'incomplete' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
+                            status === 'at-risk' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                            'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                          )}>
+                            {status === 'incomplete' ? 'Incompleto' :
+                             status === 'at-risk' ? 'Em Risco' : 'Adequado'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -691,9 +759,45 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Framework Filter */}
+          {/* Framework Category Cards - Specialist View */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Cobertura por Framework</h3>
+            <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Alinhamento com frameworks de referência para instituições financeiras
+            </p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {frameworkCategoryData.map(fc => (
+                <div key={fc.categoryId} className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-sm">{fc.name}</span>
+                    <span 
+                      className="text-lg font-bold"
+                      style={{ color: fc.maturityLevel.color }}
+                    >
+                      {fc.score}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-2">
+                    <div 
+                      className="h-full transition-all" 
+                      style={{ 
+                        width: `${fc.score}%`,
+                        backgroundColor: fc.maturityLevel.color 
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{fc.answeredQuestions}/{fc.totalQuestions} perguntas</span>
+                    <span>{fc.coverage}% cobertura</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Individual Framework Coverage */}
+          <div className="card-elevated p-6">
+            <h3 className="font-semibold mb-4">Cobertura Detalhada por Framework</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {frameworkCoverage.map(fw => (
                 <div key={fw.framework} className="p-4 bg-muted/50 rounded-lg">

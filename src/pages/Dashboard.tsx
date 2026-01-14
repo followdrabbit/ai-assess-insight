@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
-import { domains, subcategories, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, FrameworkCategoryId } from '@/lib/dataset';
-import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap } from '@/lib/scoring';
+import { domains, subcategories, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, FrameworkCategoryId, questions as defaultQuestions } from '@/lib/dataset';
+import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { cn } from '@/lib/utils';
 import { 
@@ -15,6 +15,8 @@ import {
   NistFunctionHelp 
 } from '@/components/HelpTooltip';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
+import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
+import { frameworks as defaultFrameworks, Framework } from '@/lib/frameworks';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {
@@ -54,11 +56,106 @@ export default function Dashboard() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
   const [persona, setPersona] = useState<PersonaType>('executive');
+  
+  const [activeQuestions, setActiveQuestions] = useState<ActiveQuestion[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
+  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+
+  // Load active questions and frameworks
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [customQuestions, disabledQuestionIds, enabledFrameworkIds, selectedIds, customFrameworks] = await Promise.all([
+          getAllCustomQuestions(),
+          getDisabledQuestions(),
+          getEnabledFrameworks(),
+          getSelectedFrameworks(),
+          getAllCustomFrameworks()
+        ]);
+
+        // Combine default and custom questions, excluding disabled ones
+        const active: ActiveQuestion[] = [
+          ...defaultQuestions
+            .filter(q => !disabledQuestionIds.includes(q.questionId))
+            .map(q => ({
+              questionId: q.questionId,
+              questionText: q.questionText,
+              subcatId: q.subcatId,
+              domainId: q.domainId,
+              ownershipType: q.ownershipType,
+              frameworks: q.frameworks || []
+            })),
+          ...customQuestions
+            .filter(q => !q.isDisabled)
+            .map(q => ({
+              questionId: q.questionId,
+              questionText: q.questionText,
+              subcatId: q.subcatId || '',
+              domainId: q.domainId,
+              ownershipType: q.ownershipType,
+              frameworks: q.frameworks || []
+            }))
+        ];
+
+        setActiveQuestions(active);
+
+        // Combine default and custom frameworks, filter by enabled
+        const allFrameworks: Framework[] = [
+          ...defaultFrameworks,
+          ...customFrameworks.map(cf => ({
+            frameworkId: cf.frameworkId,
+            frameworkName: cf.frameworkName,
+            shortName: cf.shortName,
+            description: cf.description,
+            targetAudience: cf.targetAudience,
+            assessmentScope: cf.assessmentScope,
+            defaultEnabled: cf.defaultEnabled,
+            version: cf.version,
+            category: cf.category as 'core' | 'high-value' | 'tech-focused',
+            references: cf.references
+          }))
+        ];
+
+        const enabledSet = new Set(enabledFrameworkIds);
+        const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
+        setEnabledFrameworks(enabled);
+        setSelectedFrameworkIds(selectedIds);
+
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // Fallback to default questions
+        setActiveQuestions(defaultQuestions.map(q => ({
+          questionId: q.questionId,
+          questionText: q.questionText,
+          subcatId: q.subcatId,
+          domainId: q.domainId,
+          ownershipType: q.ownershipType,
+          frameworks: q.frameworks || []
+        })));
+        setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
+      } finally {
+        setDataLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // Handle framework selection change
+  const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
+    setSelectedFrameworkIds(frameworkIds);
+    try {
+      await setSelectedFrameworks(frameworkIds);
+    } catch (error) {
+      console.error('Error saving framework selection:', error);
+    }
+  };
 
   const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
-  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5), [answers]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers), [answers]);
-  const roadmap = useMemo(() => generateRoadmap(answers, 10), [answers]);
+  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, activeQuestions), [answers, activeQuestions]);
+  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, activeQuestions), [answers, activeQuestions]);
+  const roadmap = useMemo(() => generateRoadmap(answers, 10, activeQuestions), [answers, activeQuestions]);
 
   // Data for charts
   const domainChartData = metrics.domainMetrics.map(dm => ({
@@ -100,7 +197,7 @@ export default function Dashboard() {
     answered: om.answeredQuestions,
   }));
 
-  if (isLoading) {
+  if (isLoading || dataLoading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
   }
 
@@ -136,6 +233,10 @@ export default function Dashboard() {
           criticalGaps={criticalGaps}
           roadmap={roadmap}
           frameworkCoverage={frameworkCoverage}
+          enabledFrameworks={enabledFrameworks}
+          selectedFrameworkIds={selectedFrameworkIds}
+          onFrameworkSelectionChange={handleFrameworkSelectionChange}
+          activeQuestions={activeQuestions}
         />
       )}
 

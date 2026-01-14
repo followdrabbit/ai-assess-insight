@@ -508,9 +508,12 @@ export function ExecutiveDashboard({
         </div>
       </div>
 
-      {/* Executive KPI Cards - Enhanced */}
+      {/* Executive KPI Cards - Enhanced with staggered animations */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="kpi-card relative overflow-hidden">
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+        >
           <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Score Geral</div>
@@ -527,7 +530,10 @@ export function ExecutiveDashboard({
           </div>
         </div>
 
-        <div className="kpi-card relative overflow-hidden">
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
+        >
           <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Gaps Críticos</div>
@@ -548,7 +554,10 @@ export function ExecutiveDashboard({
           </div>
         </div>
 
-        <div className="kpi-card relative overflow-hidden">
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+        >
           <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Cobertura</div>
@@ -563,7 +572,10 @@ export function ExecutiveDashboard({
           </div>
         </div>
 
-        <div className="kpi-card relative overflow-hidden">
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
+        >
           <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Prontidão de Evidências</div>

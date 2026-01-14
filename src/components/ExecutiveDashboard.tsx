@@ -89,7 +89,6 @@ interface ExecutiveDashboardProps {
   activeQuestions: ActiveQuestion[];
 }
 
-type DomainFilter = 'all' | string;
 type CriticalityFilter = 'all' | 'Critical' | 'High' | 'Medium' | 'Low';
 type NistFunctionFilter = 'all' | 'GOVERN' | 'MAP' | 'MEASURE' | 'MANAGE';
 
@@ -106,7 +105,6 @@ export function ExecutiveDashboard({
   const navigate = useNavigate();
   
   // Filter states
-  const [domainFilter, setDomainFilter] = useState<DomainFilter>('all');
   const [criticalityFilter, setCriticalityFilter] = useState<CriticalityFilter>('all');
   const [nistFilter, setNistFilter] = useState<NistFunctionFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -188,9 +186,6 @@ export function ExecutiveDashboard({
   const filteredGaps = useMemo(() => {
     let filtered = [...filteredByFramework.gaps];
     
-    if (domainFilter !== 'all') {
-      filtered = filtered.filter(g => g.domainId === domainFilter);
-    }
     if (criticalityFilter !== 'all') {
       filtered = filtered.filter(g => g.criticality === criticalityFilter);
     }
@@ -207,7 +202,7 @@ export function ExecutiveDashboard({
     }
     
     return filtered;
-  }, [filteredByFramework.gaps, domainFilter, criticalityFilter, nistFilter, searchQuery]);
+  }, [filteredByFramework.gaps, criticalityFilter, nistFilter, searchQuery]);
 
   // Filtered domain metrics
   const filteredDomainMetrics = useMemo(() => {
@@ -311,31 +306,13 @@ export function ExecutiveDashboard({
     ].filter(d => d.value > 0);
   }, [filteredByFramework.gaps]);
 
-  // Unique domains for filter - use filtered gaps
-  const uniqueDomains = useMemo(() => {
-    const domains = new Map<string, string>();
-    filteredByFramework.gaps.forEach(g => domains.set(g.domainId, g.domainName));
-    return Array.from(domains.entries());
-  }, [filteredByFramework.gaps]);
-
-  // Reset domain filter if selected domain no longer exists in available gaps
-  useEffect(() => {
-    if (domainFilter !== 'all') {
-      const domainExists = uniqueDomains.some(([id]) => id === domainFilter);
-      if (!domainExists) {
-        setDomainFilter('all');
-      }
-    }
-  }, [uniqueDomains, domainFilter]);
-
   const clearFilters = () => {
-    setDomainFilter('all');
     setCriticalityFilter('all');
     setNistFilter('all');
     setSearchQuery('');
   };
 
-  const hasActiveFilters = domainFilter !== 'all' || criticalityFilter !== 'all' || nistFilter !== 'all' || searchQuery.trim() !== '';
+  const hasActiveFilters = criticalityFilter !== 'all' || nistFilter !== 'all' || searchQuery.trim() !== '';
 
   // Framework selection helpers
   const toggleFramework = (frameworkId: string) => {
@@ -923,17 +900,6 @@ export function ExecutiveDashboard({
               className="w-40 h-8 text-sm"
             />
             
-            <Select value={domainFilter} onValueChange={(v) => setDomainFilter(v as DomainFilter)}>
-              <SelectTrigger className="w-36 h-8 text-sm">
-                <SelectValue placeholder="Domínio" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                <SelectItem value="all">Todos Domínios</SelectItem>
-                {uniqueDomains.map(([id, name]) => (
-                  <SelectItem key={id} value={id}>{name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             
             <Select value={criticalityFilter} onValueChange={(v) => setCriticalityFilter(v as CriticalityFilter)}>
               <SelectTrigger className="w-32 h-8 text-sm">

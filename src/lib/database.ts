@@ -16,7 +16,10 @@ export interface AssessmentMeta {
   createdAt: string;
   updatedAt: string;
   version: string;
-  selectedFrameworks: string[]; // NEW: track selected frameworks
+  // Frameworks ENABLED by admin in Settings (available for selection)
+  enabledFrameworks: string[];
+  // Frameworks SELECTED by user for the current assessment
+  selectedFrameworks: string[];
 }
 
 class AssessmentDatabase extends Dexie {
@@ -58,15 +61,23 @@ export async function initializeDatabase() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       version: '2.0.0',
-      selectedFrameworks: ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'] // Default core frameworks
+      enabledFrameworks: ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'], // Default enabled frameworks
+      selectedFrameworks: [] // User hasn't selected any yet
     });
   } else {
-    // Ensure selectedFrameworks exists in existing meta
+    // Ensure enabledFrameworks and selectedFrameworks exist in existing meta
     const meta = await db.meta.get('current');
-    if (meta && !meta.selectedFrameworks) {
-      await db.meta.update('current', {
-        selectedFrameworks: ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD']
-      });
+    if (meta) {
+      const updates: Partial<AssessmentMeta> = {};
+      if (!meta.enabledFrameworks) {
+        updates.enabledFrameworks = meta.selectedFrameworks || ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+      }
+      if (!meta.selectedFrameworks) {
+        updates.selectedFrameworks = [];
+      }
+      if (Object.keys(updates).length > 0) {
+        await db.meta.update('current', updates);
+      }
     }
   }
 }
@@ -110,6 +121,20 @@ export async function bulkSaveAnswers(answers: Answer[]): Promise<void> {
   });
 }
 
+// Enabled frameworks (admin setting in Settings page)
+export async function getEnabledFrameworks(): Promise<string[]> {
+  const meta = await db.meta.get('current');
+  return meta?.enabledFrameworks || [];
+}
+
+export async function setEnabledFrameworks(frameworkIds: string[]): Promise<void> {
+  await db.meta.update('current', {
+    enabledFrameworks: frameworkIds,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+// Selected frameworks (user selection for assessment)
 export async function getSelectedFrameworks(): Promise<string[]> {
   const meta = await db.meta.get('current');
   return meta?.selectedFrameworks || [];

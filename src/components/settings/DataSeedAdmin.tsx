@@ -4,10 +4,6 @@ import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Import JSON data for seeding
-import taxonomyData from '@/data/taxonomy.json';
-import questionsData from '@/data/questions.json';
-
 export function DataSeedAdmin() {
   const [isSeeding, setIsSeeding] = useState(false);
   const [progress, setProgress] = useState<string[]>([]);
@@ -33,38 +29,29 @@ export function DataSeedAdmin() {
       // 2. Seed domains
       addProgress('Inserindo domínios...');
       const domainsResponse = await supabase.functions.invoke('seed-data', {
-        body: { 
-          action: 'seed-domains',
-          data: { domains: taxonomyData.domains }
-        }
+        body: { action: 'seed-domains' }
       });
       
       if (domainsResponse.error) throw new Error(domainsResponse.error.message);
-      addProgress(`✓ ${taxonomyData.domains.length} domínios inseridos`);
+      addProgress('✓ Domínios inseridos');
 
       // 3. Seed subcategories
       addProgress('Inserindo subcategorias...');
       const subcategoriesResponse = await supabase.functions.invoke('seed-data', {
-        body: { 
-          action: 'seed-subcategories',
-          data: { subcategories: taxonomyData.subcategories }
-        }
+        body: { action: 'seed-subcategories' }
       });
       
       if (subcategoriesResponse.error) throw new Error(subcategoriesResponse.error.message);
-      addProgress(`✓ ${taxonomyData.subcategories.length} subcategorias inseridas`);
+      addProgress('✓ Subcategorias inseridas');
 
       // 4. Seed questions
       addProgress('Inserindo perguntas (pode levar alguns segundos)...');
       const questionsResponse = await supabase.functions.invoke('seed-data', {
-        body: { 
-          action: 'seed-questions',
-          data: { questions: questionsData.questions }
-        }
+        body: { action: 'seed-questions' }
       });
       
       if (questionsResponse.error) throw new Error(questionsResponse.error.message);
-      addProgress(`✓ ${questionsData.questions.length} perguntas inseridas`);
+      addProgress('✓ Perguntas inseridas');
 
       addProgress('');
       addProgress('🎉 Seed completo! Todos os dados foram migrados para o banco de dados.');
@@ -117,8 +104,8 @@ export function DataSeedAdmin() {
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-4">Migração de Dados para o Banco</h3>
       <p className="text-sm text-muted-foreground mb-4">
-        Esta ferramenta migra os dados dos arquivos JSON locais para as tabelas do banco de dados.
-        Execute apenas uma vez ou para atualizar os dados base.
+        Esta ferramenta executa o seed dos dados iniciais no banco de dados.
+        Execute apenas uma vez ou para reinicializar os dados base.
       </p>
 
       <div className="flex gap-2 mb-4">

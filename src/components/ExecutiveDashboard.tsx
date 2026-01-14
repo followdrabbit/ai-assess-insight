@@ -241,18 +241,60 @@ export function ExecutiveDashboard({
     color: nistFunctionColors[nf.function],
   }));
 
-  const frameworkCategoryData = metrics.frameworkCategoryMetrics
-    .filter(fc => fc.totalQuestions > 0)
-    .map(fc => ({
-      categoryId: fc.categoryId,
-      name: frameworkCategoryLabels[fc.categoryId] || fc.categoryId,
-      score: Math.round(fc.score * 100),
-      coverage: Math.round(fc.coverage * 100),
-      totalQuestions: fc.totalQuestions,
-      answeredQuestions: fc.answeredQuestions,
-      color: frameworkCategoryColors[fc.categoryId] || 'hsl(var(--primary))',
-      maturityLevel: fc.maturityLevel,
-    }));
+  // Map framework IDs to category IDs for filtering
+  const frameworkIdToCategoryId: Record<string, FrameworkCategoryId> = {
+    'NIST_AI_RMF': 'NIST_AI_RMF',
+    'ISO_27001_27002': 'SECURITY_BASELINE',
+    'ISO_23894': 'AI_RISK_MGMT',
+    'LGPD': 'PRIVACY_LGPD',
+    'NIST_SSDF': 'SECURE_DEVELOPMENT',
+    'CSA_CCM': 'SECURE_DEVELOPMENT',
+    'CSA_AI': 'SECURE_DEVELOPMENT',
+    'OWASP_LLM': 'THREAT_EXPOSURE',
+    'OWASP_API': 'THREAT_EXPOSURE'
+  };
+
+  // Get enabled category IDs based on enabled frameworks
+  const enabledCategoryIds = useMemo(() => {
+    const categoryIds = new Set<FrameworkCategoryId>();
+    enabledFrameworks.forEach(fw => {
+      const categoryId = frameworkIdToCategoryId[fw.frameworkId];
+      if (categoryId) {
+        categoryIds.add(categoryId);
+      }
+    });
+    return categoryIds;
+  }, [enabledFrameworks]);
+
+  // Get selected category IDs based on selected frameworks (if any selected)
+  const selectedCategoryIds = useMemo(() => {
+    if (selectedFrameworkIds.length === 0) {
+      return enabledCategoryIds; // Show all enabled categories if none selected
+    }
+    const categoryIds = new Set<FrameworkCategoryId>();
+    selectedFrameworkIds.forEach(fwId => {
+      const categoryId = frameworkIdToCategoryId[fwId];
+      if (categoryId) {
+        categoryIds.add(categoryId);
+      }
+    });
+    return categoryIds;
+  }, [selectedFrameworkIds, enabledCategoryIds]);
+
+  const frameworkCategoryData = useMemo(() => {
+    return metrics.frameworkCategoryMetrics
+      .filter(fc => fc.totalQuestions > 0 && selectedCategoryIds.has(fc.categoryId))
+      .map(fc => ({
+        categoryId: fc.categoryId,
+        name: frameworkCategoryLabels[fc.categoryId] || fc.categoryId,
+        score: Math.round(fc.score * 100),
+        coverage: Math.round(fc.coverage * 100),
+        totalQuestions: fc.totalQuestions,
+        answeredQuestions: fc.answeredQuestions,
+        color: frameworkCategoryColors[fc.categoryId] || 'hsl(var(--primary))',
+        maturityLevel: fc.maturityLevel,
+      }));
+  }, [metrics.frameworkCategoryMetrics, selectedCategoryIds]);
 
   // Risk distribution for pie chart - use filtered gaps
   const riskDistribution = useMemo(() => {

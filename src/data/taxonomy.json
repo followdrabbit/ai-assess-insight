@@ -1,0 +1,243 @@
+{
+  "domains": [
+    { "domainId": "GOV", "domainName": "Governança de IA", "order": 1 },
+    { "domainId": "DATA", "domainName": "Dados e Privacidade", "order": 2 },
+    { "domainId": "MODEL", "domainName": "Segurança de Modelos", "order": 3 },
+    { "domainId": "INFRA", "domainName": "Infraestrutura e Operações", "order": 4 },
+    { "domainId": "RISK", "domainName": "Gestão de Riscos", "order": 5 },
+    { "domainId": "HUMAN", "domainName": "Fator Humano", "order": 6 }
+  ],
+  "subcategories": [
+    {
+      "subcatId": "GOV-01",
+      "domainId": "GOV",
+      "subcatName": "Políticas e Procedimentos",
+      "definition": "Estabelecimento de políticas formais para uso e desenvolvimento de IA",
+      "objective": "Garantir governança estruturada de iniciativas de IA",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "riskSummary": "Ausência de políticas pode levar a uso inadequado de IA",
+      "frameworkRefs": ["NIST AI RMF - GOVERN", "ISO/IEC 42001"]
+    },
+    {
+      "subcatId": "GOV-02",
+      "domainId": "GOV",
+      "subcatName": "Responsabilidades e Papéis",
+      "definition": "Definição clara de responsabilidades para gestão de IA",
+      "objective": "Estabelecer accountability para decisões de IA",
+      "criticality": "High",
+      "weight": 1.3,
+      "riskSummary": "Falta de responsáveis pode gerar gaps de segurança",
+      "frameworkRefs": ["NIST AI RMF - GOVERN", "ISO 27001"]
+    },
+    {
+      "subcatId": "GOV-03",
+      "domainId": "GOV",
+      "subcatName": "Conformidade Regulatória",
+      "definition": "Aderência a regulamentações aplicáveis de IA",
+      "objective": "Garantir conformidade legal e regulatória",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "riskSummary": "Não conformidade pode resultar em sanções legais",
+      "frameworkRefs": ["EU AI Act", "LGPD", "GDPR"]
+    },
+    {
+      "subcatId": "DATA-01",
+      "domainId": "DATA",
+      "subcatName": "Classificação de Dados",
+      "definition": "Categorização de dados usados em sistemas de IA",
+      "objective": "Garantir tratamento adequado por sensibilidade",
+      "criticality": "High",
+      "weight": 1.3,
+      "riskSummary": "Dados mal classificados podem ser expostos indevidamente",
+      "frameworkRefs": ["NIST AI RMF - MAP", "ISO 27001"]
+    },
+    {
+      "subcatId": "DATA-02",
+      "domainId": "DATA",
+      "subcatName": "Privacidade e Consentimento",
+      "definition": "Gestão de privacidade e consentimento para dados de IA",
+      "objective": "Proteger direitos de privacidade dos titulares",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "riskSummary": "Violações de privacidade podem gerar multas e danos reputacionais",
+      "frameworkRefs": ["LGPD", "GDPR", "NIST Privacy Framework"]
+    },
+    {
+      "subcatId": "DATA-03",
+      "domainId": "DATA",
+      "subcatName": "Qualidade de Dados",
+      "definition": "Garantia de qualidade dos dados de treinamento e inferência",
+      "objective": "Assegurar dados precisos e representativos",
+      "criticality": "High",
+      "weight": 1.2,
+      "riskSummary": "Dados de baixa qualidade comprometem resultados do modelo",
+      "frameworkRefs": ["NIST AI RMF - MAP", "ISO 8000"]
+    },
+    {
+      "subcatId": "DATA-04",
+      "domainId": "DATA",
+      "subcatName": "Retenção e Descarte",
+      "definition": "Políticas de ciclo de vida dos dados de IA",
+      "objective": "Gerenciar adequadamente retenção e exclusão",
+      "criticality": "Medium",
+      "weight": 1.0,
+      "riskSummary": "Retenção inadequada pode violar regulamentações",
+      "frameworkRefs": ["LGPD", "GDPR", "ISO 27001"]
+    },
+    {
+      "subcatId": "MODEL-01",
+      "domainId": "MODEL",
+      "subcatName": "Segurança do Pipeline de ML",
+      "definition": "Proteção do pipeline de desenvolvimento de modelos",
+      "objective": "Prevenir ataques ao processo de treinamento",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "riskSummary": "Pipeline comprometido pode inserir backdoors em modelos",
+      "frameworkRefs": ["NIST AI RMF - MANAGE", "OWASP ML Top 10"]
+    },
+    {
+      "subcatId": "MODEL-02",
+      "domainId": "MODEL",
+      "subcatName": "Robustez e Adversarial",
+      "definition": "Proteção contra ataques adversariais",
+      "objective": "Garantir robustez do modelo contra manipulação",
+      "criticality": "High",
+      "weight": 1.3,
+      "riskSummary": "Modelos vulneráveis podem ser enganados por inputs maliciosos",
+      "frameworkRefs": ["NIST AI RMF - MEASURE", "MITRE ATLAS"]
+    },
+    {
+      "subcatId": "MODEL-03",
+      "domainId": "MODEL",
+      "subcatName": "Versionamento e Reprodutibilidade",
+      "definition": "Controle de versões e rastreabilidade de modelos",
+      "objective": "Garantir reprodutibilidade e auditoria",
+      "criticality": "Medium",
+      "weight": 1.0,
+      "riskSummary": "Falta de versionamento dificulta rollback e investigação",
+      "frameworkRefs": ["NIST AI RMF - GOVERN", "MLOps Best Practices"]
+    },
+    {
+      "subcatId": "MODEL-04",
+      "domainId": "MODEL",
+      "subcatName": "Explicabilidade e Transparência",
+      "definition": "Capacidade de explicar decisões do modelo",
+      "objective": "Garantir transparência e auditabilidade",
+      "criticality": "High",
+      "weight": 1.2,
+      "riskSummary": "Modelos opacos dificultam detecção de vieses e erros",
+      "frameworkRefs": ["EU AI Act", "NIST AI RMF - MEASURE"]
+    },
+    {
+      "subcatId": "INFRA-01",
+      "domainId": "INFRA",
+      "subcatName": "Segurança de Ambiente",
+      "definition": "Proteção da infraestrutura de execução de IA",
+      "objective": "Garantir segurança do ambiente computacional",
+      "criticality": "Critical",
+      "weight": 1.4,
+      "riskSummary": "Ambiente comprometido expõe modelos e dados",
+      "frameworkRefs": ["NIST CSF", "CIS Controls", "ISO 27001"]
+    },
+    {
+      "subcatId": "INFRA-02",
+      "domainId": "INFRA",
+      "subcatName": "Controle de Acesso",
+      "definition": "Gestão de acessos a sistemas e dados de IA",
+      "objective": "Implementar princípio do menor privilégio",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "riskSummary": "Acessos inadequados podem comprometer confidencialidade",
+      "frameworkRefs": ["NIST AI RMF - GOVERN", "ISO 27001", "CIS Controls"]
+    },
+    {
+      "subcatId": "INFRA-03",
+      "domainId": "INFRA",
+      "subcatName": "Monitoramento e Logging",
+      "definition": "Monitoramento contínuo de sistemas de IA",
+      "objective": "Detectar anomalias e incidentes de segurança",
+      "criticality": "High",
+      "weight": 1.2,
+      "riskSummary": "Sem monitoramento, ataques podem passar despercebidos",
+      "frameworkRefs": ["NIST CSF", "ISO 27001", "SOC 2"]
+    },
+    {
+      "subcatId": "INFRA-04",
+      "domainId": "INFRA",
+      "subcatName": "Backup e Recuperação",
+      "definition": "Estratégias de backup e disaster recovery para IA",
+      "objective": "Garantir continuidade e recuperação de serviços",
+      "criticality": "Medium",
+      "weight": 1.0,
+      "riskSummary": "Ausência de backup pode resultar em perda irreversível",
+      "frameworkRefs": ["ISO 22301", "NIST CSF"]
+    },
+    {
+      "subcatId": "RISK-01",
+      "domainId": "RISK",
+      "subcatName": "Avaliação de Riscos",
+      "definition": "Identificação e avaliação de riscos de IA",
+      "objective": "Mapear e priorizar riscos de segurança",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "riskSummary": "Riscos não identificados não podem ser mitigados",
+      "frameworkRefs": ["NIST AI RMF - MAP", "ISO 31000"]
+    },
+    {
+      "subcatId": "RISK-02",
+      "domainId": "RISK",
+      "subcatName": "Resposta a Incidentes",
+      "definition": "Procedimentos de resposta a incidentes de IA",
+      "objective": "Responder efetivamente a incidentes de segurança",
+      "criticality": "High",
+      "weight": 1.3,
+      "riskSummary": "Resposta lenta aumenta impacto de incidentes",
+      "frameworkRefs": ["NIST CSF", "ISO 27001", "NIST AI RMF - MANAGE"]
+    },
+    {
+      "subcatId": "RISK-03",
+      "domainId": "RISK",
+      "subcatName": "Terceiros e Supply Chain",
+      "definition": "Gestão de riscos de fornecedores e parceiros",
+      "objective": "Controlar riscos da cadeia de suprimentos de IA",
+      "criticality": "High",
+      "weight": 1.2,
+      "riskSummary": "Terceiros podem introduzir vulnerabilidades",
+      "frameworkRefs": ["NIST AI RMF - GOVERN", "ISO 27001 Annex A"]
+    },
+    {
+      "subcatId": "HUMAN-01",
+      "domainId": "HUMAN",
+      "subcatName": "Treinamento e Conscientização",
+      "definition": "Capacitação em segurança de IA",
+      "objective": "Garantir conhecimento adequado das equipes",
+      "criticality": "High",
+      "weight": 1.2,
+      "riskSummary": "Equipes não treinadas cometem mais erros",
+      "frameworkRefs": ["NIST AI RMF - GOVERN", "ISO 27001"]
+    },
+    {
+      "subcatId": "HUMAN-02",
+      "domainId": "HUMAN",
+      "subcatName": "Ética e Vieses",
+      "definition": "Gestão de aspectos éticos e vieses em IA",
+      "objective": "Garantir uso ético e justo de IA",
+      "criticality": "High",
+      "weight": 1.3,
+      "riskSummary": "Vieses podem causar discriminação e danos reputacionais",
+      "frameworkRefs": ["EU AI Act", "NIST AI RMF - MAP", "IEEE EAD"]
+    },
+    {
+      "subcatId": "HUMAN-03",
+      "domainId": "HUMAN",
+      "subcatName": "Supervisão Humana",
+      "definition": "Mecanismos de supervisão humana sobre IA",
+      "objective": "Manter controle humano sobre decisões críticas",
+      "criticality": "Critical",
+      "weight": 1.4,
+      "riskSummary": "IA sem supervisão pode tomar decisões prejudiciais",
+      "frameworkRefs": ["EU AI Act", "NIST AI RMF - GOVERN"]
+    }
+  ]
+}

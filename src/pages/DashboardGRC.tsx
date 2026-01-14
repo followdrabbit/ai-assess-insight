@@ -219,24 +219,12 @@ export default function DashboardGRC() {
           >
             Exportar Relatório
           </Button>
-          <Button 
-            size="sm"
-            onClick={() => navigate('/assessment')}
-          >
-            Continuar Avaliação
-          </Button>
         </div>
       </div>
 
       {answers.size === 0 && (
         <div className="card-elevated p-6 text-center">
-          <p className="text-muted-foreground mb-4">Nenhuma avaliação realizada ainda.</p>
-          <button 
-            onClick={() => navigate('/assessment')}
-            className="text-primary hover:underline font-medium"
-          >
-            Iniciar avaliação
-          </button>
+          <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
         </div>
       )}
 

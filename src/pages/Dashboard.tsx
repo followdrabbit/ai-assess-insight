@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
-import { domains, subcategories, maturityLevels, nistAiRmfFunctions } from '@/lib/dataset';
+import { domains, subcategories, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, FrameworkCategoryId } from '@/lib/dataset';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,25 @@ const nistFunctionColors: Record<string, string> = {
   MAP: 'hsl(var(--chart-2))',
   MEASURE: 'hsl(var(--chart-3))',
   MANAGE: 'hsl(var(--chart-4))',
+};
+
+// Framework category display names and colors
+const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
+  AI_GOVERNANCE: 'Governança de IA',
+  SECURITY_FOUNDATION: 'Fundamentos de Segurança',
+  ENGINEERING: 'Engenharia',
+  PRIVACY: 'Privacidade',
+  FINANCIAL_BR: 'Regulação Financeira BR',
+  THREAT_INTELLIGENCE: 'Inteligência de Ameaças',
+};
+
+const frameworkCategoryColors: Record<FrameworkCategoryId, string> = {
+  AI_GOVERNANCE: 'hsl(var(--chart-1))',
+  SECURITY_FOUNDATION: 'hsl(var(--chart-2))',
+  ENGINEERING: 'hsl(var(--chart-3))',
+  PRIVACY: 'hsl(var(--chart-4))',
+  FINANCIAL_BR: 'hsl(var(--chart-5))',
+  THREAT_INTELLIGENCE: 'hsl(221, 83%, 53%)',
 };
 
 export default function Dashboard() {
@@ -57,6 +76,20 @@ export default function Dashboard() {
     fullMark: 100,
     color: nistFunctionColors[nf.function],
   }));
+
+  // Framework category data for charts
+  const frameworkCategoryData = metrics.frameworkCategoryMetrics
+    .filter(fc => fc.totalQuestions > 0)
+    .map(fc => ({
+      categoryId: fc.categoryId,
+      name: frameworkCategoryLabels[fc.categoryId] || fc.categoryId,
+      score: Math.round(fc.score * 100),
+      coverage: Math.round(fc.coverage * 100),
+      totalQuestions: fc.totalQuestions,
+      answeredQuestions: fc.answeredQuestions,
+      color: frameworkCategoryColors[fc.categoryId] || 'hsl(var(--primary))',
+      maturityLevel: fc.maturityLevel,
+    }));
 
   const ownershipData = metrics.ownershipMetrics.map(om => ({
     name: om.ownershipType,
@@ -198,6 +231,42 @@ export default function Dashboard() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+            </div>
+          </div>
+
+          {/* Framework Category Maturity */}
+          <div className="card-elevated p-6">
+            <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Visão consolidada do alinhamento com frameworks de referência agrupados por categoria
+            </p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {frameworkCategoryData.map(fc => (
+                <div key={fc.categoryId} className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-sm">{fc.name}</span>
+                    <span 
+                      className="text-lg font-bold"
+                      style={{ color: fc.maturityLevel.color }}
+                    >
+                      {fc.score}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-2">
+                    <div 
+                      className="h-full transition-all" 
+                      style={{ 
+                        width: `${fc.score}%`,
+                        backgroundColor: fc.maturityLevel.color 
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{fc.answeredQuestions}/{fc.totalQuestions} perguntas</span>
+                    <span>{fc.coverage}% cobertura</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

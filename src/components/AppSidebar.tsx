@@ -27,13 +27,13 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-
-const simpleNavItems = [
-  { path: '/', label: 'Home', icon: Home },
-  { path: '/assessment', label: 'Avaliação', icon: ClipboardCheck },
-  { path: '/reports', label: 'Relatórios', icon: FileText },
-];
 
 const dashboardSubItems = [
   { path: '/dashboard/executive', label: 'Executivo', icon: Briefcase, description: 'CISO / Head de Segurança' },
@@ -80,41 +80,75 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Dashboard with submenu */}
-              <Collapsible
-                asChild
-                defaultOpen={isDashboardActive}
-                className="group/collapsible"
-              >
+              {/* Dashboard with submenu - different behavior when collapsed */}
+              {isCollapsed ? (
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip="Dashboard"
-                      className={cn(isDashboardActive && 'bg-accent text-accent-foreground')}
-                    >
-                      <LayoutDashboard className="h-4 w-4" />
-                      <span>Dashboard</span>
-                      <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuButton
+                        tooltip="Dashboard"
+                        className={cn(isDashboardActive && 'bg-accent text-accent-foreground')}
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span>Dashboard</span>
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start" className="min-w-[200px]">
                       {dashboardSubItems.map((item) => (
-                        <SidebarMenuSubItem key={item.path}>
-                          <SidebarMenuSubButton
-                            onClick={() => navigate(item.path)}
-                            isActive={isActive(item.path)}
-                            className="cursor-pointer"
-                          >
-                            <item.icon className="h-3.5 w-3.5" />
+                        <DropdownMenuItem
+                          key={item.path}
+                          onClick={() => navigate(item.path)}
+                          className={cn(
+                            "cursor-pointer gap-2",
+                            isActive(item.path) && "bg-accent text-accent-foreground"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          <div className="flex flex-col">
                             <span>{item.label}</span>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
+                            <span className="text-xs text-muted-foreground">{item.description}</span>
+                          </div>
+                        </DropdownMenuItem>
                       ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </SidebarMenuItem>
-              </Collapsible>
+              ) : (
+                <Collapsible
+                  asChild
+                  defaultOpen={isDashboardActive}
+                  className="group/collapsible"
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        tooltip="Dashboard"
+                        className={cn(isDashboardActive && 'bg-accent text-accent-foreground')}
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span>Dashboard</span>
+                        <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {dashboardSubItems.map((item) => (
+                          <SidebarMenuSubItem key={item.path}>
+                            <SidebarMenuSubButton
+                              onClick={() => navigate(item.path)}
+                              isActive={isActive(item.path)}
+                              className="cursor-pointer"
+                            >
+                              <item.icon className="h-3.5 w-3.5" />
+                              <span>{item.label}</span>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
 
               {/* Assessment */}
               <SidebarMenuItem>

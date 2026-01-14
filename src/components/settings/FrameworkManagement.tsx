@@ -70,6 +70,7 @@ export function FrameworkManagement() {
   const [customFrameworks, setCustomFrameworks] = useState<CustomFramework[]>([]);
   const [disabledDefaultFrameworks, setDisabledDefaultFrameworks] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
   const [editingFramework, setEditingFramework] = useState<CustomFramework | null>(null);
   const [isEditingDefault, setIsEditingDefault] = useState(false);
   const [formData, setFormData] = useState<FrameworkFormData>(emptyFormData);
@@ -127,32 +128,42 @@ export function FrameworkManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = async () => {
-    // Validation
+  const validateForm = (): boolean => {
     if (!formData.frameworkId.trim()) {
       toast.error('ID do framework é obrigatório');
-      return;
+      return false;
     }
     if (!formData.frameworkName.trim()) {
       toast.error('Nome do framework é obrigatório');
-      return;
+      return false;
     }
     if (!formData.shortName.trim()) {
       toast.error('Nome curto é obrigatório');
-      return;
+      return false;
     }
     if (formData.targetAudience.length === 0) {
       toast.error('Selecione pelo menos um público-alvo');
-      return;
+      return false;
     }
 
     // Check for duplicate ID only when creating completely new framework
     const customFrameworkIds = customFrameworks.map(f => f.frameworkId);
     if (!editingFramework && !isEditingDefault && customFrameworkIds.includes(formData.frameworkId)) {
       toast.error('Já existe um framework personalizado com este ID');
-      return;
+      return false;
     }
+    return true;
+  };
 
+  const handleConfirmSave = () => {
+    if (validateForm()) {
+      setIsConfirmSaveOpen(true);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsConfirmSaveOpen(false);
+    
     const references = referencesText.split('\n').filter(r => r.trim());
 
     try {
@@ -471,12 +482,40 @@ export function FrameworkManagement() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
-              {editingFramework ? 'Salvar Alterações' : 'Criar Framework'}
+            <Button onClick={handleConfirmSave}>
+              {editingFramework ? 'Salvar Alterações' : isEditingDefault ? 'Substituir Framework' : 'Criar Framework'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog for Save */}
+      <AlertDialog open={isConfirmSaveOpen} onOpenChange={setIsConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {editingFramework 
+                ? 'Confirmar alterações?' 
+                : isEditingDefault 
+                  ? 'Substituir framework padrão?' 
+                  : 'Criar novo framework?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {editingFramework 
+                ? `Você deseja salvar as alterações no framework "${formData.shortName}"?`
+                : isEditingDefault 
+                  ? `Você deseja criar uma versão personalizada do framework "${formData.shortName}"? O framework padrão será substituído.`
+                  : `Você deseja criar o novo framework "${formData.shortName}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSave}>
+              Sim, Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

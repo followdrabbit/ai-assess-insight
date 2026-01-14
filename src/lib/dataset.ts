@@ -6,6 +6,9 @@ export interface Domain {
   domainId: string;
   domainName: string;
   order: number;
+  nistAiRmfFunction?: string;
+  strategicQuestion?: string;
+  description?: string;
 }
 
 export interface Subcategory {
@@ -14,8 +17,10 @@ export interface Subcategory {
   subcatName: string;
   definition?: string;
   objective?: string;
+  securityOutcome?: string;
   criticality: 'Low' | 'Medium' | 'High' | 'Critical';
   weight: number;
+  ownershipType?: 'Executive' | 'GRC' | 'Engineering';
   riskSummary?: string;
   frameworkRefs?: string[];
 }
@@ -29,6 +34,7 @@ export interface Question {
   imperativeChecks: string;
   riskSummary: string;
   frameworks: string[];
+  ownershipType?: 'Executive' | 'GRC' | 'Engineering';
 }
 
 export interface MaturityLevel {
@@ -61,11 +67,19 @@ export interface EvidenceOption {
 // Type assertions for imported data
 export const domains: Domain[] = taxonomyData.domains;
 export const subcategories: Subcategory[] = taxonomyData.subcategories as Subcategory[];
-export const questions: Question[] = questionsData.questions;
+export const questions: Question[] = questionsData.questions as Question[];
 export const maturityLevels: MaturityLevel[] = maturityRefData.levels;
 export const criticalityLevels: CriticalityLevel[] = maturityRefData.criticalityLevels;
 export const responseOptions: ResponseOption[] = maturityRefData.responseOptions;
 export const evidenceOptions: EvidenceOption[] = maturityRefData.evidenceOptions;
+
+// NIST AI RMF Functions for grouping
+export const nistAiRmfFunctions = ['GOVERN', 'MAP', 'MEASURE', 'MANAGE'] as const;
+export type NistAiRmfFunction = typeof nistAiRmfFunctions[number];
+
+// Ownership types for role-based views
+export const ownershipTypes = ['Executive', 'GRC', 'Engineering'] as const;
+export type OwnershipType = typeof ownershipTypes[number];
 
 // Helper functions
 export function getDomainById(domainId: string): Domain | undefined {
@@ -111,6 +125,21 @@ export function getEvidenceMultiplier(evidence: string): number | null {
   return option?.multiplier ?? null;
 }
 
+// Get domains by NIST AI RMF function
+export function getDomainsByNistFunction(nistFunction: NistAiRmfFunction): Domain[] {
+  return domains.filter(d => d.nistAiRmfFunction === nistFunction);
+}
+
+// Get subcategories by ownership type
+export function getSubcategoriesByOwnership(ownershipType: OwnershipType): Subcategory[] {
+  return subcategories.filter(s => s.ownershipType === ownershipType);
+}
+
+// Get questions by ownership type
+export function getQuestionsByOwnership(ownershipType: OwnershipType): Question[] {
+  return questions.filter(q => q.ownershipType === ownershipType);
+}
+
 // Statistics
 export function getTotalQuestions(): number {
   return questions.length;
@@ -138,4 +167,26 @@ export function getQuestionCountBySubcategory(): Record<string, number> {
     counts[s.subcatId] = questions.filter(q => q.subcatId === s.subcatId).length;
   });
   return counts;
+}
+
+// Get question count by NIST function
+export function getQuestionCountByNistFunction(): Record<NistAiRmfFunction, number> {
+  const counts: Record<string, number> = { GOVERN: 0, MAP: 0, MEASURE: 0, MANAGE: 0 };
+  domains.forEach(d => {
+    if (d.nistAiRmfFunction) {
+      counts[d.nistAiRmfFunction] += questions.filter(q => q.domainId === d.domainId).length;
+    }
+  });
+  return counts as Record<NistAiRmfFunction, number>;
+}
+
+// Get question count by ownership
+export function getQuestionCountByOwnership(): Record<OwnershipType, number> {
+  const counts: Record<string, number> = { Executive: 0, GRC: 0, Engineering: 0 };
+  questions.forEach(q => {
+    if (q.ownershipType) {
+      counts[q.ownershipType]++;
+    }
+  });
+  return counts as Record<OwnershipType, number>;
 }

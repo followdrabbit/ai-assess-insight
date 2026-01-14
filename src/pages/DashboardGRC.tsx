@@ -318,13 +318,45 @@ export default function DashboardGRC() {
     return filtered;
   }, [metrics.domainMetrics, searchTerm, statusFilter, ownershipFilter, sortField, sortOrder]);
 
-  // Framework coverage filtered
+  // Framework coverage filtered by selected frameworks
   const filteredFrameworkCoverage = useMemo(() => {
-    if (!searchTerm) return frameworkCoverage;
-    return frameworkCoverage.filter(fw => 
-      fw.framework.toLowerCase().includes(searchTerm.toLowerCase())
+    // Map framework IDs to display names
+    const frameworkIdToName: Record<string, string> = {
+      'NIST_AI_RMF': 'NIST AI RMF',
+      'ISO_27001_27002': 'ISO/IEC 27001 / 27002',
+      'ISO_23894': 'ISO/IEC 23894',
+      'LGPD': 'LGPD',
+      'NIST_SSDF': 'NIST SSDF',
+      'CSA_CCM': 'CSA AI Security',
+      'CSA_AI': 'CSA AI Security',
+      'OWASP_LLM': 'OWASP Top 10 for LLM Applications',
+      'OWASP_API': 'OWASP API Security Top 10'
+    };
+    
+    // Use enabled frameworks as default when no specific selection
+    const effectiveFrameworkIds = selectedFrameworkIds.length > 0 
+      ? selectedFrameworkIds 
+      : enabledFrameworks.map(f => f.frameworkId);
+    
+    // Get the display names for selected/enabled frameworks
+    const selectedFrameworkNames = new Set(
+      effectiveFrameworkIds.map(id => frameworkIdToName[id]).filter(Boolean)
     );
-  }, [frameworkCoverage, searchTerm]);
+    
+    // Filter by selected frameworks
+    let filtered = frameworkCoverage.filter(fw => 
+      selectedFrameworkNames.has(fw.framework)
+    );
+    
+    // Also apply search term if present
+    if (searchTerm) {
+      filtered = filtered.filter(fw => 
+        fw.framework.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [frameworkCoverage, searchTerm, selectedFrameworkIds, enabledFrameworks]);
 
   // Summary stats for quick view
   const quickStats = useMemo(() => ({

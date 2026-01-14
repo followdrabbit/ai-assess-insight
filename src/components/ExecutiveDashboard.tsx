@@ -965,8 +965,8 @@ export function ExecutiveDashboard({
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-lg font-bold text-muted-foreground w-6 transition-all duration-200">{idx + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate transition-colors duration-200">{gap.subcatName}</p>
-                  <p className="text-xs text-muted-foreground truncate transition-colors duration-200">{gap.domainName}</p>
+                  <p className="font-medium text-sm truncate transition-colors duration-200">{gap.questionText}</p>
+                  <p className="text-xs text-muted-foreground truncate transition-colors duration-200">{gap.subcatName} · {gap.domainName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">

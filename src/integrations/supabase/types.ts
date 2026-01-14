@@ -14,7 +14,207 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      answers: {
+        Row: {
+          created_at: string | null
+          evidence_links: string[] | null
+          evidence_ok: string | null
+          framework_id: string | null
+          id: string
+          notes: string | null
+          question_id: string
+          response: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          evidence_links?: string[] | null
+          evidence_ok?: string | null
+          framework_id?: string | null
+          id?: string
+          notes?: string | null
+          question_id: string
+          response?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          evidence_links?: string[] | null
+          evidence_ok?: string | null
+          framework_id?: string | null
+          id?: string
+          notes?: string | null
+          question_id?: string
+          response?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      assessment_meta: {
+        Row: {
+          created_at: string | null
+          enabled_frameworks: string[] | null
+          id: string
+          name: string | null
+          selected_frameworks: string[] | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled_frameworks?: string[] | null
+          id?: string
+          name?: string | null
+          selected_frameworks?: string[] | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled_frameworks?: string[] | null
+          id?: string
+          name?: string | null
+          selected_frameworks?: string[] | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      change_logs: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: number
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: number
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      custom_frameworks: {
+        Row: {
+          assessment_scope: string | null
+          category: string | null
+          created_at: string | null
+          default_enabled: boolean | null
+          description: string | null
+          framework_id: string
+          framework_name: string
+          reference_links: string[] | null
+          short_name: string
+          target_audience: string[] | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          assessment_scope?: string | null
+          category?: string | null
+          created_at?: string | null
+          default_enabled?: boolean | null
+          description?: string | null
+          framework_id: string
+          framework_name: string
+          reference_links?: string[] | null
+          short_name: string
+          target_audience?: string[] | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          assessment_scope?: string | null
+          category?: string | null
+          created_at?: string | null
+          default_enabled?: boolean | null
+          description?: string | null
+          framework_id?: string
+          framework_name?: string
+          reference_links?: string[] | null
+          short_name?: string
+          target_audience?: string[] | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      custom_questions: {
+        Row: {
+          created_at: string | null
+          criticality: string | null
+          domain_id: string
+          expected_evidence: string | null
+          frameworks: string[] | null
+          imperative_checks: string | null
+          is_disabled: boolean | null
+          ownership_type: string | null
+          question_id: string
+          question_text: string
+          risk_summary: string | null
+          subcat_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          criticality?: string | null
+          domain_id: string
+          expected_evidence?: string | null
+          frameworks?: string[] | null
+          imperative_checks?: string | null
+          is_disabled?: boolean | null
+          ownership_type?: string | null
+          question_id: string
+          question_text: string
+          risk_summary?: string | null
+          subcat_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          criticality?: string | null
+          domain_id?: string
+          expected_evidence?: string | null
+          frameworks?: string[] | null
+          imperative_checks?: string | null
+          is_disabled?: boolean | null
+          ownership_type?: string | null
+          question_id?: string
+          question_text?: string
+          risk_summary?: string | null
+          subcat_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      disabled_questions: {
+        Row: {
+          disabled_at: string | null
+          question_id: string
+        }
+        Insert: {
+          disabled_at?: string | null
+          question_id: string
+        }
+        Update: {
+          disabled_at?: string | null
+          question_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -734,7 +734,7 @@
       "expectedEvidence": "Controles de integridade de dados, validações de entrada, detecção de anomalias",
       "imperativeChecks": "Verificar implementação e testes de eficácia dos controles",
       "riskSummary": "Data poisoning pode inserir backdoors ou degradar intencionalmente o modelo",
-      "frameworks": ["MITRE ATLAS AML.T0020", "NIST AI RMF MEASURE 2.5"],
+      "frameworks": ["OWASP LLM Top 10 LLM04:2025", "MITRE ATLAS AML.T0020", "NIST AI RMF MEASURE 2.5"],
       "ownershipType": "Engineering"
     },
     {
@@ -1824,6 +1824,17 @@
       "imperativeChecks": "Verificar tempo de resposta a novas vulnerabilidades em componentes críticos",
       "riskSummary": "Vulnerabilidades em frameworks de IA são rapidamente exploradas",
       "frameworks": ["OWASP LLM Top 10 LLM03:2025", "NIST SSDF RV.1"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "LLM-03-Q04",
+      "subcatId": "LLM-03",
+      "domainId": "LLM",
+      "questionText": "Existem controles de segurança para sistemas de RAG e vector stores?",
+      "expectedEvidence": "Controles de acesso a vector databases, validação de embeddings, proteção contra embedding injection",
+      "imperativeChecks": "Verificar isolamento de namespaces, filtragem de metadados e proteção contra manipulação de vetores",
+      "riskSummary": "Vector stores vulneráveis permitem injeção de conteúdo malicioso e bypass de controles de acesso",
+      "frameworks": ["OWASP LLM Top 10 LLM08:2025", "MITRE ATLAS"],
       "ownershipType": "Engineering"
     },
     {

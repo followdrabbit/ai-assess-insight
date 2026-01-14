@@ -389,7 +389,10 @@ export function calculateFrameworkCategoryMetrics(
 }
 
 // Calculate overall metrics
-export function calculateOverallMetrics(answersMap: Map<string, Answer>): OverallMetrics {
+export function calculateOverallMetrics(
+  answersMap: Map<string, Answer>,
+  activeQuestionsCount?: number
+): OverallMetrics {
   const domainMetrics = domains.map(d => 
     calculateDomainMetrics(d.domainId, answersMap)
   );
@@ -432,16 +435,18 @@ export function calculateOverallMetrics(answersMap: Map<string, Answer>): Overal
   });
 
   const overallScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
-  const coverage = totalApplicable > 0 ? totalAnswered / totalApplicable : 0;
+  // Use the provided active questions count if available, otherwise fall back to total applicable
+  const totalQuestionsForCoverage = activeQuestionsCount ?? totalApplicable;
+  const coverage = totalQuestionsForCoverage > 0 ? totalAnswered / totalQuestionsForCoverage : 0;
   const evidenceReadiness = evidenceCount > 0 ? totalEvidenceScore / evidenceCount : 0;
 
   return {
     overallScore,
     maturityLevel: getMaturityLevel(overallScore),
-    totalQuestions: questions.length,
+    totalQuestions: activeQuestionsCount ?? questions.length,
     answeredQuestions: totalAnswered,
     applicableQuestions: totalApplicable,
-    coverage,
+    coverage: Math.min(coverage, 1), // Cap at 100%
     evidenceReadiness,
     criticalGaps: totalCriticalGaps,
     domainMetrics,

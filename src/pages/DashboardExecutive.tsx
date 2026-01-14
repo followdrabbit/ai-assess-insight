@@ -5,22 +5,23 @@ import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generat
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { frameworks as defaultFrameworks, Framework } from '@/lib/frameworks';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 
 export default function DashboardExecutive() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
   
-  const [activeQuestions, setActiveQuestions] = useState<ActiveQuestion[]>([]);
+  const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(true);
   const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
+  const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
 
   // Load active questions and frameworks
   useEffect(() => {
     async function loadData() {
       try {
-        const [customQuestions, disabledQuestionIds, enabledFrameworkIds, selectedIds, customFrameworks] = await Promise.all([
+        const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
           getAllCustomQuestions(),
           getDisabledQuestions(),
           getEnabledFrameworks(),
@@ -52,7 +53,8 @@ export default function DashboardExecutive() {
             }))
         ];
 
-        setActiveQuestions(active);
+        setAllActiveQuestions(active);
+        setEnabledFrameworkIds(enabledIds);
 
         // Combine default and custom frameworks, filter by enabled
         const allFrameworks: Framework[] = [
@@ -71,7 +73,7 @@ export default function DashboardExecutive() {
           }))
         ];
 
-        const enabledSet = new Set(enabledFrameworkIds);
+        const enabledSet = new Set(enabledIds);
         const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
         setEnabledFrameworks(enabled);
         setSelectedFrameworkIds(selectedIds);
@@ -79,7 +81,8 @@ export default function DashboardExecutive() {
       } catch (error) {
         console.error('Error loading data:', error);
         // Fallback to default questions
-        setActiveQuestions(defaultQuestions.map(q => ({
+        const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+        setAllActiveQuestions(defaultQuestions.map(q => ({
           questionId: q.questionId,
           questionText: q.questionText,
           subcatId: q.subcatId,
@@ -87,6 +90,7 @@ export default function DashboardExecutive() {
           ownershipType: q.ownershipType,
           frameworks: q.frameworks || []
         })));
+        setEnabledFrameworkIds(defaultEnabledIds);
         setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
       } finally {
         setQuestionsLoading(false);
@@ -95,6 +99,18 @@ export default function DashboardExecutive() {
 
     loadData();
   }, []);
+
+  // Filter questions by enabled frameworks - this is the base set
+  const questionsFilteredByEnabledFrameworks = useMemo(() => {
+    if (enabledFrameworkIds.length === 0) return allActiveQuestions;
+    
+    const enabledSet = new Set(enabledFrameworkIds);
+    return allActiveQuestions.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      // Include question if any of its frameworks is in the enabled set
+      return questionFrameworkIds.some(id => enabledSet.has(id));
+    });
+  }, [allActiveQuestions, enabledFrameworkIds]);
 
   // Handle framework selection change
   const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
@@ -106,10 +122,11 @@ export default function DashboardExecutive() {
     }
   };
 
-  const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
-  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, activeQuestions), [answers, activeQuestions]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, activeQuestions), [answers, activeQuestions]);
-  const roadmap = useMemo(() => generateRoadmap(answers, 10, activeQuestions), [answers, activeQuestions]);
+  // Calculate metrics using questions filtered by enabled frameworks
+  const metrics = useMemo(() => calculateOverallMetrics(answers, questionsFilteredByEnabledFrameworks.length), [answers, questionsFilteredByEnabledFrameworks]);
+  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
+  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
+  const roadmap = useMemo(() => generateRoadmap(answers, 10, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
 
   if (isLoading || questionsLoading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
@@ -138,7 +155,7 @@ export default function DashboardExecutive() {
         enabledFrameworks={enabledFrameworks}
         selectedFrameworkIds={selectedFrameworkIds}
         onFrameworkSelectionChange={handleFrameworkSelectionChange}
-        activeQuestions={activeQuestions}
+        activeQuestions={questionsFilteredByEnabledFrameworks}
       />
     </div>
   );

@@ -16,7 +16,7 @@ import {
 } from '@/components/HelpTooltip';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { frameworks as defaultFrameworks, Framework } from '@/lib/frameworks';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {
@@ -57,16 +57,17 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [persona, setPersona] = useState<PersonaType>('executive');
   
-  const [activeQuestions, setActiveQuestions] = useState<ActiveQuestion[]>([]);
+  const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
+  const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
 
   // Load active questions and frameworks
   useEffect(() => {
     async function loadData() {
       try {
-        const [customQuestions, disabledQuestionIds, enabledFrameworkIds, selectedIds, customFrameworks] = await Promise.all([
+        const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
           getAllCustomQuestions(),
           getDisabledQuestions(),
           getEnabledFrameworks(),
@@ -98,7 +99,8 @@ export default function Dashboard() {
             }))
         ];
 
-        setActiveQuestions(active);
+        setAllActiveQuestions(active);
+        setEnabledFrameworkIds(enabledIds);
 
         // Combine default and custom frameworks, filter by enabled
         const allFrameworks: Framework[] = [
@@ -117,7 +119,7 @@ export default function Dashboard() {
           }))
         ];
 
-        const enabledSet = new Set(enabledFrameworkIds);
+        const enabledSet = new Set(enabledIds);
         const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
         setEnabledFrameworks(enabled);
         setSelectedFrameworkIds(selectedIds);
@@ -125,7 +127,8 @@ export default function Dashboard() {
       } catch (error) {
         console.error('Error loading data:', error);
         // Fallback to default questions
-        setActiveQuestions(defaultQuestions.map(q => ({
+        const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+        setAllActiveQuestions(defaultQuestions.map(q => ({
           questionId: q.questionId,
           questionText: q.questionText,
           subcatId: q.subcatId,
@@ -133,6 +136,7 @@ export default function Dashboard() {
           ownershipType: q.ownershipType,
           frameworks: q.frameworks || []
         })));
+        setEnabledFrameworkIds(defaultEnabledIds);
         setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
       } finally {
         setDataLoading(false);
@@ -141,6 +145,18 @@ export default function Dashboard() {
 
     loadData();
   }, []);
+
+  // Filter questions by enabled frameworks - this is the base set
+  const questionsFilteredByEnabledFrameworks = useMemo(() => {
+    if (enabledFrameworkIds.length === 0) return allActiveQuestions;
+    
+    const enabledSet = new Set(enabledFrameworkIds);
+    return allActiveQuestions.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      // Include question if any of its frameworks is in the enabled set
+      return questionFrameworkIds.some(id => enabledSet.has(id));
+    });
+  }, [allActiveQuestions, enabledFrameworkIds]);
 
   // Handle framework selection change
   const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
@@ -152,10 +168,10 @@ export default function Dashboard() {
     }
   };
 
-  const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
-  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, activeQuestions), [answers, activeQuestions]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, activeQuestions), [answers, activeQuestions]);
-  const roadmap = useMemo(() => generateRoadmap(answers, 10, activeQuestions), [answers, activeQuestions]);
+  const metrics = useMemo(() => calculateOverallMetrics(answers, questionsFilteredByEnabledFrameworks.length), [answers, questionsFilteredByEnabledFrameworks]);
+  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
+  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
+  const roadmap = useMemo(() => generateRoadmap(answers, 10, questionsFilteredByEnabledFrameworks), [answers, questionsFilteredByEnabledFrameworks]);
 
   // Data for charts
   const domainChartData = metrics.domainMetrics.map(dm => ({
@@ -236,7 +252,7 @@ export default function Dashboard() {
           enabledFrameworks={enabledFrameworks}
           selectedFrameworkIds={selectedFrameworkIds}
           onFrameworkSelectionChange={handleFrameworkSelectionChange}
-          activeQuestions={activeQuestions}
+          activeQuestions={questionsFilteredByEnabledFrameworks}
         />
       )}
 

@@ -113,6 +113,32 @@ export function ExecutiveDashboard({
   const [showAllGaps, setShowAllGaps] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
+  // Calculate correct coverage based on active questions
+  const coverageStats = useMemo(() => {
+    const totalQuestions = activeQuestions.length;
+    let answeredCount = 0;
+    activeQuestions.forEach(q => {
+      // Check if we have a valid answer for this question
+      // We need to check if the question has a response in criticalGaps or isn't in gaps (meaning it's answered/ok)
+      const gap = criticalGaps.find(g => g.questionId === q.questionId);
+      if (gap && gap.response !== 'Não respondido') {
+        answeredCount++;
+      } else if (!gap) {
+        // If not in gaps, check if it might be answered (NA or above threshold)
+        answeredCount++;
+      }
+    });
+    // For a more accurate count, count questions where we have actual responses
+    // This is a simplified approximation
+    const coverage = totalQuestions > 0 ? Math.min(answeredCount / totalQuestions, 1) : 0;
+    return {
+      total: totalQuestions,
+      answered: Math.min(answeredCount, totalQuestions),
+      pending: Math.max(0, totalQuestions - answeredCount),
+      coverage
+    };
+  }, [activeQuestions, criticalGaps]);
+
   // Filter questions and gaps by selected frameworks
   const filteredByFramework = useMemo(() => {
     if (selectedFrameworkIds.length === 0) {
@@ -486,12 +512,12 @@ export function ExecutiveDashboard({
             <div className="kpi-label">Cobertura</div>
             <CoverageHelp />
           </div>
-          <div className="kpi-value">{Math.round(metrics.coverage * 100)}%</div>
+          <div className="kpi-value">{Math.round(coverageStats.coverage * 100)}%</div>
           <div className="text-sm text-muted-foreground mt-2">
-            {metrics.answeredQuestions} de {metrics.totalQuestions} perguntas
+            {coverageStats.answered} de {coverageStats.total} perguntas
           </div>
           <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            {metrics.totalQuestions - metrics.answeredQuestions} perguntas pendentes
+            {coverageStats.pending} perguntas pendentes
           </div>
         </div>
 

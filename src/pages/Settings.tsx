@@ -395,7 +395,7 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="text-lg">Status da Avaliação</CardTitle>
               <CardDescription>
-                Resumo dos dados armazenados localmente
+                Resumo dos dados da avaliação
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -643,10 +643,10 @@ export default function Settings() {
             </CardHeader>
             <CardContent>
               <ul className="text-sm text-muted-foreground space-y-2">
-                <li>• <strong>Armazenamento Local:</strong> Todos os dados são armazenados apenas no seu navegador (IndexedDB)</li>
-                <li>• <strong>Sem Transmissão:</strong> Nenhum dado é enviado para servidores externos</li>
+                <li>• <strong>Armazenamento Seguro:</strong> Todos os dados são armazenados de forma segura na nuvem</li>
+                <li>• <strong>Acesso Controlado:</strong> Apenas usuários autorizados podem acessar os dados</li>
                 <li>• <strong>Seu Controle:</strong> Você pode exportar ou limpar seus dados a qualquer momento</li>
-                <li>• <strong>Persistência:</strong> Os dados permanecem após fechar o navegador, mas podem ser perdidos ao limpar dados do navegador</li>
+                <li>• <strong>Persistência:</strong> Os dados são mantidos de forma permanente e sincronizados automaticamente</li>
               </ul>
             </CardContent>
           </Card>

@@ -194,7 +194,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-border p-3">
         {!isCollapsed && (
           <div className="text-[10px] text-muted-foreground text-center">
-            Dados armazenados localmente
+            Dados sincronizados
           </div>
         )}
       </SidebarFooter>

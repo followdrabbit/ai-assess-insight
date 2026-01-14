@@ -13,7 +13,7 @@ export default function Layout() {
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
             <div className="text-xs text-muted-foreground">
-              Dados armazenados localmente
+              Dados sincronizados com a nuvem
             </div>
           </header>
 
@@ -25,7 +25,7 @@ export default function Layout() {
           {/* Footer */}
           <footer className="border-t border-border py-3 px-4">
             <div className="text-center text-xs text-muted-foreground">
-              Todos os dados permanecem no seu navegador. Nenhum dado é enviado para servidores externos.
+              Plataforma de Avaliação de Maturidade em Segurança de IA
             </div>
           </footer>
         </SidebarInset>

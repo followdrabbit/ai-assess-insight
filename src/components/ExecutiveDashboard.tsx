@@ -318,6 +318,16 @@ export function ExecutiveDashboard({
     return Array.from(domains.entries());
   }, [filteredByFramework.gaps]);
 
+  // Reset domain filter if selected domain no longer exists in available gaps
+  useEffect(() => {
+    if (domainFilter !== 'all') {
+      const domainExists = uniqueDomains.some(([id]) => id === domainFilter);
+      if (!domainExists) {
+        setDomainFilter('all');
+      }
+    }
+  }, [uniqueDomains, domainFilter]);
+
   const clearFilters = () => {
     setDomainFilter('all');
     setCriticalityFilter('all');

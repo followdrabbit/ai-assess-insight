@@ -519,15 +519,8 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
 
   questions.forEach(q => {
     q.frameworks.forEach(fw => {
-      // Extract main framework name (before " - " or first word for short names)
-      let mainFw = fw.split(' - ')[0].trim();
-      // Group similar frameworks
-      if (mainFw.startsWith('NIST AI RMF')) mainFw = 'NIST AI RMF';
-      if (mainFw.startsWith('NIST CSF')) mainFw = 'NIST CSF';
-      if (mainFw.startsWith('ISO 27001')) mainFw = 'ISO 27001';
-      if (mainFw.startsWith('EU AI Act')) mainFw = 'EU AI Act';
-      if (mainFw.startsWith('MITRE ATLAS')) mainFw = 'MITRE ATLAS';
-      if (mainFw.startsWith('OWASP')) mainFw = 'OWASP';
+      // Normalize framework name for grouping
+      let mainFw = normalizeFrameworkName(fw);
       
       if (!frameworkMap.has(mainFw)) {
         frameworkMap.set(mainFw, { total: 0, answered: 0, scores: [] });
@@ -558,6 +551,49 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
       coverage: data.total > 0 ? data.answered / data.total : 0,
     }))
     .sort((a, b) => b.totalQuestions - a.totalQuestions);
+}
+
+// Helper to normalize framework names for grouping
+function normalizeFrameworkName(fw: string): string {
+  const lowerFw = fw.toLowerCase();
+  
+  // AI Governance frameworks
+  if (lowerFw.includes('nist ai rmf')) return 'NIST AI RMF';
+  if (lowerFw.includes('iso/iec 42001') || lowerFw.includes('iso 42001')) return 'ISO/IEC 42001';
+  if (lowerFw.includes('iso/iec 23894') || lowerFw.includes('iso 23894')) return 'ISO/IEC 23894';
+  if (lowerFw.includes('eu ai act')) return 'EU AI Act';
+  
+  // Security Foundation
+  if (lowerFw.includes('iso 27001') || lowerFw.includes('iso/iec 27001')) return 'ISO 27001';
+  if (lowerFw.includes('iso 27002') || lowerFw.includes('iso/iec 27002')) return 'ISO 27002';
+  if (lowerFw.includes('nist sp 800-53') || lowerFw.includes('nist 800-53')) return 'NIST SP 800-53';
+  if (lowerFw.includes('nist csf')) return 'NIST CSF';
+  if (lowerFw.includes('cis controls') || lowerFw.includes('cis critical')) return 'CIS Controls';
+  
+  // Engineering & Supply Chain
+  if (lowerFw.includes('nist ssdf')) return 'NIST SSDF';
+  if (lowerFw.includes('slsa')) return 'SLSA';
+  if (lowerFw.includes('owasp llm') || lowerFw.includes('owasp top 10 llm')) return 'OWASP LLM Top 10';
+  if (lowerFw.includes('owasp ml') || lowerFw.includes('owasp machine learning')) return 'OWASP ML Security';
+  if (lowerFw.includes('owasp api')) return 'OWASP API Security';
+  if (lowerFw.includes('owasp top 10') && !lowerFw.includes('llm') && !lowerFw.includes('api')) return 'OWASP Top 10';
+  if (lowerFw.includes('owasp')) return 'OWASP';
+  
+  // Privacy
+  if (lowerFw.includes('lgpd')) return 'LGPD';
+  if (lowerFw.includes('gdpr')) return 'GDPR';
+  
+  // Brazilian Financial Regulation
+  if (lowerFw.includes('res. cmn') || lowerFw.includes('cmn 4.893') || lowerFw.includes('cmn 5.187')) return 'CMN/BACEN';
+  if (lowerFw.includes('bacen')) return 'CMN/BACEN';
+  if (lowerFw.includes('lc 105')) return 'LC 105 (Sigilo)';
+  
+  // Threat Intelligence
+  if (lowerFw.includes('mitre atlas')) return 'MITRE ATLAS';
+  if (lowerFw.includes('mitre att&ck') || lowerFw.includes('mitre attack')) return 'MITRE ATT&CK';
+  
+  // Return cleaned version if no match
+  return fw.split(' - ')[0].trim();
 }
 
 // Generate strategic roadmap items based on gaps

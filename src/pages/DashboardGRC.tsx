@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
-import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage } from '@/lib/scoring';
+import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, ActiveQuestion } from '@/lib/scoring';
 import { cn } from '@/lib/utils';
 import { 
   MaturityScoreHelp, 
@@ -25,6 +25,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { questions as defaultQuestions } from '@/lib/dataset';
+import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -53,6 +62,13 @@ export default function DashboardGRC() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
 
+  // Framework states
+  const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
+  const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
+  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -61,9 +77,179 @@ export default function DashboardGRC() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
 
-  const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers), [answers]);
-  const criticalGaps = useMemo(() => getCriticalGaps(answers), [answers]);
+  // Load active questions and frameworks
+  const loadData = useCallback(async () => {
+    setQuestionsLoading(true);
+    try {
+      const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
+        getAllCustomQuestions(),
+        getDisabledQuestions(),
+        getEnabledFrameworks(),
+        getSelectedFrameworks(),
+        getAllCustomFrameworks()
+      ]);
+
+      // Combine default and custom questions, excluding disabled ones
+      const active: ActiveQuestion[] = [
+        ...defaultQuestions
+          .filter(q => !disabledQuestionIds.includes(q.questionId))
+          .map(q => ({
+            questionId: q.questionId,
+            questionText: q.questionText,
+            subcatId: q.subcatId,
+            domainId: q.domainId,
+            ownershipType: q.ownershipType,
+            frameworks: q.frameworks || []
+          })),
+        ...customQuestions
+          .filter(q => !q.isDisabled)
+          .map(q => ({
+            questionId: q.questionId,
+            questionText: q.questionText,
+            subcatId: q.subcatId || '',
+            domainId: q.domainId,
+            ownershipType: q.ownershipType,
+            frameworks: q.frameworks || []
+          }))
+      ];
+
+      setAllActiveQuestions(active);
+      setEnabledFrameworkIds(enabledIds);
+
+      // Combine default and custom frameworks, filter by enabled
+      const allFrameworks: Framework[] = [
+        ...defaultFrameworks,
+        ...customFrameworks.map(cf => ({
+          frameworkId: cf.frameworkId,
+          frameworkName: cf.frameworkName,
+          shortName: cf.shortName,
+          description: cf.description,
+          targetAudience: cf.targetAudience,
+          assessmentScope: cf.assessmentScope,
+          defaultEnabled: cf.defaultEnabled,
+          version: cf.version,
+          category: cf.category as 'core' | 'high-value' | 'tech-focused',
+          references: cf.references
+        }))
+      ];
+
+      const enabledSet = new Set(enabledIds);
+      const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
+      setEnabledFrameworks(enabled);
+
+      // Sanitize selected frameworks
+      const enabledIdSet = new Set(enabledIds);
+      const sanitizedSelected = (selectedIds || []).filter(id => enabledIdSet.has(id));
+      setSelectedFrameworkIds(sanitizedSelected);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+      setAllActiveQuestions(defaultQuestions.map(q => ({
+        questionId: q.questionId,
+        questionText: q.questionText,
+        subcatId: q.subcatId,
+        domainId: q.domainId,
+        ownershipType: q.ownershipType,
+        frameworks: q.frameworks || []
+      })));
+      setEnabledFrameworkIds(defaultEnabledIds);
+      setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Refresh on focus/visibility
+  useEffect(() => {
+    const onFocus = () => loadData();
+    const onVisibility = () => {
+      if (!document.hidden) loadData();
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [loadData]);
+
+  // Filter questions by enabled frameworks
+  const questionsFilteredByEnabledFrameworks = useMemo(() => {
+    if (enabledFrameworkIds.length === 0) return allActiveQuestions;
+
+    const enabledSet = new Set(enabledFrameworkIds);
+    return allActiveQuestions.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      return questionFrameworkIds.some(id => enabledSet.has(id));
+    });
+  }, [allActiveQuestions, enabledFrameworkIds]);
+
+  // Apply user selection on top of enabled frameworks
+  const questionsForDashboard = useMemo(() => {
+    if (selectedFrameworkIds.length === 0) return questionsFilteredByEnabledFrameworks;
+
+    const selectedSet = new Set(selectedFrameworkIds);
+    return questionsFilteredByEnabledFrameworks.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      return questionFrameworkIds.some(id => selectedSet.has(id));
+    });
+  }, [questionsFilteredByEnabledFrameworks, selectedFrameworkIds]);
+
+  // Handle framework selection change
+  const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
+    setSelectedFrameworkIds(frameworkIds);
+    try {
+      await setSelectedFrameworks(frameworkIds);
+    } catch (error) {
+      console.error('Error saving framework selection:', error);
+    }
+  };
+
+  // Toggle framework selection
+  const toggleFramework = (frameworkId: string) => {
+    const newSelection = selectedFrameworkIds.includes(frameworkId)
+      ? selectedFrameworkIds.filter(id => id !== frameworkId)
+      : [...selectedFrameworkIds, frameworkId];
+    handleFrameworkSelectionChange(newSelection);
+  };
+
+  // Clear framework selection
+  const clearFrameworkSelection = () => {
+    handleFrameworkSelectionChange([]);
+  };
+
+  // Group frameworks by category
+  const frameworksByCategory = useMemo(() => {
+    const groups: Record<string, Framework[]> = {
+      'core': [],
+      'high-value': [],
+      'tech-focused': []
+    };
+    enabledFrameworks.forEach(fw => {
+      const cat = fw.category || 'core';
+      if (groups[cat]) groups[cat].push(fw);
+    });
+    return groups;
+  }, [enabledFrameworks]);
+
+  const categoryLabels: Record<string, string> = {
+    'core': 'Frameworks Principais',
+    'high-value': 'Alto Valor',
+    'tech-focused': 'Foco Técnico'
+  };
+
+  // Calculate metrics using filtered questions
+  const metrics = useMemo(() => calculateOverallMetrics(answers, questionsForDashboard), [answers, questionsForDashboard]);
+  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsForDashboard), [answers, questionsForDashboard]);
+  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsForDashboard), [answers, questionsForDashboard]);
 
   // Unique ownership types for filter
   const ownershipTypes = useMemo(() => {
@@ -86,7 +272,6 @@ export default function DashboardGRC() {
   // Filtered and sorted domain metrics
   const filteredDomainMetrics = useMemo(() => {
     let filtered = metrics.domainMetrics.filter(dm => {
-      // Search filter
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         const matchesDomain = dm.domainName.toLowerCase().includes(search);
@@ -96,13 +281,11 @@ export default function DashboardGRC() {
         if (!matchesDomain && !matchesSubcat) return false;
       }
 
-      // Status filter
       if (statusFilter !== 'all') {
         const status = getStatus(dm.coverage, dm.score);
         if (status !== statusFilter) return false;
       }
 
-      // Ownership filter (check if any subcategory matches)
       if (ownershipFilter !== 'all') {
         const hasOwnership = dm.subcategoryMetrics.some(sm => 
           sm.ownershipType === ownershipFilter
@@ -113,7 +296,6 @@ export default function DashboardGRC() {
       return true;
     });
 
-    // Sort
     filtered.sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
@@ -197,7 +379,7 @@ export default function DashboardGRC() {
       maturityLevel: fc.maturityLevel,
     }));
 
-  if (isLoading) {
+  if (isLoading || questionsLoading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
   }
 
@@ -227,6 +409,99 @@ export default function DashboardGRC() {
           <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
         </div>
       )}
+
+      {/* Framework Selection Section */}
+      <div className="card-elevated p-4 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h3 className="font-medium text-sm">Escopo da Análise</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {selectedFrameworkIds.length === 0 
+                ? `Todos os ${enabledFrameworks.length} frameworks habilitados`
+                : `${selectedFrameworkIds.length} de ${enabledFrameworks.length} frameworks selecionados`
+              }
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs"
+              onClick={clearFrameworkSelection}
+              disabled={selectedFrameworkIds.length === 0}
+            >
+              Limpar Seleção
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  Selecionar Frameworks
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 bg-popover" align="end">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">Frameworks Habilitados</h4>
+                    <span className="text-xs text-muted-foreground">
+                      {enabledFrameworks.length} disponíveis
+                    </span>
+                  </div>
+                  
+                  {Object.entries(frameworksByCategory).map(([category, frameworks]) => (
+                    frameworks.length > 0 && (
+                      <div key={category}>
+                        <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                          {categoryLabels[category]}
+                        </h5>
+                        <div className="space-y-2">
+                          {frameworks.map(fw => (
+                            <div 
+                              key={fw.frameworkId}
+                              className="flex items-center gap-2"
+                            >
+                              <Checkbox
+                                id={`grc-${fw.frameworkId}`}
+                                checked={selectedFrameworkIds.includes(fw.frameworkId)}
+                                onCheckedChange={() => toggleFramework(fw.frameworkId)}
+                              />
+                              <label 
+                                htmlFor={`grc-${fw.frameworkId}`}
+                                className="text-sm cursor-pointer flex-1"
+                              >
+                                {fw.shortName}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Framework Pills */}
+        <div className="flex flex-wrap gap-2">
+          {enabledFrameworks.map(fw => {
+            const isSelected = selectedFrameworkIds.length === 0 || selectedFrameworkIds.includes(fw.frameworkId);
+            return (
+              <Badge
+                key={fw.frameworkId}
+                variant={isSelected ? "default" : "outline"}
+                className={cn(
+                  "cursor-pointer transition-all text-xs",
+                  !isSelected && "opacity-50 hover:opacity-75"
+                )}
+                onClick={() => toggleFramework(fw.frameworkId)}
+              >
+                {fw.shortName}
+              </Badge>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Quick Status Pills */}
       <div className="flex flex-wrap gap-2">
@@ -271,7 +546,7 @@ export default function DashboardGRC() {
 
       {/* GRC KPI Cards */}
       <div className="stats-grid">
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Cobertura Geral</div>
             <CoverageHelp />
@@ -282,7 +557,7 @@ export default function DashboardGRC() {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Prontidão de Evidências</div>
             <EvidenceReadinessHelp />
@@ -293,7 +568,7 @@ export default function DashboardGRC() {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Score Geral</div>
             <MaturityScoreHelp />
@@ -306,7 +581,7 @@ export default function DashboardGRC() {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
           <div className="kpi-label">Gaps Críticos</div>
           <div className="kpi-value text-destructive">
             {quickStats.criticalGapsCount}
@@ -342,7 +617,7 @@ export default function DashboardGRC() {
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Responsável" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="all">Todos Responsáveis</SelectItem>
                 {ownershipTypes.map(type => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
@@ -353,7 +628,7 @@ export default function DashboardGRC() {
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="gaps">Gaps</SelectItem>
                 <SelectItem value="coverage">Cobertura</SelectItem>
                 <SelectItem value="maturity">Maturidade</SelectItem>
@@ -381,7 +656,7 @@ export default function DashboardGRC() {
 
           {/* Domain Cards with Expandable Subcategories */}
           <div className="space-y-3">
-            {filteredDomainMetrics.map(dm => {
+            {filteredDomainMetrics.map((dm, idx) => {
               const status = getStatus(dm.coverage, dm.score);
               const isExpanded = expandedDomains.has(dm.domainId);
               
@@ -396,7 +671,10 @@ export default function DashboardGRC() {
                   open={isExpanded}
                   onOpenChange={() => toggleDomainExpanded(dm.domainId)}
                 >
-                  <div className="card-elevated overflow-hidden">
+                  <div 
+                    className="card-elevated overflow-hidden animate-in fade-in-0 slide-in-from-left-4 duration-400"
+                    style={{ animationDelay: `${500 + idx * 50}ms`, animationFillMode: 'backwards' }}
+                  >
                     <CollapsibleTrigger className="w-full">
                       <div className="p-4 flex items-center justify-between hover:bg-accent/30 transition-colors">
                         <div className="flex items-center gap-4 flex-1">
@@ -535,11 +813,15 @@ export default function DashboardGRC() {
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Maturidade por Categoria</h3>
               <div className="space-y-4">
-                {frameworkCategoryData.map(fc => {
+                {frameworkCategoryData.map((fc, idx) => {
                   const status = fc.coverage < 50 ? 'incomplete' : 
                                  fc.score < 50 ? 'at-risk' : 'on-track';
                   return (
-                    <div key={fc.categoryId} className="p-3 border border-border rounded-lg">
+                    <div 
+                      key={fc.categoryId} 
+                      className="p-3 border border-border rounded-lg animate-in fade-in-0 slide-in-from-right-4 duration-400"
+                      style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'backwards' }}
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-sm">{fc.name}</span>
                         <span className={cn(
@@ -594,10 +876,11 @@ export default function DashboardGRC() {
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Cobertura por Framework ({filteredFrameworkCoverage.length})</h3>
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                {filteredFrameworkCoverage.map(fw => (
+                {filteredFrameworkCoverage.map((fw, idx) => (
                   <div 
                     key={fw.framework} 
-                    className="flex items-center justify-between p-2 hover:bg-muted/50 rounded transition-colors"
+                    className="flex items-center justify-between p-2 hover:bg-muted/50 rounded transition-colors animate-in fade-in-0 duration-300"
+                    style={{ animationDelay: `${idx * 30}ms`, animationFillMode: 'backwards' }}
                   >
                     <span className="text-sm truncate flex-1 mr-2" title={fw.framework}>
                       {fw.framework}
@@ -642,7 +925,8 @@ export default function DashboardGRC() {
                 {criticalGaps.slice(0, 20).map((gap, index) => (
                   <div 
                     key={gap.questionId}
-                    className="p-4 border border-destructive/30 bg-destructive/5 rounded-lg"
+                    className="p-4 border border-destructive/30 bg-destructive/5 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -682,10 +966,11 @@ export default function DashboardGRC() {
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Maturidade por Responsável</h3>
               <div className="space-y-4">
-                {ownershipData.map(od => (
+                {ownershipData.map((od, idx) => (
                   <div 
                     key={od.name}
-                    className="p-3 border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
+                    className="p-3 border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors animate-in fade-in-0 slide-in-from-left-4 duration-400"
+                    style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'backwards' }}
                     onClick={() => setOwnershipFilter(od.name)}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -716,10 +1001,11 @@ export default function DashboardGRC() {
                   .filter(sm => sm.answeredQuestions > 0 && sm.score < 0.7)
                   .sort((a, b) => a.score - b.score)
                   .slice(0, 15)
-                  .map(sm => (
+                  .map((sm, idx) => (
                     <div 
                       key={sm.subcatId}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg animate-in fade-in-0 duration-300"
+                      style={{ animationDelay: `${idx * 50}ms`, animationFillMode: 'backwards' }}
                     >
                       <div className="flex-1">
                         <p className="font-medium text-sm">{sm.subcatName}</p>

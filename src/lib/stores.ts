@@ -10,10 +10,12 @@ import {
   getSelectedFrameworks, 
   setSelectedFrameworks as dbSetSelectedFrameworks,
   getEnabledFrameworks,
-  setEnabledFrameworks as dbSetEnabledFrameworks
+  setEnabledFrameworks as dbSetEnabledFrameworks,
+  getAllCustomQuestions,
+  getDisabledQuestions
 } from './database';
-import { questions, getQuestionById } from './dataset';
-import { getDefaultEnabledFrameworks } from './frameworks';
+import { questions as defaultQuestions, getQuestionById } from './dataset';
+import { getDefaultEnabledFrameworks, getPrimaryFrameworkId } from './frameworks';
 
 interface AnswersState {
   answers: Map<string, Answer>;
@@ -119,7 +121,19 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
   generateDemoData: async () => {
     const demoAnswers: Answer[] = [];
 
-    questions.forEach((q) => {
+    // Load custom questions and disabled questions
+    const [customQuestions, disabledQuestionIds] = await Promise.all([
+      getAllCustomQuestions(),
+      getDisabledQuestions()
+    ]);
+
+    // Combine default and custom questions, excluding disabled ones
+    const allQuestions = [
+      ...defaultQuestions.filter(q => !disabledQuestionIds.includes(q.questionId)),
+      ...customQuestions.filter(q => !q.isDisabled)
+    ];
+
+    allQuestions.forEach((q) => {
       const rand = Math.random();
       let response: Answer['response'];
       if (rand < 0.35) response = 'Sim';
@@ -139,9 +153,14 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
         }
       }
 
+      // Get the primary framework from the question's frameworks array
+      const frameworkId = getPrimaryFrameworkId(q.frameworks) || 
+                          (q as any).frameworkId || 
+                          'NIST_AI_RMF';
+
       demoAnswers.push({
         questionId: q.questionId,
-        frameworkId: (q as any).frameworkId || 'NIST_AI_RMF',
+        frameworkId,
         response,
         evidenceOk,
         notes: response === 'Não' ? 'Pendente de implementação' : '',

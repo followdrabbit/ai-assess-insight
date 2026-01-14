@@ -4,7 +4,8 @@ import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion } from '@/lib/scoring';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { questions as defaultQuestions } from '@/lib/dataset';
-import { getAllCustomQuestions, getDisabledQuestions } from '@/lib/database';
+import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
+import { frameworks as defaultFrameworks, Framework } from '@/lib/frameworks';
 
 export default function DashboardExecutive() {
   const { answers, isLoading } = useAnswersStore();
@@ -12,14 +13,19 @@ export default function DashboardExecutive() {
   
   const [activeQuestions, setActiveQuestions] = useState<ActiveQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
+  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
 
-  // Load active questions (default + custom, excluding disabled)
+  // Load active questions and frameworks
   useEffect(() => {
-    async function loadActiveQuestions() {
+    async function loadData() {
       try {
-        const [customQuestions, disabledQuestionIds] = await Promise.all([
+        const [customQuestions, disabledQuestionIds, enabledFrameworkIds, selectedIds, customFrameworks] = await Promise.all([
           getAllCustomQuestions(),
-          getDisabledQuestions()
+          getDisabledQuestions(),
+          getEnabledFrameworks(),
+          getSelectedFrameworks(),
+          getAllCustomFrameworks()
         ]);
 
         // Combine default and custom questions, excluding disabled ones
@@ -47,8 +53,31 @@ export default function DashboardExecutive() {
         ];
 
         setActiveQuestions(active);
+
+        // Combine default and custom frameworks, filter by enabled
+        const allFrameworks: Framework[] = [
+          ...defaultFrameworks,
+          ...customFrameworks.map(cf => ({
+            frameworkId: cf.frameworkId,
+            frameworkName: cf.frameworkName,
+            shortName: cf.shortName,
+            description: cf.description,
+            targetAudience: cf.targetAudience,
+            assessmentScope: cf.assessmentScope,
+            defaultEnabled: cf.defaultEnabled,
+            version: cf.version,
+            category: cf.category as 'core' | 'high-value' | 'tech-focused',
+            references: cf.references
+          }))
+        ];
+
+        const enabledSet = new Set(enabledFrameworkIds);
+        const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
+        setEnabledFrameworks(enabled);
+        setSelectedFrameworkIds(selectedIds);
+
       } catch (error) {
-        console.error('Error loading active questions:', error);
+        console.error('Error loading data:', error);
         // Fallback to default questions
         setActiveQuestions(defaultQuestions.map(q => ({
           questionId: q.questionId,
@@ -58,13 +87,24 @@ export default function DashboardExecutive() {
           ownershipType: q.ownershipType,
           frameworks: q.frameworks || []
         })));
+        setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
       } finally {
         setQuestionsLoading(false);
       }
     }
 
-    loadActiveQuestions();
+    loadData();
   }, []);
+
+  // Handle framework selection change
+  const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
+    setSelectedFrameworkIds(frameworkIds);
+    try {
+      await setSelectedFrameworks(frameworkIds);
+    } catch (error) {
+      console.error('Error saving framework selection:', error);
+    }
+  };
 
   const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
   const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, activeQuestions), [answers, activeQuestions]);
@@ -95,6 +135,10 @@ export default function DashboardExecutive() {
         criticalGaps={criticalGaps}
         roadmap={roadmap}
         frameworkCoverage={frameworkCoverage}
+        enabledFrameworks={enabledFrameworks}
+        selectedFrameworkIds={selectedFrameworkIds}
+        onFrameworkSelectionChange={handleFrameworkSelectionChange}
+        activeQuestions={activeQuestions}
       />
     </div>
   );

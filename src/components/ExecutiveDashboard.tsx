@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,8 @@ import { OverallMetrics, CriticalGap, RoadmapItem, FrameworkCoverage } from '@/l
 import { FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -20,6 +22,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Framework, getFrameworkById } from '@/lib/frameworks';
+import { getQuestionFrameworkIds } from '@/lib/frameworks';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {
@@ -55,11 +69,24 @@ const frameworkCategoryColors: Record<FrameworkCategoryId, string> = {
   THREAT_EXPOSURE: 'hsl(221, 83%, 53%)',
 };
 
+export interface ActiveQuestion {
+  questionId: string;
+  questionText: string;
+  subcatId: string;
+  domainId: string;
+  ownershipType?: string;
+  frameworks: string[];
+}
+
 interface ExecutiveDashboardProps {
   metrics: OverallMetrics;
   criticalGaps: CriticalGap[];
   roadmap: RoadmapItem[];
   frameworkCoverage: FrameworkCoverage[];
+  enabledFrameworks: Framework[];
+  selectedFrameworkIds: string[];
+  onFrameworkSelectionChange: (frameworkIds: string[]) => void;
+  activeQuestions: ActiveQuestion[];
 }
 
 type DomainFilter = 'all' | string;
@@ -70,7 +97,11 @@ export function ExecutiveDashboard({
   metrics, 
   criticalGaps, 
   roadmap,
-  frameworkCoverage 
+  frameworkCoverage,
+  enabledFrameworks,
+  selectedFrameworkIds,
+  onFrameworkSelectionChange,
+  activeQuestions
 }: ExecutiveDashboardProps) {
   const navigate = useNavigate();
   
@@ -80,10 +111,57 @@ export function ExecutiveDashboard({
   const [nistFilter, setNistFilter] = useState<NistFunctionFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllGaps, setShowAllGaps] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  // Filter critical gaps
+  // Filter questions and gaps by selected frameworks
+  const filteredByFramework = useMemo(() => {
+    if (selectedFrameworkIds.length === 0) {
+      return { gaps: criticalGaps, coverage: frameworkCoverage, roadmapItems: roadmap };
+    }
+
+    const selectedSet = new Set(selectedFrameworkIds);
+    
+    // Filter gaps - only show gaps from questions that belong to selected frameworks
+    const filteredGaps = criticalGaps.filter(gap => {
+      const question = activeQuestions.find(q => q.questionId === gap.questionId);
+      if (!question) return false;
+      const questionFrameworkIds = getQuestionFrameworkIds(question.frameworks);
+      return questionFrameworkIds.some(id => selectedSet.has(id));
+    });
+
+    // Filter framework coverage
+    const frameworkIdToName: Record<string, string> = {
+      'NIST_AI_RMF': 'NIST AI RMF',
+      'ISO_27001_27002': 'ISO/IEC 27001 / 27002',
+      'ISO_23894': 'ISO/IEC 23894',
+      'LGPD': 'LGPD',
+      'NIST_SSDF': 'NIST SSDF',
+      'CSA_CCM': 'CSA AI Security',
+      'CSA_AI': 'CSA AI Security',
+      'OWASP_LLM': 'OWASP Top 10 for LLM Applications',
+      'OWASP_API': 'OWASP API Security Top 10'
+    };
+    
+    const selectedFrameworkNames = new Set(
+      selectedFrameworkIds.map(id => frameworkIdToName[id]).filter(Boolean)
+    );
+    
+    const filteredCoverage = frameworkCoverage.filter(fc => 
+      selectedFrameworkNames.has(fc.framework)
+    );
+
+    // Roadmap items are already derived from gaps, so filter similarly
+    const filteredRoadmap = roadmap.filter(item => {
+      // Check if any gap in this domain belongs to selected frameworks
+      return filteredGaps.some(gap => gap.domainName === item.domain);
+    });
+
+    return { gaps: filteredGaps, coverage: filteredCoverage, roadmapItems: filteredRoadmap };
+  }, [criticalGaps, frameworkCoverage, roadmap, selectedFrameworkIds, activeQuestions]);
+
+  // Apply additional filters to gaps
   const filteredGaps = useMemo(() => {
-    let filtered = [...criticalGaps];
+    let filtered = [...filteredByFramework.gaps];
     
     if (domainFilter !== 'all') {
       filtered = filtered.filter(g => g.domainId === domainFilter);
@@ -104,7 +182,7 @@ export function ExecutiveDashboard({
     }
     
     return filtered;
-  }, [criticalGaps, domainFilter, criticalityFilter, nistFilter, searchQuery]);
+  }, [filteredByFramework.gaps, domainFilter, criticalityFilter, nistFilter, searchQuery]);
 
   // Filtered domain metrics
   const filteredDomainMetrics = useMemo(() => {
@@ -150,10 +228,10 @@ export function ExecutiveDashboard({
       maturityLevel: fc.maturityLevel,
     }));
 
-  // Risk distribution for pie chart
+  // Risk distribution for pie chart - use filtered gaps
   const riskDistribution = useMemo(() => {
     const distribution = { Critical: 0, High: 0, Medium: 0, Low: 0 };
-    criticalGaps.forEach(gap => {
+    filteredByFramework.gaps.forEach(gap => {
       if (gap.criticality in distribution) {
         distribution[gap.criticality as keyof typeof distribution]++;
       }
@@ -164,14 +242,14 @@ export function ExecutiveDashboard({
       { name: 'Médio', value: distribution.Medium, color: 'hsl(45, 93%, 47%)' },
       { name: 'Baixo', value: distribution.Low, color: 'hsl(142, 76%, 36%)' },
     ].filter(d => d.value > 0);
-  }, [criticalGaps]);
+  }, [filteredByFramework.gaps]);
 
-  // Unique domains for filter
+  // Unique domains for filter - use filtered gaps
   const uniqueDomains = useMemo(() => {
     const domains = new Map<string, string>();
-    criticalGaps.forEach(g => domains.set(g.domainId, g.domainName));
+    filteredByFramework.gaps.forEach(g => domains.set(g.domainId, g.domainName));
     return Array.from(domains.entries());
-  }, [criticalGaps]);
+  }, [filteredByFramework.gaps]);
 
   const clearFilters = () => {
     setDomainFilter('all');
@@ -182,25 +260,182 @@ export function ExecutiveDashboard({
 
   const hasActiveFilters = domainFilter !== 'all' || criticalityFilter !== 'all' || nistFilter !== 'all' || searchQuery.trim() !== '';
 
+  // Framework selection helpers
+  const toggleFramework = (frameworkId: string) => {
+    if (selectedFrameworkIds.includes(frameworkId)) {
+      onFrameworkSelectionChange(selectedFrameworkIds.filter(id => id !== frameworkId));
+    } else {
+      onFrameworkSelectionChange([...selectedFrameworkIds, frameworkId]);
+    }
+  };
+
+  const selectAllFrameworks = () => {
+    onFrameworkSelectionChange(enabledFrameworks.map(f => f.frameworkId));
+  };
+
+  const clearFrameworkSelection = () => {
+    onFrameworkSelectionChange([]);
+  };
+
+  // Categorize frameworks
+  const frameworksByCategory = useMemo(() => {
+    const categories: Record<string, Framework[]> = {
+      core: [],
+      'high-value': [],
+      'tech-focused': []
+    };
+    enabledFrameworks.forEach(f => {
+      if (categories[f.category]) {
+        categories[f.category].push(f);
+      }
+    });
+    return categories;
+  }, [enabledFrameworks]);
+
+  const categoryLabels: Record<string, string> = {
+    core: 'Principais',
+    'high-value': 'Alto Valor',
+    'tech-focused': 'Técnicos'
+  };
+
   return (
     <div className="space-y-6">
-      {/* Executive Summary Header */}
+      {/* Executive Summary Header with Framework Selector */}
       <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-primary">Resumo Executivo - Maturidade em Segurança de IA</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Visão consolidada para tomada de decisão estratégica
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-primary">Resumo Executivo - Maturidade em Segurança de IA</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Visão consolidada para tomada de decisão estratégica
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/reports')}
+              >
+                Exportar Relatório
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/reports')}
-            >
-              Exportar Relatório
-            </Button>
+
+          {/* Framework Selector */}
+          <div className="border-t pt-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Frameworks em Análise</span>
+                <span className="text-xs text-muted-foreground">
+                  ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-xs"
+                  onClick={selectAllFrameworks}
+                >
+                  Selecionar Todos
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-xs"
+                  onClick={clearFrameworkSelection}
+                  disabled={selectedFrameworkIds.length === 0}
+                >
+                  Limpar Seleção
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      Gerenciar
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 bg-popover" align="end">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">Frameworks Habilitados</h4>
+                        <span className="text-xs text-muted-foreground">
+                          {enabledFrameworks.length} disponíveis
+                        </span>
+                      </div>
+                      
+                      {Object.entries(frameworksByCategory).map(([category, frameworks]) => (
+                        frameworks.length > 0 && (
+                          <div key={category}>
+                            <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                              {categoryLabels[category]}
+                            </h5>
+                            <div className="space-y-2">
+                              {frameworks.map(fw => (
+                                <div 
+                                  key={fw.frameworkId}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Checkbox
+                                    id={fw.frameworkId}
+                                    checked={selectedFrameworkIds.includes(fw.frameworkId)}
+                                    onCheckedChange={() => toggleFramework(fw.frameworkId)}
+                                  />
+                                  <label 
+                                    htmlFor={fw.frameworkId}
+                                    className="text-sm cursor-pointer flex-1"
+                                  >
+                                    {fw.shortName}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      ))}
+                      
+                      <div className="pt-2 border-t">
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          className="h-auto p-0 text-xs"
+                          onClick={() => navigate('/settings')}
+                        >
+                          Configurar frameworks habilitados
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Framework Pills */}
+            <div className="flex flex-wrap gap-2">
+              {enabledFrameworks.map(fw => {
+                const isSelected = selectedFrameworkIds.length === 0 || selectedFrameworkIds.includes(fw.frameworkId);
+                return (
+                  <Badge
+                    key={fw.frameworkId}
+                    variant={isSelected ? "default" : "outline"}
+                    className={cn(
+                      "cursor-pointer transition-all",
+                      isSelected 
+                        ? "bg-primary hover:bg-primary/90" 
+                        : "opacity-50 hover:opacity-100"
+                    )}
+                    onClick={() => toggleFramework(fw.frameworkId)}
+                  >
+                    {fw.shortName}
+                  </Badge>
+                );
+              })}
+            </div>
+
+            {selectedFrameworkIds.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Exibindo dados apenas para os frameworks selecionados. Clique em um framework para alternar.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -230,17 +465,17 @@ export function ExecutiveDashboard({
             <div className="kpi-label">Gaps Críticos</div>
             <CriticalGapsHelp />
           </div>
-          <div className="kpi-value text-destructive">{metrics.criticalGaps}</div>
+          <div className="kpi-value text-destructive">{filteredByFramework.gaps.length}</div>
           <div className="text-sm text-muted-foreground mt-2">
             Requerem ação prioritária
           </div>
           <div className="mt-3 pt-3 border-t text-xs">
             <span className={cn(
-              metrics.criticalGaps === 0 ? 'text-green-600' :
-              metrics.criticalGaps <= 5 ? 'text-amber-600' : 'text-red-600'
+              filteredByFramework.gaps.length === 0 ? 'text-green-600' :
+              filteredByFramework.gaps.length <= 5 ? 'text-amber-600' : 'text-red-600'
             )}>
-              {metrics.criticalGaps === 0 ? 'Excelente' :
-               metrics.criticalGaps <= 5 ? 'Atenção necessária' : 'Ação imediata'}
+              {filteredByFramework.gaps.length === 0 ? 'Excelente' :
+               filteredByFramework.gaps.length <= 5 ? 'Atenção necessária' : 'Ação imediata'}
             </span>
           </div>
         </div>
@@ -427,6 +662,42 @@ export function ExecutiveDashboard({
         </div>
       </div>
 
+      {/* Framework Coverage */}
+      {filteredByFramework.coverage.length > 0 && (
+        <div className="card-elevated p-6">
+          <h3 className="font-semibold mb-4">Cobertura por Framework</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {filteredByFramework.coverage.map(fc => (
+              <div 
+                key={fc.framework} 
+                className="p-4 bg-muted/50 rounded-lg"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-sm truncate" title={fc.framework}>
+                    {fc.framework}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-2xl font-bold">
+                    {Math.round(fc.averageScore * 100)}%
+                  </span>
+                  <span className="text-xs text-muted-foreground">score</span>
+                </div>
+                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mb-2">
+                  <div 
+                    className="h-full bg-primary transition-all" 
+                    style={{ width: `${fc.coverage * 100}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {fc.answeredQuestions}/{fc.totalQuestions} perguntas respondidas
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Framework Category Maturity */}
       <div className="card-elevated p-6">
         <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
@@ -464,7 +735,7 @@ export function ExecutiveDashboard({
       </div>
 
       {/* Strategic Roadmap */}
-      {roadmap.length > 0 && (
+      {filteredByFramework.roadmapItems.length > 0 && (
         <div className="card-elevated p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -485,7 +756,7 @@ export function ExecutiveDashboard({
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {['immediate', 'short', 'medium'].map(priority => {
-              const items = roadmap.filter(r => r.priority === priority);
+              const items = filteredByFramework.roadmapItems.filter(r => r.priority === priority);
               const config = {
                 immediate: { label: '0-30 dias', color: 'border-red-500', bg: 'bg-red-50 dark:bg-red-950/20' },
                 short: { label: '30-60 dias', color: 'border-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/20' },
@@ -519,7 +790,7 @@ export function ExecutiveDashboard({
             <h3 className="font-semibold">Gaps Críticos</h3>
             <p className="text-xs text-muted-foreground mt-1">
               {filteredGaps.length} gaps encontrados
-              {hasActiveFilters && ` (de ${criticalGaps.length} total)`}
+              {hasActiveFilters && ` (de ${filteredByFramework.gaps.length} total)`}
             </p>
           </div>
           
@@ -536,7 +807,7 @@ export function ExecutiveDashboard({
               <SelectTrigger className="w-36 h-8 text-sm">
                 <SelectValue placeholder="Domínio" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="all">Todos Domínios</SelectItem>
                 {uniqueDomains.map(([id, name]) => (
                   <SelectItem key={id} value={id}>{name}</SelectItem>
@@ -548,7 +819,7 @@ export function ExecutiveDashboard({
               <SelectTrigger className="w-32 h-8 text-sm">
                 <SelectValue placeholder="Criticidade" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="Critical">Crítico</SelectItem>
                 <SelectItem value="High">Alto</SelectItem>

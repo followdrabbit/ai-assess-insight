@@ -950,32 +950,46 @@ export function ExecutiveDashboard({
           {filteredGaps.slice(0, showAllGaps ? undefined : 5).map((gap, idx) => (
             <div 
               key={gap.questionId}
-              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+              className={cn(
+                "flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 cursor-pointer",
+                "transition-all duration-300 ease-out",
+                "animate-in fade-in-0 slide-in-from-left-2"
+              )}
+              style={{ 
+                animationDelay: `${idx * 50}ms`, 
+                animationFillMode: 'backwards',
+                animationDuration: '300ms'
+              }}
               onClick={() => navigate('/assessment')}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-lg font-bold text-muted-foreground w-6">{idx + 1}</span>
+                <span className="text-lg font-bold text-muted-foreground w-6 transition-all duration-200">{idx + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{gap.subcatName}</p>
-                  <p className="text-xs text-muted-foreground truncate">{gap.domainName}</p>
+                  <p className="font-medium text-sm truncate transition-colors duration-200">{gap.subcatName}</p>
+                  <p className="text-xs text-muted-foreground truncate transition-colors duration-200">{gap.domainName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 {gap.nistFunction && (
-                  <span className="text-xs bg-muted px-2 py-0.5 rounded hidden md:inline">
+                  <span className="text-xs bg-muted px-2 py-0.5 rounded hidden md:inline transition-all duration-200">
                     {nistFunctionLabels[gap.nistFunction]}
                   </span>
                 )}
-                <span className={cn("criticality-badge", `criticality-${gap.criticality.toLowerCase()}`)}>
+                <span className={cn(
+                  "criticality-badge transition-all duration-200",
+                  `criticality-${gap.criticality.toLowerCase()}`
+                )}>
                   {gap.criticality}
                 </span>
-                <span className="font-mono text-sm w-12 text-right">{Math.round(gap.effectiveScore * 100)}%</span>
+                <span className="font-mono text-sm w-12 text-right transition-all duration-200">
+                  {Math.round(gap.effectiveScore * 100)}%
+                </span>
               </div>
             </div>
           ))}
           
           {filteredGaps.length === 0 && (
-            <div className="text-center py-8 text-sm text-muted-foreground">
+            <div className="text-center py-8 text-sm text-muted-foreground animate-in fade-in-0 duration-300">
               {hasActiveFilters ? 'Nenhum gap encontrado com os filtros aplicados' : 'Nenhum gap crítico identificado'}
             </div>
           )}

@@ -10,6 +10,10 @@ import {
   getEvidenceMultiplier,
   getMaturityLevel,
   MaturityLevel,
+  NistAiRmfFunction,
+  nistAiRmfFunctions,
+  OwnershipType,
+  ownershipTypes,
 } from './dataset';
 
 export interface QuestionScore {
@@ -33,11 +37,13 @@ export interface SubcategoryMetrics {
   criticality: string;
   weight: number;
   criticalGaps: number;
+  ownershipType?: string;
 }
 
 export interface DomainMetrics {
   domainId: string;
   domainName: string;
+  nistFunction?: string;
   score: number;
   maturityLevel: MaturityLevel;
   totalQuestions: number;
@@ -46,6 +52,25 @@ export interface DomainMetrics {
   coverage: number;
   subcategoryMetrics: SubcategoryMetrics[];
   criticalGaps: number;
+}
+
+export interface NistFunctionMetrics {
+  function: NistAiRmfFunction;
+  score: number;
+  maturityLevel: MaturityLevel;
+  totalQuestions: number;
+  answeredQuestions: number;
+  coverage: number;
+  domainCount: number;
+}
+
+export interface OwnershipMetrics {
+  ownershipType: OwnershipType;
+  score: number;
+  maturityLevel: MaturityLevel;
+  totalQuestions: number;
+  answeredQuestions: number;
+  coverage: number;
 }
 
 export interface OverallMetrics {
@@ -58,6 +83,8 @@ export interface OverallMetrics {
   evidenceReadiness: number;
   criticalGaps: number;
   domainMetrics: DomainMetrics[];
+  nistFunctionMetrics: NistFunctionMetrics[];
+  ownershipMetrics: OwnershipMetrics[];
 }
 
 // Calculate effective score for a single question
@@ -159,6 +186,7 @@ export function calculateSubcategoryMetrics(
     criticality: subcat.criticality,
     weight: subcat.weight,
     criticalGaps,
+    ownershipType: subcat.ownershipType,
   };
 }
 
@@ -202,6 +230,7 @@ export function calculateDomainMetrics(
   return {
     domainId,
     domainName: domain.domainName,
+    nistFunction: domain.nistAiRmfFunction,
     score,
     maturityLevel: getMaturityLevel(score),
     totalQuestions: domainQuestions.length,
@@ -213,11 +242,89 @@ export function calculateDomainMetrics(
   };
 }
 
+// Calculate NIST function metrics
+export function calculateNistFunctionMetrics(
+  answersMap: Map<string, Answer>,
+  domainMetrics: DomainMetrics[]
+): NistFunctionMetrics[] {
+  return nistAiRmfFunctions.map(func => {
+    const funcDomains = domainMetrics.filter(d => d.nistFunction === func);
+    
+    let totalScore = 0;
+    let totalAnswered = 0;
+    let totalQuestions = 0;
+    let count = 0;
+
+    funcDomains.forEach(dm => {
+      if (dm.answeredQuestions > 0) {
+        totalScore += dm.score;
+        count++;
+      }
+      totalAnswered += dm.answeredQuestions;
+      totalQuestions += dm.totalQuestions;
+    });
+
+    const score = count > 0 ? totalScore / count : 0;
+    const coverage = totalQuestions > 0 ? totalAnswered / totalQuestions : 0;
+
+    return {
+      function: func,
+      score,
+      maturityLevel: getMaturityLevel(score),
+      totalQuestions,
+      answeredQuestions: totalAnswered,
+      coverage,
+      domainCount: funcDomains.length,
+    };
+  });
+}
+
+// Calculate ownership type metrics
+export function calculateOwnershipMetrics(
+  answersMap: Map<string, Answer>
+): OwnershipMetrics[] {
+  return ownershipTypes.map(ownerType => {
+    const ownerQuestions = questions.filter(q => q.ownershipType === ownerType);
+    
+    let totalScore = 0;
+    let answeredCount = 0;
+    let applicableCount = 0;
+
+    ownerQuestions.forEach(q => {
+      const answer = answersMap.get(q.questionId);
+      const scoreData = calculateQuestionScore(answer);
+      
+      if (scoreData.isApplicable) {
+        applicableCount++;
+        if (scoreData.effectiveScore !== null) {
+          totalScore += scoreData.effectiveScore;
+          answeredCount++;
+        }
+      }
+    });
+
+    const score = answeredCount > 0 ? totalScore / answeredCount : 0;
+    const coverage = applicableCount > 0 ? answeredCount / applicableCount : 0;
+
+    return {
+      ownershipType: ownerType,
+      score,
+      maturityLevel: getMaturityLevel(score),
+      totalQuestions: ownerQuestions.length,
+      answeredQuestions: answeredCount,
+      coverage,
+    };
+  });
+}
+
 // Calculate overall metrics
 export function calculateOverallMetrics(answersMap: Map<string, Answer>): OverallMetrics {
   const domainMetrics = domains.map(d => 
     calculateDomainMetrics(d.domainId, answersMap)
   );
+
+  const nistFunctionMetrics = calculateNistFunctionMetrics(answersMap, domainMetrics);
+  const ownershipMetrics = calculateOwnershipMetrics(answersMap);
 
   // Weighted average across domains (using average subcategory weight per domain)
   let totalWeightedScore = 0;
@@ -266,6 +373,8 @@ export function calculateOverallMetrics(answersMap: Map<string, Answer>): Overal
     evidenceReadiness,
     criticalGaps: totalCriticalGaps,
     domainMetrics,
+    nistFunctionMetrics,
+    ownershipMetrics,
   };
 }
 
@@ -281,6 +390,8 @@ export interface CriticalGap {
   effectiveScore: number;
   response: string;
   evidenceOk: string;
+  ownershipType?: string;
+  nistFunction?: string;
 }
 
 export function getCriticalGaps(
@@ -315,6 +426,8 @@ export function getCriticalGaps(
           effectiveScore: scoreData.effectiveScore ?? 0,
           response: answer?.response || 'Não respondido',
           evidenceOk: answer?.evidenceOk || 'N/A',
+          ownershipType: q.ownershipType,
+          nistFunction: domain.nistAiRmfFunction,
         });
       }
     }
@@ -347,8 +460,15 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
 
   questions.forEach(q => {
     q.frameworks.forEach(fw => {
-      // Extract main framework name (before " - ")
-      const mainFw = fw.split(' - ')[0].trim();
+      // Extract main framework name (before " - " or first word for short names)
+      let mainFw = fw.split(' - ')[0].trim();
+      // Group similar frameworks
+      if (mainFw.startsWith('NIST AI RMF')) mainFw = 'NIST AI RMF';
+      if (mainFw.startsWith('NIST CSF')) mainFw = 'NIST CSF';
+      if (mainFw.startsWith('ISO 27001')) mainFw = 'ISO 27001';
+      if (mainFw.startsWith('EU AI Act')) mainFw = 'EU AI Act';
+      if (mainFw.startsWith('MITRE ATLAS')) mainFw = 'MITRE ATLAS';
+      if (mainFw.startsWith('OWASP')) mainFw = 'OWASP';
       
       if (!frameworkMap.has(mainFw)) {
         frameworkMap.set(mainFw, { total: 0, answered: 0, scores: [] });
@@ -379,4 +499,71 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
       coverage: data.total > 0 ? data.answered / data.total : 0,
     }))
     .sort((a, b) => b.totalQuestions - a.totalQuestions);
+}
+
+// Generate strategic roadmap items based on gaps
+export interface RoadmapItem {
+  priority: 'immediate' | 'short' | 'medium';
+  timeframe: string;
+  domain: string;
+  action: string;
+  impact: string;
+  effort: 'low' | 'medium' | 'high';
+  ownershipType: string;
+}
+
+export function generateRoadmap(
+  answersMap: Map<string, Answer>,
+  maxItems: number = 10
+): RoadmapItem[] {
+  const gaps = getCriticalGaps(answersMap, 0.5);
+  const roadmap: RoadmapItem[] = [];
+
+  // Group gaps by domain and prioritize
+  const domainGaps = new Map<string, CriticalGap[]>();
+  gaps.forEach(gap => {
+    if (!domainGaps.has(gap.domainId)) {
+      domainGaps.set(gap.domainId, []);
+    }
+    domainGaps.get(gap.domainId)!.push(gap);
+  });
+
+  let itemCount = 0;
+  domainGaps.forEach((domainGapList, domainId) => {
+    if (itemCount >= maxItems) return;
+
+    const domain = domains.find(d => d.domainId === domainId);
+    if (!domain) return;
+
+    // Take top gaps per domain
+    const topGaps = domainGapList.slice(0, 3);
+    
+    topGaps.forEach((gap, idx) => {
+      if (itemCount >= maxItems) return;
+
+      const priority: 'immediate' | 'short' | 'medium' = 
+        gap.criticality === 'Critical' && gap.effectiveScore < 0.25 ? 'immediate' :
+        gap.criticality === 'Critical' || gap.effectiveScore < 0.25 ? 'short' : 'medium';
+
+      const timeframe = 
+        priority === 'immediate' ? '0-30 dias' :
+        priority === 'short' ? '30-60 dias' : '60-90 dias';
+
+      roadmap.push({
+        priority,
+        timeframe,
+        domain: domain.domainName,
+        action: `Implementar controle: ${gap.subcatName}`,
+        impact: gap.criticality === 'Critical' ? 'Alto impacto em risco' : 'Médio impacto em risco',
+        effort: gap.response === 'Não respondido' ? 'medium' : gap.effectiveScore < 0.25 ? 'high' : 'low',
+        ownershipType: gap.ownershipType || 'GRC',
+      });
+
+      itemCount++;
+    });
+  });
+
+  // Sort by priority
+  const priorityOrder = { immediate: 0, short: 1, medium: 2 };
+  return roadmap.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 }

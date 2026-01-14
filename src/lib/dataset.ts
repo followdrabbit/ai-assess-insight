@@ -90,14 +90,15 @@ export type NistAiRmfFunction = typeof nistAiRmfFunctions[number];
 export const ownershipTypes = ['Executive', 'GRC', 'Engineering'] as const;
 export type OwnershipType = typeof ownershipTypes[number];
 
-// Framework category IDs
+// Rationalized Framework Categories for AI Security Maturity
+// Aligned with authoritative frameworks for Brazilian financial institutions
 export const frameworkCategoryIds = [
-  'AI_GOVERNANCE',
-  'SECURITY_FOUNDATION', 
-  'ENGINEERING',
-  'PRIVACY',
-  'FINANCIAL_BR',
-  'THREAT_INTELLIGENCE'
+  'NIST_AI_RMF',           // Primary organizing axis
+  'SECURITY_BASELINE',     // ISO 27001/27002 foundation
+  'AI_RISK_MGMT',          // ISO/IEC 23894 formal AI risk
+  'SECURE_DEVELOPMENT',    // NIST SSDF + CSA guidance
+  'PRIVACY_LGPD',          // LGPD and data protection
+  'THREAT_EXPOSURE',       // OWASP LLM + API Security
 ] as const;
 export type FrameworkCategoryId = typeof frameworkCategoryIds[number];
 
@@ -160,72 +161,75 @@ export function getQuestionsByOwnership(ownershipType: OwnershipType): Question[
   return questions.filter(q => q.ownershipType === ownershipType);
 }
 
-// Normalize framework name to category
+// Normalize framework name to rationalized category
+// AUTHORITATIVE SET ONLY - removes noise from deprecated/academic frameworks
 export function getFrameworkCategory(framework: string): FrameworkCategoryId | null {
   const lowerFramework = framework.toLowerCase();
   
-  // AI Governance frameworks
+  // NIST AI RMF - Primary organizing axis (GOVERN, MAP, MEASURE, MANAGE)
   if (lowerFramework.includes('nist ai rmf') || 
-      lowerFramework.includes('iso/iec 42001') || 
-      lowerFramework.includes('iso 42001') ||
-      lowerFramework.includes('iso/iec 23894') || 
-      lowerFramework.includes('iso 23894') ||
-      lowerFramework.includes('eu ai act') ||
-      lowerFramework.includes('ieee ead')) {
-    return 'AI_GOVERNANCE';
+      lowerFramework.includes('ai rmf')) {
+    return 'NIST_AI_RMF';
   }
   
-  // Security Foundation frameworks
+  // Security Baseline - ISO 27001/27002 foundation
   if (lowerFramework.includes('iso 27001') || 
       lowerFramework.includes('iso/iec 27001') ||
       lowerFramework.includes('iso 27002') ||
+      lowerFramework.includes('iso/iec 27002') ||
       lowerFramework.includes('nist sp 800-53') || 
       lowerFramework.includes('nist 800-53') ||
-      lowerFramework.includes('nist csf') || 
-      lowerFramework.includes('cis controls') ||
-      lowerFramework.includes('iso 22301') ||
-      lowerFramework.includes('iso 31000') ||
-      lowerFramework.includes('iso 37002') ||
-      lowerFramework.includes('iso 8000')) {
-    return 'SECURITY_FOUNDATION';
+      lowerFramework.includes('nist csf')) {
+    return 'SECURITY_BASELINE';
   }
   
-  // Engineering and DevSecOps frameworks
+  // AI Risk Management - ISO/IEC 23894 + ISO 42001
+  if (lowerFramework.includes('iso/iec 23894') || 
+      lowerFramework.includes('iso 23894') ||
+      lowerFramework.includes('iso/iec 42001') || 
+      lowerFramework.includes('iso 42001') ||
+      lowerFramework.includes('iso 31000')) {
+    return 'AI_RISK_MGMT';
+  }
+  
+  // Secure Development - NIST SSDF + CSA + SLSA
   if (lowerFramework.includes('nist ssdf') || 
+      lowerFramework.includes('ssdf') ||
       lowerFramework.includes('slsa') || 
       lowerFramework.includes('sbom') ||
-      (lowerFramework.includes('owasp') && 
-       lowerFramework.includes('top 10') && 
-       !lowerFramework.includes('llm') && 
-       !lowerFramework.includes('api')) ||
-      lowerFramework.includes('owasp ml')) {
-    return 'ENGINEERING';
+      lowerFramework.includes('csa') ||
+      (lowerFramework.includes('owasp') && lowerFramework.includes('ml'))) {
+    return 'SECURE_DEVELOPMENT';
   }
   
-  // Privacy frameworks
+  // Privacy - LGPD and data protection (Brazil-focused)
   if (lowerFramework.includes('lgpd') || 
-      lowerFramework.includes('gdpr') || 
       lowerFramework.includes('privacy framework') ||
       lowerFramework.includes('lc 105') ||
       lowerFramework.includes('lei complementar 105')) {
-    return 'PRIVACY';
+    return 'PRIVACY_LGPD';
   }
   
-  // Brazilian Financial Regulation
-  if (lowerFramework.includes('res. cmn') || 
-      lowerFramework.includes('cmn 4.') ||
-      lowerFramework.includes('cmn 5.') ||
-      lowerFramework.includes('bacen') ||
-      lowerFramework.includes('resolução cmn')) {
-    return 'FINANCIAL_BR';
+  // Threat Exposure - OWASP LLM + API Security (Tech-focused)
+  if (lowerFramework.includes('owasp llm') ||
+      lowerFramework.includes('owasp api') ||
+      lowerFramework.includes('api security')) {
+    return 'THREAT_EXPOSURE';
   }
   
-  // Threat Intelligence frameworks
-  if (lowerFramework.includes('mitre atlas') || 
-      lowerFramework.includes('mitre att&ck') ||
-      lowerFramework.includes('owasp llm') ||
-      lowerFramework.includes('owasp api')) {
-    return 'THREAT_INTELLIGENCE';
+  // DE-EMPHASIZED: Return null for frameworks that should not be primary dimensions
+  // These are explicitly excluded from primary views:
+  // - MITRE ATLAS, STRIDE, CIS Benchmarks, SOC 2, EU AI Act
+  // - Any generic or overlapping framework
+  if (lowerFramework.includes('mitre') ||
+      lowerFramework.includes('stride') ||
+      lowerFramework.includes('cis controls') ||
+      lowerFramework.includes('cis benchmark') ||
+      lowerFramework.includes('soc 2') ||
+      lowerFramework.includes('eu ai act') ||
+      lowerFramework.includes('ieee ead') ||
+      lowerFramework.includes('gdpr')) {
+    return null; // Explicitly excluded from primary analysis
   }
   
   return null;

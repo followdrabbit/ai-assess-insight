@@ -1,12 +1,10 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap } from '@/lib/scoring';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 
 export default function DashboardExecutive() {
   const { answers, isLoading } = useAnswersStore();
-  const navigate = useNavigate();
 
   const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
   const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5), [answers]);
@@ -28,13 +26,7 @@ export default function DashboardExecutive() {
 
       {answers.size === 0 && (
         <div className="card-elevated p-6 text-center">
-          <p className="text-muted-foreground mb-4">Nenhuma avaliação realizada ainda.</p>
-          <button 
-            onClick={() => navigate('/assessment')}
-            className="text-primary hover:underline font-medium"
-          >
-            Iniciar avaliação
-          </button>
+          <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
         </div>
       )}
 

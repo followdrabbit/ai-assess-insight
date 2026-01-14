@@ -36,23 +36,23 @@ const nistFunctionColors: Record<string, string> = {
   MANAGE: 'hsl(var(--chart-4))',
 };
 
-// Framework category display names
+// Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
-  AI_GOVERNANCE: 'Governança de IA',
-  SECURITY_FOUNDATION: 'Fundamentos de Segurança',
-  ENGINEERING: 'Engenharia',
-  PRIVACY: 'Privacidade',
-  FINANCIAL_BR: 'Regulação Financeira BR',
-  THREAT_INTELLIGENCE: 'Inteligência de Ameaças',
+  NIST_AI_RMF: 'NIST AI RMF',
+  SECURITY_BASELINE: 'ISO 27001/27002',
+  AI_RISK_MGMT: 'ISO 23894 / Gestão de Riscos',
+  SECURE_DEVELOPMENT: 'NIST SSDF / CSA',
+  PRIVACY_LGPD: 'LGPD / Privacidade',
+  THREAT_EXPOSURE: 'OWASP LLM + API',
 };
 
 const frameworkCategoryColors: Record<FrameworkCategoryId, string> = {
-  AI_GOVERNANCE: 'hsl(var(--chart-1))',
-  SECURITY_FOUNDATION: 'hsl(var(--chart-2))',
-  ENGINEERING: 'hsl(var(--chart-3))',
-  PRIVACY: 'hsl(var(--chart-4))',
-  FINANCIAL_BR: 'hsl(var(--chart-5))',
-  THREAT_INTELLIGENCE: 'hsl(221, 83%, 53%)',
+  NIST_AI_RMF: 'hsl(var(--chart-1))',
+  SECURITY_BASELINE: 'hsl(var(--chart-2))',
+  AI_RISK_MGMT: 'hsl(var(--chart-3))',
+  SECURE_DEVELOPMENT: 'hsl(var(--chart-4))',
+  PRIVACY_LGPD: 'hsl(var(--chart-5))',
+  THREAT_EXPOSURE: 'hsl(221, 83%, 53%)',
 };
 
 interface ExecutiveDashboardProps {

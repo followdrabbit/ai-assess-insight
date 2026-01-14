@@ -30,8 +30,8 @@ const features = [
   },
   {
     icon: Lock,
-    title: '100% Offline',
-    description: 'Dados armazenados localmente no navegador. Nenhuma informação é enviada para servidores externos.',
+    title: 'Dados Seguros',
+    description: 'Seus dados são armazenados de forma segura na nuvem com acesso exclusivo à sua organização.',
   },
 ];
 

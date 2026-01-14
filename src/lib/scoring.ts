@@ -20,7 +20,21 @@ import {
   frameworkCategories,
 } from './dataset';
 
+// Combine framework tags from question-level mapping and subcategory references.
+// This ensures regulatory references (e.g., BACEN/CMN) defined at subcategory level
+// are reflected consistently in analytics without duplicating them across all questions.
+function getFrameworkTagsForQuestion(q: { questionId: string; subcatId: string; frameworks: string[] }): string[] {
+  const subcat = subcategories.find(s => s.subcatId === q.subcatId);
+  const combined = new Set<string>();
+
+  (q.frameworks || []).forEach(fw => fw && combined.add(fw));
+  (subcat?.frameworkRefs || []).forEach(fw => fw && combined.add(fw));
+
+  return Array.from(combined);
+}
+
 export interface QuestionScore {
+
   questionId: string;
   responseScore: number | null;
   evidenceMultiplier: number | null;
@@ -338,7 +352,7 @@ export function calculateFrameworkCategoryMetrics(
 ): FrameworkCategoryMetrics[] {
   return frameworkCategoryIds.map(categoryId => {
     const categoryQuestions = questions.filter(q =>
-      q.frameworks.some(fw => getFrameworkCategory(fw) === categoryId)
+      getFrameworkTagsForQuestion(q).some(fw => getFrameworkCategory(fw) === categoryId)
     );
 
     let totalScore = 0;
@@ -518,9 +532,9 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
   }>();
 
   questions.forEach(q => {
-    q.frameworks.forEach(fw => {
+    getFrameworkTagsForQuestion(q).forEach(fw => {
       // Normalize framework name for grouping
-      let mainFw = normalizeFrameworkName(fw);
+      const mainFw = normalizeFrameworkName(fw);
       
       if (!frameworkMap.has(mainFw)) {
         frameworkMap.set(mainFw, { total: 0, answered: 0, scores: [] });
@@ -584,9 +598,14 @@ function normalizeFrameworkName(fw: string): string {
   if (lowerFw.includes('gdpr')) return 'GDPR';
   
   // Brazilian Financial Regulation
-  if (lowerFw.includes('res. cmn') || lowerFw.includes('cmn 4.893') || lowerFw.includes('cmn 5.187')) return 'CMN/BACEN';
-  if (lowerFw.includes('bacen')) return 'CMN/BACEN';
-  if (lowerFw.includes('lc 105')) return 'LC 105 (Sigilo)';
+  if (
+    lowerFw.includes('res. cmn') ||
+    lowerFw.includes('resolução cmn') ||
+    lowerFw.includes('cmn 4.') ||
+    lowerFw.includes('cmn 5.') ||
+    lowerFw.includes('bacen')
+  ) return 'BACEN/CMN';
+  if (lowerFw.includes('lc 105') || lowerFw.includes('lei complementar 105')) return 'LC 105 (Sigilo)';
   
   // Threat Intelligence
   if (lowerFw.includes('mitre atlas')) return 'MITRE ATLAS';

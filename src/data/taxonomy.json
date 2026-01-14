@@ -89,6 +89,24 @@
       "strategicQuestion": "As pessoas estão preparadas para operar IA de forma segura e responsável?",
       "description": "Treinamento, conscientização, ética, supervisão humana, override e competências",
       "bankingRelevance": "Suporta requisitos de capacitação e cultura de riscos esperados pelo BACEN"
+    },
+    {
+      "domainId": "LLM",
+      "domainName": "Segurança de LLMs e IA Generativa",
+      "order": 11,
+      "nistAiRmfFunction": "MANAGE",
+      "strategicQuestion": "Os sistemas de LLM e IA generativa possuem controles adequados contra as principais ameaças?",
+      "description": "Proteção contra prompt injection, vazamento de dados, alucinações, supply chain e abusos específicos de LLMs",
+      "bankingRelevance": "Crítico para uso seguro de IA generativa em atendimento ao cliente, análise de documentos e automação"
+    },
+    {
+      "domainId": "API",
+      "domainName": "Segurança de APIs de IA",
+      "order": 12,
+      "nistAiRmfFunction": "MANAGE",
+      "strategicQuestion": "As APIs de IA estão protegidas contra as principais vulnerabilidades?",
+      "description": "Controles de autorização, autenticação, rate limiting, validação de entrada e proteção contra abusos de API",
+      "bankingRelevance": "Essencial para proteção de APIs de modelos expostas a clientes e parceiros"
     }
   ],
   "subcategories": [
@@ -455,6 +473,123 @@
       "ownershipType": "Executive",
       "riskSummary": "IA sem supervisão pode tomar decisões prejudiciais sem correção",
       "frameworkRefs": ["EU AI Act Art. 14", "NIST AI RMF GOVERN 3.3", "LGPD Art. 20"]
+    },
+    {
+      "subcatId": "LLM-01",
+      "domainId": "LLM",
+      "subcatName": "Prompt Injection e Manipulação",
+      "definition": "Proteção contra injeção de prompts maliciosos diretos e indiretos",
+      "objective": "Prevenir manipulação do comportamento do LLM via prompts",
+      "securityOutcome": "LLM resiste a tentativas de bypass de guardrails e instruções maliciosas",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "ownershipType": "Engineering",
+      "riskSummary": "Prompt injection pode expor dados sensíveis ou causar comportamento malicioso",
+      "frameworkRefs": ["OWASP LLM Top 10 LLM01", "MITRE ATLAS AML.T0051"]
+    },
+    {
+      "subcatId": "LLM-02",
+      "domainId": "LLM",
+      "subcatName": "Vazamento de Informações Sensíveis",
+      "definition": "Controles para prevenir que o LLM exponha dados confidenciais",
+      "objective": "Proteger informações sensíveis de serem reveladas pelo modelo",
+      "securityOutcome": "Dados confidenciais não vazam através de outputs do LLM",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "ownershipType": "Engineering",
+      "riskSummary": "Vazamento pode expor PII, segredos comerciais e dados regulados",
+      "frameworkRefs": ["OWASP LLM Top 10 LLM02", "LGPD", "ISO 27001 A.8"]
+    },
+    {
+      "subcatId": "LLM-03",
+      "domainId": "LLM",
+      "subcatName": "Supply Chain e Modelos de Terceiros",
+      "definition": "Gestão de riscos de modelos pré-treinados, plugins e componentes externos",
+      "objective": "Garantir integridade e segurança de componentes de LLM externos",
+      "securityOutcome": "Componentes de terceiros são validados e monitorados",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Engineering",
+      "riskSummary": "Modelos maliciosos podem conter backdoors ou comportamento oculto",
+      "frameworkRefs": ["OWASP LLM Top 10 LLM03", "SLSA", "NIST SSDF"]
+    },
+    {
+      "subcatId": "LLM-04",
+      "domainId": "LLM",
+      "subcatName": "Output Handling e Alucinações",
+      "definition": "Validação de outputs, detecção de alucinações e misinformation",
+      "objective": "Garantir que outputs do LLM são seguros e confiáveis",
+      "securityOutcome": "Outputs maliciosos ou incorretos são detectados e tratados",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Engineering",
+      "riskSummary": "Outputs não validados podem causar XSS, injeção ou desinformação",
+      "frameworkRefs": ["OWASP LLM Top 10 LLM05", "OWASP LLM Top 10 LLM09"]
+    },
+    {
+      "subcatId": "LLM-05",
+      "domainId": "LLM",
+      "subcatName": "Agência e Autonomia",
+      "definition": "Controles sobre ações que o LLM pode executar autonomamente",
+      "objective": "Limitar capacidade do LLM de executar ações sem supervisão",
+      "securityOutcome": "LLM não executa ações destrutivas ou não autorizadas",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Engineering",
+      "riskSummary": "Agência excessiva permite que LLM cause danos sem intervenção humana",
+      "frameworkRefs": ["OWASP LLM Top 10 LLM06", "EU AI Act Art. 14"]
+    },
+    {
+      "subcatId": "API-01",
+      "domainId": "API",
+      "subcatName": "Autorização de Objetos e Funções",
+      "definition": "Controles de autorização a nível de objeto e função nas APIs",
+      "objective": "Prevenir acesso não autorizado a dados e funcionalidades via API",
+      "securityOutcome": "Usuários só acessam dados e funções autorizados",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "ownershipType": "Engineering",
+      "riskSummary": "Falhas de autorização permitem acesso a dados de outros usuários",
+      "frameworkRefs": ["OWASP API Top 10 API1", "OWASP API Top 10 API3", "OWASP API Top 10 API5"]
+    },
+    {
+      "subcatId": "API-02",
+      "domainId": "API",
+      "subcatName": "Autenticação e Gestão de Sessões",
+      "definition": "Mecanismos de autenticação e proteção de sessões de API",
+      "objective": "Garantir autenticação robusta e sessões seguras",
+      "securityOutcome": "Apenas usuários autenticados acessam APIs protegidas",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "ownershipType": "Engineering",
+      "riskSummary": "Autenticação fraca permite impersonação e acesso não autorizado",
+      "frameworkRefs": ["OWASP API Top 10 API2", "NIST SP 800-63B"]
+    },
+    {
+      "subcatId": "API-03",
+      "domainId": "API",
+      "subcatName": "Consumo de Recursos e Rate Limiting",
+      "definition": "Limites de uso, throttling e proteção contra abuso de recursos",
+      "objective": "Prevenir DoS e consumo excessivo de recursos via API",
+      "securityOutcome": "APIs resistem a ataques de negação de serviço e abuso",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Engineering",
+      "riskSummary": "Sem limites, APIs podem ser sobrecarregadas ou custos explodirem",
+      "frameworkRefs": ["OWASP API Top 10 API4", "OWASP LLM Top 10 LLM10"]
+    },
+    {
+      "subcatId": "API-04",
+      "domainId": "API",
+      "subcatName": "Inventário e Configuração de APIs",
+      "definition": "Gestão de inventário, versionamento e configuração segura de APIs",
+      "objective": "Conhecer e manter APIs seguras e atualizadas",
+      "securityOutcome": "Todas as APIs são conhecidas, documentadas e configuradas corretamente",
+      "criticality": "High",
+      "weight": 1.2,
+      "ownershipType": "Engineering",
+      "riskSummary": "APIs shadow ou mal configuradas são vetores de ataque",
+      "frameworkRefs": ["OWASP API Top 10 API8", "OWASP API Top 10 API9"]
     }
   ],
   "frameworkCategories": {

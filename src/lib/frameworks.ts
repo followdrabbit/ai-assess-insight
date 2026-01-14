@@ -70,6 +70,9 @@ const FRAMEWORK_PATTERNS: { pattern: RegExp; frameworkId: string }[] = [
   { pattern: /ISO\s*\/?\s*IEC?\s*27001/i, frameworkId: 'ISO_27001_27002' },
   { pattern: /ISO\s*27001/i, frameworkId: 'ISO_27001_27002' },
   { pattern: /ISO\s*27002/i, frameworkId: 'ISO_27001_27002' },
+  { pattern: /ISO\s*31000/i, frameworkId: 'ISO_23894' }, // Risk management maps to ISO 23894
+  { pattern: /ISO\s*22301/i, frameworkId: 'ISO_27001_27002' }, // Business continuity
+  { pattern: /ISO\s*8000/i, frameworkId: 'NIST_AI_RMF' }, // Data quality maps to AI RMF
   
   // Privacy/Data Protection
   { pattern: /LGPD/i, frameworkId: 'LGPD' },
@@ -79,20 +82,31 @@ const FRAMEWORK_PATTERNS: { pattern: RegExp; frameworkId: string }[] = [
   // Development security
   { pattern: /NIST\s*SSDF/i, frameworkId: 'NIST_SSDF' },
   { pattern: /SLSA/i, frameworkId: 'NIST_SSDF' }, // Supply chain maps to SSDF
+  { pattern: /SBOM/i, frameworkId: 'NIST_SSDF' }, // Software Bill of Materials
   
   // Cloud/Infrastructure security
-  { pattern: /CSA/i, frameworkId: 'CSA_AI' },
+  { pattern: /CSA\s*(AI)?/i, frameworkId: 'CSA_AI' },
   { pattern: /MITRE\s*ATLAS/i, frameworkId: 'CSA_AI' }, // MITRE ATLAS maps to CSA
   { pattern: /NIST\s*(SP\s*)?800-53/i, frameworkId: 'CSA_AI' }, // NIST 800-53 maps to CSA
+  { pattern: /NIST\s*(SP\s*)?800-/i, frameworkId: 'CSA_AI' }, // Other NIST SPs
   { pattern: /NIST\s*CSF/i, frameworkId: 'CSA_AI' }, // NIST CSF maps to CSA
+  { pattern: /CIS/i, frameworkId: 'CSA_AI' }, // CIS Benchmarks
   
-  // OWASP
+  // OWASP - more specific patterns first
+  { pattern: /OWASP\s*LLM\s*Top\s*10/i, frameworkId: 'OWASP_LLM' },
   { pattern: /OWASP\s*(Top\s*10\s*(for\s*)?)?LLM/i, frameworkId: 'OWASP_LLM' },
-  { pattern: /OWASP\s*(Top\s*10\s*)?(for\s*)?API/i, frameworkId: 'OWASP_API' },
-  { pattern: /OWASP\s*API/i, frameworkId: 'OWASP_API' },
+  { pattern: /LLM0[1-9]/i, frameworkId: 'OWASP_LLM' }, // LLM01, LLM02, etc.
+  { pattern: /LLM10/i, frameworkId: 'OWASP_LLM' },
+  { pattern: /OWASP\s*API\s*(Security\s*)?(Top\s*10)?/i, frameworkId: 'OWASP_API' },
+  { pattern: /API[1-9]:/i, frameworkId: 'OWASP_API' }, // API1:2023, API2:2023, etc.
+  { pattern: /API10:/i, frameworkId: 'OWASP_API' },
+  { pattern: /OWASP\s*ML/i, frameworkId: 'OWASP_LLM' }, // OWASP ML Top 10
   
   // EU AI Act - maps to NIST AI RMF (governance)
   { pattern: /EU\s*AI\s*Act/i, frameworkId: 'NIST_AI_RMF' },
+  
+  // IEEE EAD (Ethically Aligned Design) - maps to AI RMF
+  { pattern: /IEEE\s*EAD/i, frameworkId: 'NIST_AI_RMF' },
 ];
 
 /**

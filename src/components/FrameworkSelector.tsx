@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { frameworks, Framework } from '@/lib/frameworks';
 import { useAnswersStore } from '@/lib/stores';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -24,25 +25,56 @@ const categoryColors: Record<string, string> = {
 };
 
 export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps) {
-  const { selectedFrameworks } = useAnswersStore();
+  const { enabledFrameworks, selectedFrameworks, setSelectedFrameworks } = useAnswersStore();
+  
+  // Local state for user selection
+  const [localSelected, setLocalSelected] = useState<string[]>(
+    // Initialize with previously selected frameworks, filtered to only enabled ones
+    selectedFrameworks.filter(id => enabledFrameworks.includes(id))
+  );
 
-  // Show the frameworks that are enabled in Settings
-  const enabledFrameworks = useMemo(() => {
-    return frameworks.filter(f => selectedFrameworks.includes(f.frameworkId));
-  }, [selectedFrameworks]);
+  // Only show frameworks that are ENABLED by admin in Settings
+  const availableFrameworks = useMemo(() => {
+    return frameworks.filter(f => enabledFrameworks.includes(f.frameworkId));
+  }, [enabledFrameworks]);
 
-  // Group enabled frameworks by category
-  const coreFrameworks = enabledFrameworks.filter(f => f.category === 'core');
-  const highValueFrameworks = enabledFrameworks.filter(f => f.category === 'high-value');
-  const techFrameworks = enabledFrameworks.filter(f => f.category === 'tech-focused');
+  // Group available frameworks by category
+  const coreFrameworks = availableFrameworks.filter(f => f.category === 'core');
+  const highValueFrameworks = availableFrameworks.filter(f => f.category === 'high-value');
+  const techFrameworks = availableFrameworks.filter(f => f.category === 'tech-focused');
 
-  // If no frameworks are enabled, show message to go to Settings
-  if (enabledFrameworks.length === 0) {
+  const toggleFramework = (frameworkId: string) => {
+    setLocalSelected(prev => 
+      prev.includes(frameworkId)
+        ? prev.filter(id => id !== frameworkId)
+        : [...prev, frameworkId]
+    );
+  };
+
+  const handleStart = async () => {
+    await setSelectedFrameworks(localSelected);
+    onStartAssessment();
+  };
+
+  const selectAll = () => {
+    setLocalSelected(availableFrameworks.map(f => f.frameworkId));
+  };
+
+  const selectCore = () => {
+    setLocalSelected(availableFrameworks.filter(f => f.category === 'core').map(f => f.frameworkId));
+  };
+
+  const clearAll = () => {
+    setLocalSelected([]);
+  };
+
+  // If no frameworks are enabled by admin, show message to go to Settings
+  if (availableFrameworks.length === 0) {
     return (
       <div className="space-y-6 text-center py-12">
-        <h2 className="text-2xl font-bold">Nenhum Framework Habilitado</h2>
+        <h2 className="text-2xl font-bold">Nenhum Framework Disponível</h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Não há frameworks habilitados para avaliação. Acesse as configurações para habilitar os frameworks desejados.
+          Não há frameworks habilitados para avaliação. O administrador precisa habilitar frameworks nas configurações.
         </p>
         <Button asChild>
           <Link to="/settings">Ir para Configurações</Link>
@@ -54,12 +86,24 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Frameworks Habilitados</h2>
+        <h2 className="text-2xl font-bold">Selecione os Frameworks</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Os seguintes frameworks estão habilitados para esta avaliação. 
-          Para alterar os frameworks disponíveis, acesse as{' '}
-          <Link to="/settings" className="text-primary hover:underline">Configurações</Link>.
+          Escolha quais frameworks você deseja avaliar nesta sessão. 
+          Apenas os frameworks habilitados pelo administrador estão disponíveis.
         </p>
+      </div>
+
+      {/* Quick actions */}
+      <div className="flex justify-center gap-2">
+        <Button variant="outline" size="sm" onClick={selectCore}>
+          Apenas Fundamentais
+        </Button>
+        <Button variant="outline" size="sm" onClick={selectAll}>
+          Selecionar Todos
+        </Button>
+        <Button variant="ghost" size="sm" onClick={clearAll}>
+          Limpar
+        </Button>
       </div>
 
       {/* Core Frameworks */}
@@ -68,9 +112,17 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
             Frameworks Fundamentais
           </h3>
+          <p className="text-xs text-muted-foreground">
+            Recomendados para qualquer programa de segurança de IA
+          </p>
           <div className="grid md:grid-cols-2 gap-3">
             {coreFrameworks.map(fw => (
-              <FrameworkCard key={fw.frameworkId} framework={fw} />
+              <FrameworkCard
+                key={fw.frameworkId}
+                framework={fw}
+                selected={localSelected.includes(fw.frameworkId)}
+                onToggle={() => toggleFramework(fw.frameworkId)}
+              />
             ))}
           </div>
         </div>
@@ -82,9 +134,17 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
             Frameworks de Alto Valor
           </h3>
+          <p className="text-xs text-muted-foreground">
+            Para organizações com programas de IA mais maduros
+          </p>
           <div className="grid md:grid-cols-2 gap-3">
             {highValueFrameworks.map(fw => (
-              <FrameworkCard key={fw.frameworkId} framework={fw} />
+              <FrameworkCard
+                key={fw.frameworkId}
+                framework={fw}
+                selected={localSelected.includes(fw.frameworkId)}
+                onToggle={() => toggleFramework(fw.frameworkId)}
+              />
             ))}
           </div>
         </div>
@@ -96,9 +156,17 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
             Frameworks Técnicos
           </h3>
+          <p className="text-xs text-muted-foreground">
+            Focados em riscos específicos de implementação e APIs
+          </p>
           <div className="grid md:grid-cols-2 gap-3">
             {techFrameworks.map(fw => (
-              <FrameworkCard key={fw.frameworkId} framework={fw} />
+              <FrameworkCard
+                key={fw.frameworkId}
+                framework={fw}
+                selected={localSelected.includes(fw.frameworkId)}
+                onToggle={() => toggleFramework(fw.frameworkId)}
+              />
             ))}
           </div>
         </div>
@@ -106,11 +174,22 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
 
       {/* Start button */}
       <div className="flex flex-col items-center gap-4 pt-4">
-        <Button size="lg" onClick={onStartAssessment}>
-          Iniciar Avaliação ({enabledFrameworks.length} framework{enabledFrameworks.length !== 1 ? 's' : ''})
+        <Button 
+          size="lg" 
+          onClick={handleStart}
+          disabled={localSelected.length === 0}
+        >
+          Iniciar Avaliação ({localSelected.length} framework{localSelected.length !== 1 ? 's' : ''})
         </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/settings">Alterar Frameworks</Link>
+        
+        {localSelected.length === 0 && (
+          <p className="text-sm text-destructive">
+            Selecione pelo menos um framework para continuar
+          </p>
+        )}
+
+        <Button variant="link" size="sm" asChild className="text-muted-foreground">
+          <Link to="/settings">Gerenciar frameworks disponíveis</Link>
         </Button>
       </div>
     </div>
@@ -119,18 +198,29 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
 
 interface FrameworkCardProps {
   framework: Framework;
+  selected: boolean;
+  onToggle: () => void;
 }
 
-function FrameworkCard({ framework }: FrameworkCardProps) {
+function FrameworkCard({ framework, selected, onToggle }: FrameworkCardProps) {
   return (
-    <Card className="border-primary/30 bg-primary/5">
+    <Card 
+      className={cn(
+        "cursor-pointer transition-all hover:border-primary/50",
+        selected && "border-primary bg-primary/5"
+      )}
+      onClick={onToggle}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <CardTitle className="text-base">{framework.shortName}</CardTitle>
-            <CardDescription className="text-xs mt-0.5">
-              {framework.frameworkName}
-            </CardDescription>
+          <div className="flex items-center gap-3">
+            <Checkbox checked={selected} />
+            <div>
+              <CardTitle className="text-base">{framework.shortName}</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                {framework.frameworkName}
+              </CardDescription>
+            </div>
           </div>
           <Badge 
             variant="secondary" 

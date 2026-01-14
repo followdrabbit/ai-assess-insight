@@ -39,8 +39,8 @@ const audienceLabels: Record<string, string> = {
 };
 
 export default function Settings() {
-  const { selectedFrameworks, setSelectedFrameworks, answers, clearAnswers, generateDemoData } = useAnswersStore();
-  const [pendingFrameworks, setPendingFrameworks] = useState<string[]>(selectedFrameworks);
+  const { enabledFrameworks, setEnabledFrameworks, answers, clearAnswers, generateDemoData } = useAnswersStore();
+  const [pendingFrameworks, setPendingFrameworks] = useState<string[]>(enabledFrameworks);
   const [hasChanges, setHasChanges] = useState(false);
   const [assessmentName, setAssessmentName] = useState('Avaliação de Maturidade em Segurança de IA');
   const [organizationName, setOrganizationName] = useState('');
@@ -136,13 +136,13 @@ export default function Settings() {
       return;
     }
     
-    await setSelectedFrameworks(pendingFrameworks);
+    await setEnabledFrameworks(pendingFrameworks);
     setHasChanges(false);
     toast.success('Configurações salvas com sucesso');
   };
 
   const cancelChanges = () => {
-    setPendingFrameworks(selectedFrameworks);
+    setPendingFrameworks(enabledFrameworks);
     setHasChanges(false);
   };
 
@@ -391,7 +391,7 @@ export default function Settings() {
                   <div className="text-sm text-muted-foreground">Respostas salvas</div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{selectedFrameworks.length}</div>
+                  <div className="text-2xl font-bold">{enabledFrameworks.length}</div>
                   <div className="text-sm text-muted-foreground">Frameworks ativos</div>
                 </div>
                 <div className="p-4 border rounded-lg">
@@ -538,7 +538,7 @@ export default function Settings() {
                         <AlertDialogAction 
                           onClick={async () => {
                             await clearAnswers();
-                            await setSelectedFrameworks(
+                            await setEnabledFrameworks(
                               frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
                             );
                             setPendingFrameworks(

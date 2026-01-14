@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Answer, saveAnswer, getAllAnswers, clearAllAnswers, bulkSaveAnswers, initializeDatabase, getSelectedFrameworks, setSelectedFrameworks as dbSetSelectedFrameworks } from './database';
+import { Answer, saveAnswer, getAllAnswers, clearAllAnswers, bulkSaveAnswers, initializeDatabase, getSelectedFrameworks, setSelectedFrameworks as dbSetSelectedFrameworks, getEnabledFrameworks, setEnabledFrameworks as dbSetEnabledFrameworks } from './database';
 import { questions, getQuestionById } from './dataset';
 import { getDefaultEnabledFrameworks } from './frameworks';
 
@@ -8,6 +8,9 @@ interface AnswersState {
   answers: Map<string, Answer>;
   isLoading: boolean;
   lastUpdated: string | null;
+  // Frameworks ENABLED by admin in Settings (available for selection)
+  enabledFrameworks: string[];
+  // Frameworks SELECTED by user for the current assessment
   selectedFrameworks: string[];
   
   // Actions
@@ -17,15 +20,21 @@ interface AnswersState {
   importAnswers: (newAnswers: Answer[]) => Promise<void>;
   generateDemoData: () => Promise<void>;
   getAnswer: (questionId: string) => Answer | undefined;
+  // Admin action: enable/disable frameworks in Settings
+  setEnabledFrameworks: (frameworkIds: string[]) => Promise<void>;
+  // User action: select frameworks for assessment
   setSelectedFrameworks: (frameworkIds: string[]) => Promise<void>;
   getAnswersByFramework: (frameworkId: string) => Answer[];
 }
+
+const defaultEnabledFrameworks = getDefaultEnabledFrameworks().map(f => f.frameworkId);
 
 export const useAnswersStore = create<AnswersState>()((set, get) => ({
   answers: new Map(),
   isLoading: true,
   lastUpdated: null,
-  selectedFrameworks: getDefaultEnabledFrameworks().map(f => f.frameworkId),
+  enabledFrameworks: defaultEnabledFrameworks,
+  selectedFrameworks: [],
 
   loadAnswers: async () => {
     set({ isLoading: true });
@@ -35,13 +44,15 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       const answersMap = new Map<string, Answer>();
       storedAnswers.forEach(a => answersMap.set(a.questionId, a));
       
+      const enabledFw = await getEnabledFrameworks();
       const selectedFw = await getSelectedFrameworks();
       
       set({ 
         answers: answersMap, 
         isLoading: false,
         lastUpdated: new Date().toISOString(),
-        selectedFrameworks: selectedFw.length > 0 ? selectedFw : getDefaultEnabledFrameworks().map(f => f.frameworkId)
+        enabledFrameworks: enabledFw.length > 0 ? enabledFw : defaultEnabledFrameworks,
+        selectedFrameworks: selectedFw
       });
     } catch (error) {
       console.error('Error loading answers:', error);
@@ -144,6 +155,15 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
 
   getAnswer: (questionId: string) => {
     return get().answers.get(questionId);
+  },
+
+  setEnabledFrameworks: async (frameworkIds: string[]) => {
+    set({ enabledFrameworks: frameworkIds });
+    try {
+      await dbSetEnabledFrameworks(frameworkIds);
+    } catch (error) {
+      console.error('Error saving enabled frameworks:', error);
+    }
   },
 
   setSelectedFrameworks: async (frameworkIds: string[]) => {

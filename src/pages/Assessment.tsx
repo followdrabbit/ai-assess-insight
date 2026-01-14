@@ -4,6 +4,7 @@ import {
   fetchDomains, 
   fetchSubcategories, 
   fetchQuestions,
+  clearDataCache,
   Domain,
   Subcategory,
   Question,
@@ -41,11 +42,19 @@ export default function Assessment() {
     async function loadData() {
       setDataLoading(true);
       try {
+        // Clear cache to ensure fresh data
+        clearDataCache();
+        
         const [domainsData, subcatsData, questionsData] = await Promise.all([
-          fetchDomains(),
-          fetchSubcategories(),
-          fetchQuestions()
+          fetchDomains(true),
+          fetchSubcategories(true),
+          fetchQuestions(true)
         ]);
+        console.log('Assessment loaded data:', {
+          domains: domainsData.length,
+          subcategories: subcatsData.length,
+          questions: questionsData.length
+        });
         setDomains(domainsData);
         setSubcategories(subcatsData);
         setQuestions(questionsData);

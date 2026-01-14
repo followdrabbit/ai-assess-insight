@@ -85,13 +85,14 @@ let lastFetch: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Fetch domains from database
-export async function fetchDomains(): Promise<Domain[]> {
+export async function fetchDomains(forceRefresh = false): Promise<Domain[]> {
   const now = Date.now();
   
-  if (domainsCache && (now - lastFetch) < CACHE_DURATION) {
+  if (!forceRefresh && domainsCache && (now - lastFetch) < CACHE_DURATION) {
     return domainsCache;
   }
 
+  console.log('Fetching domains from database...');
   const { data, error } = await supabase
     .from('domains')
     .select('*')
@@ -102,6 +103,7 @@ export async function fetchDomains(): Promise<Domain[]> {
     return domainsCache || [];
   }
 
+  console.log('Domains fetched:', data?.length || 0);
   domainsCache = (data || []).map(row => ({
     domainId: row.domain_id,
     domainName: row.domain_name,
@@ -117,13 +119,14 @@ export async function fetchDomains(): Promise<Domain[]> {
 }
 
 // Fetch subcategories from database
-export async function fetchSubcategories(): Promise<Subcategory[]> {
+export async function fetchSubcategories(forceRefresh = false): Promise<Subcategory[]> {
   const now = Date.now();
   
-  if (subcategoriesCache && (now - lastFetch) < CACHE_DURATION) {
+  if (!forceRefresh && subcategoriesCache && (now - lastFetch) < CACHE_DURATION) {
     return subcategoriesCache;
   }
 
+  console.log('Fetching subcategories from database...');
   const { data, error } = await supabase
     .from('subcategories')
     .select('*')
@@ -134,6 +137,7 @@ export async function fetchSubcategories(): Promise<Subcategory[]> {
     return subcategoriesCache || [];
   }
 
+  console.log('Subcategories fetched:', data?.length || 0);
   subcategoriesCache = (data || []).map(row => ({
     subcatId: row.subcat_id,
     domainId: row.domain_id,
@@ -152,13 +156,14 @@ export async function fetchSubcategories(): Promise<Subcategory[]> {
 }
 
 // Fetch questions from database
-export async function fetchQuestions(): Promise<Question[]> {
+export async function fetchQuestions(forceRefresh = false): Promise<Question[]> {
   const now = Date.now();
   
-  if (questionsCache && (now - lastFetch) < CACHE_DURATION) {
+  if (!forceRefresh && questionsCache && (now - lastFetch) < CACHE_DURATION) {
     return questionsCache;
   }
 
+  console.log('Fetching questions from database...');
   const { data, error } = await supabase
     .from('default_questions')
     .select('*')
@@ -169,6 +174,7 @@ export async function fetchQuestions(): Promise<Question[]> {
     return questionsCache || [];
   }
 
+  console.log('Questions fetched:', data?.length || 0);
   questionsCache = (data || []).map(row => ({
     questionId: row.question_id,
     subcatId: row.subcat_id,

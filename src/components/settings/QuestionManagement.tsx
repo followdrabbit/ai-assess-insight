@@ -103,11 +103,13 @@ export function QuestionManagement() {
   const allQuestions = useMemo(() => {
     const defaultWithStatus = defaultQuestions.map(q => ({
       ...q,
+      criticality: 'Medium' as const, // Default questions don't have criticality, use default
       isCustom: false as const,
       isDisabled: disabledQuestionIds.includes(q.questionId)
     }));
     const customWithStatus = customQuestions.map(q => ({
       ...q,
+      criticality: q.criticality || ('Medium' as const),
       isCustom: true as const,
       isDisabled: q.isDisabled || false
     }));
@@ -127,13 +129,16 @@ export function QuestionManagement() {
 
   const openNewDialog = () => {
     setEditingQuestion(null);
+    setIsEditingDefault(false);
     setFormData(emptyFormData);
     setFrameworksText('');
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (question: CustomQuestion) => {
-    setEditingQuestion(question);
+  const openEditDialog = (question: typeof allQuestions[0]) => {
+    // For both custom and default questions, we can edit
+    // For default questions, this will create a custom override
+    setEditingQuestion(question.isCustom ? (question as CustomQuestion) : null);
     setFormData({
       questionId: question.questionId,
       subcatId: question.subcatId,
@@ -144,11 +149,16 @@ export function QuestionManagement() {
       riskSummary: question.riskSummary,
       frameworks: question.frameworks,
       ownershipType: question.ownershipType,
-      criticality: question.criticality
+      criticality: question.criticality || 'Medium'
     });
     setFrameworksText(question.frameworks.join('\n'));
     setIsDialogOpen(true);
+    
+    // Store if we're editing a default question (to create override)
+    setIsEditingDefault(!question.isCustom);
   };
+
+  const [isEditingDefault, setIsEditingDefault] = useState(false);
 
   const handleSave = async () => {
     // Validation
@@ -165,10 +175,10 @@ export function QuestionManagement() {
       return;
     }
 
-    // Check for duplicate ID
-    const existingIds = allQuestions.map(q => q.questionId);
-    if (!editingQuestion && existingIds.includes(formData.questionId)) {
-      toast.error('Já existe uma pergunta com este ID');
+    // Check for duplicate ID only when creating new (not editing)
+    const existingCustomIds = customQuestions.map(q => q.questionId);
+    if (!editingQuestion && !isEditingDefault && existingCustomIds.includes(formData.questionId)) {
+      toast.error('Já existe uma pergunta personalizada com este ID');
       return;
     }
 
@@ -176,12 +186,25 @@ export function QuestionManagement() {
 
     try {
       if (editingQuestion) {
+        // Editing existing custom question
         await updateCustomQuestion(editingQuestion.questionId, {
           ...formData,
           frameworks
         });
         toast.success('Pergunta atualizada com sucesso');
+      } else if (isEditingDefault) {
+        // Creating custom override for default question
+        // First disable the default question
+        await disableDefaultQuestion(formData.questionId);
+        // Then create a custom version with same ID
+        await createCustomQuestion({
+          ...formData,
+          frameworks,
+          isDisabled: false
+        });
+        toast.success('Pergunta padrão substituída por versão personalizada');
       } else {
+        // Creating new custom question
         await createCustomQuestion({
           ...formData,
           frameworks
@@ -190,6 +213,7 @@ export function QuestionManagement() {
       }
       await loadData();
       setIsDialogOpen(false);
+      setIsEditingDefault(false);
     } catch (error) {
       toast.error('Erro ao salvar pergunta');
       console.error(error);
@@ -361,12 +385,14 @@ export function QuestionManagement() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingQuestion ? 'Editar Pergunta' : 'Nova Pergunta'}
+              {editingQuestion ? 'Editar Pergunta' : isEditingDefault ? 'Editar Pergunta Padrão' : 'Nova Pergunta'}
             </DialogTitle>
             <DialogDescription>
               {editingQuestion 
                 ? 'Atualize as informações da pergunta.'
-                : 'Crie uma nova pergunta personalizada para a avaliação.'
+                : isEditingDefault
+                  ? 'Crie uma versão personalizada da pergunta padrão. A original será desabilitada e substituída.'
+                  : 'Crie uma nova pergunta personalizada para a avaliação.'
               }
             </DialogDescription>
           </DialogHeader>
@@ -380,8 +406,13 @@ export function QuestionManagement() {
                   value={formData.questionId}
                   onChange={(e) => setFormData(prev => ({ ...prev, questionId: e.target.value.toUpperCase().replace(/\s/g, '-') }))}
                   placeholder="CUSTOM-01-Q01"
-                  disabled={!!editingQuestion}
+                  disabled={!!editingQuestion || isEditingDefault}
                 />
+                {isEditingDefault && (
+                  <p className="text-xs text-muted-foreground">
+                    ID mantido para substituir a pergunta padrão
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Domínio *</Label>
@@ -536,10 +567,10 @@ interface QuestionsListProps {
     isCustom: boolean;
     isDisabled: boolean;
   }>;
-  onEdit: (question: CustomQuestion) => void;
+  onEdit: (question: QuestionsListProps['questions'][0]) => void;
   onDelete: (questionId: string) => void;
   onToggleDisable: (questionId: string, isDisabled: boolean, isCustom: boolean) => void;
-  onDuplicate: (question: any) => void;
+  onDuplicate: (question: QuestionsListProps['questions'][0]) => void;
 }
 
 function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplicate }: QuestionsListProps) {
@@ -609,46 +640,35 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                   >
                     {q.isDisabled ? 'Habilitar' : 'Desabilitar'}
                   </Button>
-                  {q.isCustom ? (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => onEdit(q as CustomQuestion)}
-                      >
-                        Editar
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-destructive">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onEdit(q)}
+                  >
+                    Editar
+                  </Button>
+                  {q.isCustom && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-destructive">
+                          Excluir
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir pergunta?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. A pergunta será permanentemente removida.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDelete(q.questionId)}>
                             Excluir
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir pergunta?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. A pergunta será permanentemente removida.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDelete(q.questionId)}>
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
-                  ) : (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => onDuplicate(q)}
-                      title="Perguntas padrão não podem ser editadas diretamente. Use 'Duplicar' para criar uma cópia editável."
-                    >
-                      Editar como Cópia
-                    </Button>
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>

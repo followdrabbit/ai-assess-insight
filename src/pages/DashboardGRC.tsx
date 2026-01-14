@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage } from '@/lib/scoring';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,7 @@ type SortOrder = 'asc' | 'desc';
 
 export default function DashboardGRC() {
   const { answers, isLoading } = useAnswersStore();
+  const navigate = useNavigate();
 
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -202,16 +204,39 @@ export default function DashboardGRC() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard GRC</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Governança, Riscos e Compliance - Foco em cobertura e evidências
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard GRC</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Governança, Riscos e Compliance - Foco em cobertura e evidências
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/reports')}
+          >
+            Exportar Relatório
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => navigate('/assessment')}
+          >
+            Continuar Avaliação
+          </Button>
+        </div>
       </div>
 
       {answers.size === 0 && (
         <div className="card-elevated p-6 text-center">
-          <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
+          <p className="text-muted-foreground mb-4">Nenhuma avaliação realizada ainda.</p>
+          <button 
+            onClick={() => navigate('/assessment')}
+            className="text-primary hover:underline font-medium"
+          >
+            Iniciar avaliação
+          </button>
         </div>
       )}
 
@@ -631,14 +656,11 @@ export default function DashboardGRC() {
                     key={gap.questionId}
                     className="p-4 border border-destructive/30 bg-destructive/5 rounded-lg"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">
                             #{index + 1}
-                          </span>
-                          <span className="text-xs font-mono text-muted-foreground">
-                            {gap.questionId}
                           </span>
                           <span className={cn("criticality-badge", `criticality-${gap.criticality.toLowerCase()}`)}>
                             {gap.criticality}
@@ -651,6 +673,13 @@ export default function DashboardGRC() {
                           <span>{gap.ownershipType}</span>
                         </div>
                       </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/assessment?q=${gap.questionId}`)}
+                      >
+                        Revisar
+                      </Button>
                     </div>
                   </div>
                 ))}

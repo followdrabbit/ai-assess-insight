@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { domains, maturityLevels } from '@/lib/dataset';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage } from '@/lib/scoring';
@@ -55,6 +56,7 @@ const criticalityOrder: Record<string, number> = {
 
 export default function DashboardSpecialist() {
   const { answers, isLoading } = useAnswersStore();
+  const navigate = useNavigate();
 
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -234,16 +236,39 @@ export default function DashboardSpecialist() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard Especialista</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Arquiteto / Engenheiro - Detalhes técnicos e implementação
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard Especialista</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Arquiteto / Engenheiro - Detalhes técnicos e implementação
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/reports')}
+          >
+            Exportar Dados
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => navigate('/assessment')}
+          >
+            Continuar Avaliação
+          </Button>
+        </div>
       </div>
 
       {answers.size === 0 && (
         <div className="card-elevated p-6 text-center">
-          <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
+          <p className="text-muted-foreground mb-4">Nenhuma avaliação realizada ainda.</p>
+          <button 
+            onClick={() => navigate('/assessment')}
+            className="text-primary hover:underline font-medium"
+          >
+            Iniciar avaliação
+          </button>
         </div>
       )}
 
@@ -423,6 +448,7 @@ export default function DashboardSpecialist() {
                       <th className="w-[100px]">Status</th>
                       <th className="w-[100px]">Criticidade</th>
                       <th className="w-[80px]">Score</th>
+                      <th className="w-[80px]">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -451,6 +477,16 @@ export default function DashboardSpecialist() {
                           </span>
                         </td>
                         <td className="font-mono text-sm">{Math.round(gap.effectiveScore * 100)}%</td>
+                        <td>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => navigate(`/assessment?q=${gap.questionId}`)}
+                          >
+                            Ir →
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -508,8 +544,9 @@ export default function DashboardSpecialist() {
               {heatmapData.map(sm => (
                 <div
                   key={sm.subcatId}
-                  className="heatmap-cell aspect-square flex items-center justify-center text-xs font-medium text-white relative group"
+                  className="heatmap-cell aspect-square flex items-center justify-center text-xs font-medium text-white cursor-pointer hover:opacity-80 transition-opacity relative group"
                   style={{ backgroundColor: sm.maturityLevel.color }}
+                  onClick={() => navigate('/assessment')}
                 >
                   {Math.round(sm.score * 100)}
                   {/* Tooltip on hover */}

@@ -524,6 +524,38 @@ export interface FrameworkCoverage {
   coverage: number;
 }
 
+// AUTHORITATIVE FRAMEWORK SET - Only these frameworks are shown in reports/dashboards
+const AUTHORITATIVE_FRAMEWORKS = new Set([
+  'NIST AI RMF',
+  'ISO 27001',
+  'ISO 27002',
+  'ISO/IEC 23894',
+  'NIST SSDF',
+  'CSA AI Security',
+  'LGPD',
+  'OWASP LLM Top 10',
+  'OWASP API Security',
+  // Secondary but still shown
+  'ISO/IEC 42001',
+  'NIST SP 800-53',
+  'NIST CSF',
+  'SLSA',
+]);
+
+// Frameworks explicitly excluded from primary views
+const EXCLUDED_FRAMEWORKS = new Set([
+  'MITRE ATLAS',
+  'MITRE ATT&CK',
+  'STRIDE',
+  'CIS Controls',
+  'SOC 2',
+  'EU AI Act',
+  'IEEE EAD',
+  'GDPR',
+  'BACEN/CMN',
+  'LC 105 (Sigilo)',
+]);
+
 export function getFrameworkCoverage(answersMap: Map<string, Answer>): FrameworkCoverage[] {
   const frameworkMap = new Map<string, {
     total: number;
@@ -535,6 +567,11 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
     getFrameworkTagsForQuestion(q).forEach(fw => {
       // Normalize framework name for grouping
       const mainFw = normalizeFrameworkName(fw);
+      
+      // Skip excluded frameworks
+      if (EXCLUDED_FRAMEWORKS.has(mainFw) || mainFw === null) {
+        return;
+      }
       
       if (!frameworkMap.has(mainFw)) {
         frameworkMap.set(mainFw, { total: 0, answered: 0, scores: [] });
@@ -555,6 +592,7 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
   });
 
   return Array.from(frameworkMap.entries())
+    .filter(([framework]) => AUTHORITATIVE_FRAMEWORKS.has(framework))
     .map(([framework, data]) => ({
       framework,
       totalQuestions: data.total,
@@ -568,36 +606,42 @@ export function getFrameworkCoverage(answersMap: Map<string, Answer>): Framework
 }
 
 // Helper to normalize framework names for grouping
-function normalizeFrameworkName(fw: string): string {
+// Returns null for frameworks that should be excluded
+function normalizeFrameworkName(fw: string): string | null {
   const lowerFw = fw.toLowerCase();
   
-  // AI Governance frameworks
+  // CORE FRAMEWORKS (Strategic / Mandatory)
   if (lowerFw.includes('nist ai rmf')) return 'NIST AI RMF';
-  if (lowerFw.includes('iso/iec 42001') || lowerFw.includes('iso 42001')) return 'ISO/IEC 42001';
-  if (lowerFw.includes('iso/iec 23894') || lowerFw.includes('iso 23894')) return 'ISO/IEC 23894';
-  if (lowerFw.includes('eu ai act')) return 'EU AI Act';
-  
-  // Security Foundation
   if (lowerFw.includes('iso 27001') || lowerFw.includes('iso/iec 27001')) return 'ISO 27001';
   if (lowerFw.includes('iso 27002') || lowerFw.includes('iso/iec 27002')) return 'ISO 27002';
+  if (lowerFw.includes('lgpd')) return 'LGPD';
+  
+  // HIGH VALUE (Execution / Architecture)
+  if (lowerFw.includes('iso/iec 23894') || lowerFw.includes('iso 23894')) return 'ISO/IEC 23894';
+  if (lowerFw.includes('iso/iec 42001') || lowerFw.includes('iso 42001')) return 'ISO/IEC 42001';
+  if (lowerFw.includes('nist ssdf') || lowerFw.includes('ssdf')) return 'NIST SSDF';
+  if (lowerFw.includes('csa')) return 'CSA AI Security';
+  if (lowerFw.includes('slsa')) return 'SLSA';
+  
+  // TECH-FOCUSED (Abuse & Exposure)
+  if (lowerFw.includes('owasp llm') || lowerFw.includes('owasp top 10 llm')) return 'OWASP LLM Top 10';
+  if (lowerFw.includes('owasp api')) return 'OWASP API Security';
+  
+  // Secondary but still tracked
   if (lowerFw.includes('nist sp 800-53') || lowerFw.includes('nist 800-53')) return 'NIST SP 800-53';
   if (lowerFw.includes('nist csf')) return 'NIST CSF';
+  
+  // EXCLUDED FRAMEWORKS - Return identifiable name but they'll be filtered out
+  if (lowerFw.includes('eu ai act')) return 'EU AI Act';
+  if (lowerFw.includes('mitre atlas')) return 'MITRE ATLAS';
+  if (lowerFw.includes('mitre att&ck') || lowerFw.includes('mitre attack')) return 'MITRE ATT&CK';
   if (lowerFw.includes('cis controls') || lowerFw.includes('cis critical')) return 'CIS Controls';
-  
-  // Engineering & Supply Chain
-  if (lowerFw.includes('nist ssdf')) return 'NIST SSDF';
-  if (lowerFw.includes('slsa')) return 'SLSA';
-  if (lowerFw.includes('owasp llm') || lowerFw.includes('owasp top 10 llm')) return 'OWASP LLM Top 10';
-  if (lowerFw.includes('owasp ml') || lowerFw.includes('owasp machine learning')) return 'OWASP ML Security';
-  if (lowerFw.includes('owasp api')) return 'OWASP API Security';
-  if (lowerFw.includes('owasp top 10') && !lowerFw.includes('llm') && !lowerFw.includes('api')) return 'OWASP Top 10';
-  if (lowerFw.includes('owasp')) return 'OWASP';
-  
-  // Privacy
-  if (lowerFw.includes('lgpd')) return 'LGPD';
   if (lowerFw.includes('gdpr')) return 'GDPR';
+  if (lowerFw.includes('ieee ead')) return 'IEEE EAD';
+  if (lowerFw.includes('owasp ml') || lowerFw.includes('owasp machine learning')) return 'OWASP ML Security';
+  if (lowerFw.includes('owasp top 10') && !lowerFw.includes('llm') && !lowerFw.includes('api')) return 'OWASP Top 10';
   
-  // Brazilian Financial Regulation
+  // Brazilian Financial Regulation - excluded from primary views
   if (
     lowerFw.includes('res. cmn') ||
     lowerFw.includes('resolução cmn') ||
@@ -607,12 +651,8 @@ function normalizeFrameworkName(fw: string): string {
   ) return 'BACEN/CMN';
   if (lowerFw.includes('lc 105') || lowerFw.includes('lei complementar 105')) return 'LC 105 (Sigilo)';
   
-  // Threat Intelligence
-  if (lowerFw.includes('mitre atlas')) return 'MITRE ATLAS';
-  if (lowerFw.includes('mitre att&ck') || lowerFw.includes('mitre attack')) return 'MITRE ATT&CK';
-  
-  // Return cleaned version if no match
-  return fw.split(' - ')[0].trim();
+  // Unknown frameworks - return null to exclude
+  return null;
 }
 
 // Generate strategic roadmap items based on gaps

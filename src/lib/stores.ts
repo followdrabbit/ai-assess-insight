@@ -1,26 +1,31 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Answer, db, saveAnswer, getAllAnswers, clearAllAnswers, bulkSaveAnswers, initializeDatabase } from './database';
-import { questions } from './dataset';
+import { Answer, saveAnswer, getAllAnswers, clearAllAnswers, bulkSaveAnswers, initializeDatabase, getSelectedFrameworks, setSelectedFrameworks as dbSetSelectedFrameworks } from './database';
+import { questions, getQuestionById } from './dataset';
+import { getDefaultEnabledFrameworks } from './frameworks';
 
 interface AnswersState {
   answers: Map<string, Answer>;
   isLoading: boolean;
   lastUpdated: string | null;
+  selectedFrameworks: string[];
   
   // Actions
   loadAnswers: () => Promise<void>;
-  setAnswer: (questionId: string, updates: Partial<Answer>) => Promise<void>;
+  setAnswer: (questionId: string, updates: Partial<Omit<Answer, 'questionId' | 'frameworkId'>>) => Promise<void>;
   clearAnswers: () => Promise<void>;
   importAnswers: (newAnswers: Answer[]) => Promise<void>;
   generateDemoData: () => Promise<void>;
   getAnswer: (questionId: string) => Answer | undefined;
+  setSelectedFrameworks: (frameworkIds: string[]) => Promise<void>;
+  getAnswersByFramework: (frameworkId: string) => Answer[];
 }
 
 export const useAnswersStore = create<AnswersState>()((set, get) => ({
   answers: new Map(),
   isLoading: true,
   lastUpdated: null,
+  selectedFrameworks: getDefaultEnabledFrameworks().map(f => f.frameworkId),
 
   loadAnswers: async () => {
     set({ isLoading: true });
@@ -30,10 +35,13 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       const answersMap = new Map<string, Answer>();
       storedAnswers.forEach(a => answersMap.set(a.questionId, a));
       
+      const selectedFw = await getSelectedFrameworks();
+      
       set({ 
         answers: answersMap, 
         isLoading: false,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        selectedFrameworks: selectedFw.length > 0 ? selectedFw : getDefaultEnabledFrameworks().map(f => f.frameworkId)
       });
     } catch (error) {
       console.error('Error loading answers:', error);
@@ -41,10 +49,16 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
     }
   },
 
-  setAnswer: async (questionId: string, updates: Partial<Answer>) => {
+  setAnswer: async (questionId: string, updates: Partial<Omit<Answer, 'questionId' | 'frameworkId'>>) => {
     const currentAnswer = get().answers.get(questionId);
+    const question = getQuestionById(questionId);
+    
+    // Determine frameworkId from question or existing answer
+    const frameworkId = currentAnswer?.frameworkId || (question as any)?.frameworkId || 'NIST_AI_RMF';
+    
     const newAnswer: Answer = {
       questionId,
+      frameworkId,
       response: updates.response ?? currentAnswer?.response ?? null,
       evidenceOk: updates.evidenceOk ?? currentAnswer?.evidenceOk ?? null,
       notes: updates.notes ?? currentAnswer?.notes ?? '',
@@ -90,12 +104,10 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
 
   generateDemoData: async () => {
     const demoAnswers: Answer[] = [];
-    const responses: Answer['response'][] = ['Sim', 'Parcial', 'Não', 'NA'];
-    const evidences: Answer['evidenceOk'][] = ['Sim', 'Parcial', 'Não', 'NA'];
+    const selectedFw = get().selectedFrameworks;
 
-    questions.forEach((q, index) => {
+    questions.forEach((q) => {
       // Generate somewhat realistic distribution
-      // ~40% Sim, ~30% Parcial, ~20% Não, ~10% NA
       const rand = Math.random();
       let response: Answer['response'];
       if (rand < 0.35) response = 'Sim';
@@ -118,6 +130,7 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
 
       demoAnswers.push({
         questionId: q.questionId,
+        frameworkId: (q as any).frameworkId || 'NIST_AI_RMF',
         response,
         evidenceOk,
         notes: response === 'Não' ? 'Pendente de implementação' : '',
@@ -131,6 +144,20 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
 
   getAnswer: (questionId: string) => {
     return get().answers.get(questionId);
+  },
+
+  setSelectedFrameworks: async (frameworkIds: string[]) => {
+    set({ selectedFrameworks: frameworkIds });
+    try {
+      await dbSetSelectedFrameworks(frameworkIds);
+    } catch (error) {
+      console.error('Error saving selected frameworks:', error);
+    }
+  },
+
+  getAnswersByFramework: (frameworkId: string) => {
+    const answers = Array.from(get().answers.values());
+    return answers.filter(a => a.frameworkId === frameworkId);
   },
 }));
 

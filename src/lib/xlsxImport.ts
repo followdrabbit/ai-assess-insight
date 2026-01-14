@@ -177,6 +177,7 @@ export function importAnswersFromXLSX(file: File): Promise<ImportResult> {
 
           answers.push({
             questionId,
+            frameworkId: row.frameworkId?.toString() || 'NIST_AI_RMF', // Default for backward compatibility
             response,
             evidenceOk,
             notes: row.notes?.toString() || '',

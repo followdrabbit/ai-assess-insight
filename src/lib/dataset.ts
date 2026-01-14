@@ -35,6 +35,7 @@ export interface Question {
   imperativeChecks: string;
   riskSummary: string;
   frameworks: string[];
+  frameworkId?: string; // NEW: explicit primary framework association
   ownershipType?: 'Executive' | 'GRC' | 'Engineering';
 }
 

@@ -197,13 +197,6 @@ export function ExecutiveDashboard({
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => navigate('/assessment')}
-            >
-              Continuar Avaliação
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
               onClick={() => navigate('/reports')}
             >
               Exportar Relatório

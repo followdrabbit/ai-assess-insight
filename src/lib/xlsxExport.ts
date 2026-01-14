@@ -34,6 +34,7 @@ export function exportAnswersToXLSX(answersMap: Map<string, Answer>): Blob {
 
     return {
       questionId: answer.questionId,
+      frameworkId: answer.frameworkId || '', // NEW: include framework in export
       subcatId: question?.subcatId || '',
       domainId: question?.domainId || '',
       domainName: domain?.domainName || '',

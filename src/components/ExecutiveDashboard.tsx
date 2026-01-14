@@ -960,7 +960,7 @@ export function ExecutiveDashboard({
                 animationFillMode: 'backwards',
                 animationDuration: '300ms'
               }}
-              onClick={() => navigate('/assessment')}
+              onClick={() => navigate(`/assessment?questionId=${gap.questionId}`)}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-lg font-bold text-muted-foreground w-6 transition-all duration-200">{idx + 1}</span>

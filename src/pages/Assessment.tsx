@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { domains, subcategories, questions, getSubcategoriesByDomain, responseOptions, evidenceOptions } from '@/lib/dataset';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
@@ -15,10 +16,12 @@ import { Badge } from '@/components/ui/badge';
 
 export default function Assessment() {
   const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading, selectedFrameworks } = useAnswersStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const [showFrameworkSelector, setShowFrameworkSelector] = useState(selectedFrameworks.length === 0);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
 
   // Filter questions based on selected frameworks
   const filteredQuestions = useMemo(() => {
@@ -78,6 +81,30 @@ export default function Assessment() {
       coverage: filteredQuestions.length > 0 ? answered / filteredQuestions.length : 0,
     };
   }, [answers, filteredQuestions]);
+
+  // Handle deep link to specific question via URL param
+  useEffect(() => {
+    const questionId = searchParams.get('questionId');
+    if (questionId && !isLoading && filteredQuestions.length > 0) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`question-${questionId}`);
+        if (element) {
+          // Expand the question details
+          setExpandedQuestions(prev => new Set(prev).add(questionId));
+          // Highlight the question
+          setHighlightedQuestionId(questionId);
+          // Scroll to the question
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Clear the URL param after navigation
+          setSearchParams({}, { replace: true });
+          // Remove highlight after animation
+          setTimeout(() => setHighlightedQuestionId(null), 3000);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, isLoading, filteredQuestions, setSearchParams]);
 
   // Track scroll position for active section highlight
   useEffect(() => {
@@ -333,14 +360,16 @@ export default function Assessment() {
 
                       return (
                         <div 
-                          key={q.questionId} 
+                          key={q.questionId}
+                          id={`question-${q.questionId}`}
                           className={cn(
                             "group rounded-lg border bg-card transition-all duration-200",
-                            "hover:shadow-md",
+                            "hover:shadow-md scroll-mt-52",
                             hasResponse ? "border-l-4" : "border-l-4 border-l-muted",
                             answerStatus === 'answered' && "border-l-green-500",
                             answerStatus === 'partial' && "border-l-yellow-500",
-                            answerStatus === 'negative' && "border-l-red-400"
+                            answerStatus === 'negative' && "border-l-red-400",
+                            highlightedQuestionId === q.questionId && "ring-2 ring-primary ring-offset-2 animate-pulse"
                           )}
                         >
                           <div className="p-5">

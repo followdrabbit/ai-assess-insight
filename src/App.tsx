@@ -12,6 +12,7 @@ import DashboardExecutive from "./pages/DashboardExecutive";
 import DashboardGRC from "./pages/DashboardGRC";
 import DashboardSpecialist from "./pages/DashboardSpecialist";
 import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ function AppContent() {
           <Route path="dashboard/grc" element={<DashboardGRC />} />
           <Route path="dashboard/specialist" element={<DashboardSpecialist />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

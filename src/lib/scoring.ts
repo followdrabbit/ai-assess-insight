@@ -14,6 +14,10 @@ import {
   nistAiRmfFunctions,
   OwnershipType,
   ownershipTypes,
+  FrameworkCategoryId,
+  frameworkCategoryIds,
+  getFrameworkCategory,
+  frameworkCategories,
 } from './dataset';
 
 export interface QuestionScore {
@@ -73,6 +77,16 @@ export interface OwnershipMetrics {
   coverage: number;
 }
 
+export interface FrameworkCategoryMetrics {
+  categoryId: FrameworkCategoryId;
+  categoryName: string;
+  score: number;
+  maturityLevel: MaturityLevel;
+  totalQuestions: number;
+  answeredQuestions: number;
+  coverage: number;
+}
+
 export interface OverallMetrics {
   overallScore: number;
   maturityLevel: MaturityLevel;
@@ -85,6 +99,7 @@ export interface OverallMetrics {
   domainMetrics: DomainMetrics[];
   nistFunctionMetrics: NistFunctionMetrics[];
   ownershipMetrics: OwnershipMetrics[];
+  frameworkCategoryMetrics: FrameworkCategoryMetrics[];
 }
 
 // Calculate effective score for a single question
@@ -317,6 +332,48 @@ export function calculateOwnershipMetrics(
   });
 }
 
+// Calculate framework category metrics
+export function calculateFrameworkCategoryMetrics(
+  answersMap: Map<string, Answer>
+): FrameworkCategoryMetrics[] {
+  return frameworkCategoryIds.map(categoryId => {
+    const categoryQuestions = questions.filter(q =>
+      q.frameworks.some(fw => getFrameworkCategory(fw) === categoryId)
+    );
+
+    let totalScore = 0;
+    let answeredCount = 0;
+    let applicableCount = 0;
+
+    categoryQuestions.forEach(q => {
+      const answer = answersMap.get(q.questionId);
+      const scoreData = calculateQuestionScore(answer);
+
+      if (scoreData.isApplicable) {
+        applicableCount++;
+        if (scoreData.effectiveScore !== null) {
+          totalScore += scoreData.effectiveScore;
+          answeredCount++;
+        }
+      }
+    });
+
+    const score = answeredCount > 0 ? totalScore / answeredCount : 0;
+    const coverage = applicableCount > 0 ? answeredCount / applicableCount : 0;
+    const categoryInfo = frameworkCategories[categoryId];
+
+    return {
+      categoryId,
+      categoryName: categoryInfo?.name || categoryId,
+      score,
+      maturityLevel: getMaturityLevel(score),
+      totalQuestions: categoryQuestions.length,
+      answeredQuestions: answeredCount,
+      coverage,
+    };
+  });
+}
+
 // Calculate overall metrics
 export function calculateOverallMetrics(answersMap: Map<string, Answer>): OverallMetrics {
   const domainMetrics = domains.map(d => 
@@ -325,6 +382,7 @@ export function calculateOverallMetrics(answersMap: Map<string, Answer>): Overal
 
   const nistFunctionMetrics = calculateNistFunctionMetrics(answersMap, domainMetrics);
   const ownershipMetrics = calculateOwnershipMetrics(answersMap);
+  const frameworkCategoryMetrics = calculateFrameworkCategoryMetrics(answersMap);
 
   // Weighted average across domains (using average subcategory weight per domain)
   let totalWeightedScore = 0;
@@ -375,6 +433,7 @@ export function calculateOverallMetrics(answersMap: Map<string, Answer>): Overal
     domainMetrics,
     nistFunctionMetrics,
     ownershipMetrics,
+    frameworkCategoryMetrics,
   };
 }
 

@@ -6,15 +6,17 @@
       "order": 1,
       "nistAiRmfFunction": "GOVERN",
       "strategicQuestion": "A organização possui estrutura de governança adequada para IA?",
-      "description": "Políticas, papéis, responsabilidades e estrutura de accountability para iniciativas de IA"
+      "description": "Políticas, papéis, responsabilidades e estrutura de accountability para iniciativas de IA",
+      "bankingRelevance": "Crítico para atender expectativas do BACEN sobre governança de tecnologia e gestão de riscos operacionais"
     },
     {
       "domainId": "MAP",
-      "domainName": "Mapeamento e Contexto",
+      "domainName": "Mapeamento e Contexto de Riscos",
       "order": 2,
       "nistAiRmfFunction": "MAP",
       "strategicQuestion": "Os riscos de IA são identificados e contextualizados adequadamente?",
-      "description": "Identificação de riscos, classificação de sistemas, contexto operacional e impacto"
+      "description": "Identificação de riscos, classificação de sistemas, contexto operacional e impacto",
+      "bankingRelevance": "Alinhado com requisitos de gestão de riscos operacionais e de modelo (Res. CMN 4.557)"
     },
     {
       "domainId": "DATA",
@@ -22,7 +24,8 @@
       "order": 3,
       "nistAiRmfFunction": "MAP",
       "strategicQuestion": "Os dados são geridos de forma segura e em conformidade?",
-      "description": "Gestão de dados de treinamento e inferência, privacidade, qualidade e ciclo de vida"
+      "description": "Gestão de dados de treinamento e inferência, privacidade, qualidade e ciclo de vida",
+      "bankingRelevance": "Essencial para conformidade com LGPD, sigilo bancário e requisitos de qualidade de dados do BACEN"
     },
     {
       "domainId": "DEVELOP",
@@ -30,23 +33,26 @@
       "order": 4,
       "nistAiRmfFunction": "GOVERN",
       "strategicQuestion": "O ciclo de desenvolvimento de IA segue práticas de segurança?",
-      "description": "Pipeline de ML, segurança de código, dependências, versionamento e reprodutibilidade"
+      "description": "Pipeline de ML, segurança de código, dependências, versionamento e reprodutibilidade",
+      "bankingRelevance": "Suporta requisitos de segregação de ambientes e controles de mudança do BACEN"
     },
     {
       "domainId": "MEASURE",
-      "domainName": "Avaliação e Validação",
+      "domainName": "Avaliação e Validação de Modelos",
       "order": 5,
       "nistAiRmfFunction": "MEASURE",
-      "strategicQuestion": "Os modelos são avaliados quanto a riscos e robustez?",
-      "description": "Testes adversariais, fairness, explicabilidade e validação contínua"
+      "strategicQuestion": "Os modelos são avaliados quanto a riscos, robustez e fairness?",
+      "description": "Testes adversariais, fairness, explicabilidade, validação contínua e model risk management",
+      "bankingRelevance": "Alinhado com práticas de Model Risk Management (MRM) esperadas pelo BACEN e órgãos internacionais"
     },
     {
       "domainId": "PROTECT",
-      "domainName": "Proteção e Runtime",
+      "domainName": "Proteção e Controles de Runtime",
       "order": 6,
       "nistAiRmfFunction": "MANAGE",
       "strategicQuestion": "Os sistemas de IA estão protegidos em produção?",
-      "description": "Infraestrutura, controles de acesso, guardrails e proteção contra abusos"
+      "description": "Infraestrutura, controles de acesso, guardrails, proteção de APIs e defesa contra abusos",
+      "bankingRelevance": "Atende requisitos de segurança cibernética e proteção de infraestrutura crítica"
     },
     {
       "domainId": "DETECT",
@@ -54,15 +60,17 @@
       "order": 7,
       "nistAiRmfFunction": "MEASURE",
       "strategicQuestion": "Anomalias e incidentes são detectados tempestivamente?",
-      "description": "Observabilidade, drift detection, logging e alertas de segurança"
+      "description": "Observabilidade, drift detection, logging, SIEM e alertas de segurança",
+      "bankingRelevance": "Suporta capacidade de detecção exigida pela Res. CMN 4.893 (segurança cibernética)"
     },
     {
       "domainId": "RESPOND",
-      "domainName": "Resposta e Resiliência",
+      "domainName": "Resposta a Incidentes e Resiliência",
       "order": 8,
       "nistAiRmfFunction": "MANAGE",
       "strategicQuestion": "A organização responde efetivamente a incidentes de IA?",
-      "description": "Resposta a incidentes, continuidade, recuperação e lições aprendidas"
+      "description": "Resposta a incidentes, continuidade, recuperação, notificação e lições aprendidas",
+      "bankingRelevance": "Alinhado com requisitos de resposta a incidentes e continuidade de negócios do BACEN"
     },
     {
       "domainId": "SUPPLY",
@@ -70,15 +78,17 @@
       "order": 9,
       "nistAiRmfFunction": "GOVERN",
       "strategicQuestion": "Os riscos de fornecedores e modelos externos são geridos?",
-      "description": "Due diligence de fornecedores, modelos pré-treinados, APIs externas e contratos"
+      "description": "Due diligence de fornecedores, modelos pré-treinados, APIs externas e gestão contratual",
+      "bankingRelevance": "Crítico para conformidade com requisitos de terceirização e gestão de fornecedores do BACEN"
     },
     {
       "domainId": "PEOPLE",
       "domainName": "Pessoas e Supervisão Humana",
       "order": 10,
       "nistAiRmfFunction": "GOVERN",
-      "strategicQuestion": "As pessoas estão preparadas para operar IA de forma segura?",
-      "description": "Treinamento, conscientização, ética, supervisão humana e override"
+      "strategicQuestion": "As pessoas estão preparadas para operar IA de forma segura e responsável?",
+      "description": "Treinamento, conscientização, ética, supervisão humana, override e competências",
+      "bankingRelevance": "Suporta requisitos de capacitação e cultura de riscos esperados pelo BACEN"
     }
   ],
   "subcategories": [
@@ -93,7 +103,7 @@
       "weight": 1.5,
       "ownershipType": "GRC",
       "riskSummary": "Ausência de políticas leva a práticas ad-hoc e vulnerabilidades sistêmicas",
-      "frameworkRefs": ["NIST AI RMF GOVERN 1.1-1.5", "ISO/IEC 42001 5.1-5.3"]
+      "frameworkRefs": ["NIST AI RMF GOVERN 1.1-1.5", "ISO/IEC 42001 5.1-5.3", "ISO 27001 A.5"]
     },
     {
       "subcatId": "GOVERN-02",
@@ -106,20 +116,20 @@
       "weight": 1.3,
       "ownershipType": "Executive",
       "riskSummary": "Sem estrutura clara, decisões críticas ficam sem dono e problemas não são escalados",
-      "frameworkRefs": ["NIST AI RMF GOVERN 2.1-2.3", "ISO/IEC 42001 5.3"]
+      "frameworkRefs": ["NIST AI RMF GOVERN 2.1-2.3", "ISO/IEC 42001 5.3", "NIST SP 800-53 PM"]
     },
     {
       "subcatId": "GOVERN-03",
       "domainId": "GOVERN",
-      "subcatName": "Conformidade Regulatória",
-      "definition": "Aderência a regulamentações aplicáveis (EU AI Act, LGPD, setoriais)",
+      "subcatName": "Conformidade Regulatória e Setorial",
+      "definition": "Aderência a regulamentações aplicáveis (LGPD, regulamentações setoriais, BACEN)",
       "objective": "Garantir conformidade legal e evitar sanções regulatórias",
       "securityOutcome": "Mitiga riscos legais e reputacionais de não conformidade",
       "criticality": "Critical",
       "weight": 1.5,
       "ownershipType": "GRC",
       "riskSummary": "Não conformidade resulta em multas, sanções e danos reputacionais",
-      "frameworkRefs": ["EU AI Act", "LGPD", "GDPR", "Regulamentações Setoriais"]
+      "frameworkRefs": ["LGPD", "Res. CMN 4.893", "Res. CMN 4.557", "EU AI Act"]
     },
     {
       "subcatId": "MAP-01",
@@ -132,7 +142,7 @@
       "weight": 1.4,
       "ownershipType": "GRC",
       "riskSummary": "Sistemas não inventariados são potenciais shadow AI com riscos desconhecidos",
-      "frameworkRefs": ["NIST AI RMF MAP 1.1-1.6", "EU AI Act Art. 6"]
+      "frameworkRefs": ["NIST AI RMF MAP 1.1-1.6", "ISO/IEC 42001 6.1", "NIST SP 800-53 PM-5"]
     },
     {
       "subcatId": "MAP-02",
@@ -145,20 +155,20 @@
       "weight": 1.5,
       "ownershipType": "GRC",
       "riskSummary": "Riscos não identificados não podem ser mitigados",
-      "frameworkRefs": ["NIST AI RMF MAP 1.1-1.5", "ISO 31000", "ISO/IEC 23894"]
+      "frameworkRefs": ["NIST AI RMF MAP 1.1-1.5", "ISO 31000", "ISO/IEC 23894", "NIST SP 800-53 RA"]
     },
     {
       "subcatId": "MAP-03",
       "domainId": "MAP",
       "subcatName": "Avaliação de Impacto Algorítmico",
-      "definition": "AIAs para sistemas de alto risco com análise de impacto em direitos",
+      "definition": "AIAs para sistemas de alto risco com análise de impacto em direitos e operações",
       "objective": "Avaliar e documentar impactos potenciais antes do deploy",
       "securityOutcome": "Impactos negativos são identificados e mitigados proativamente",
       "criticality": "High",
       "weight": 1.3,
       "ownershipType": "GRC",
-      "riskSummary": "Sem AIA, impactos em direitos fundamentais podem não ser identificados",
-      "frameworkRefs": ["EU AI Act Art. 9", "NIST AI RMF MAP 1.5"]
+      "riskSummary": "Sem AIA, impactos em direitos fundamentais e operações podem não ser identificados",
+      "frameworkRefs": ["EU AI Act Art. 9", "NIST AI RMF MAP 1.5", "LGPD Art. 38"]
     },
     {
       "subcatId": "DATA-01",
@@ -171,20 +181,20 @@
       "weight": 1.3,
       "ownershipType": "Engineering",
       "riskSummary": "Dados mal classificados podem ser expostos ou tratados inadequadamente",
-      "frameworkRefs": ["NIST AI RMF MAP 2.1-2.2", "ISO 27001 A.8.2"]
+      "frameworkRefs": ["NIST AI RMF MAP 2.1-2.2", "ISO 27001 A.8.2", "NIST SP 800-53 RA-2"]
     },
     {
       "subcatId": "DATA-02",
       "domainId": "DATA",
       "subcatName": "Privacidade e Direitos de Titulares",
-      "definition": "Gestão de privacidade, bases legais e atendimento a direitos",
+      "definition": "Gestão de privacidade, bases legais, sigilo bancário e atendimento a direitos",
       "objective": "Proteger privacidade e garantir exercício de direitos",
       "securityOutcome": "Conformidade com leis de proteção de dados, confiança dos usuários",
       "criticality": "Critical",
       "weight": 1.5,
       "ownershipType": "GRC",
       "riskSummary": "Violações de privacidade geram multas e danos reputacionais",
-      "frameworkRefs": ["LGPD Art. 7-22", "GDPR Art. 6, 13-22", "NIST Privacy Framework"]
+      "frameworkRefs": ["LGPD Art. 7-22", "Lei Complementar 105/2001", "NIST Privacy Framework"]
     },
     {
       "subcatId": "DATA-03",
@@ -202,7 +212,7 @@
     {
       "subcatId": "DATA-04",
       "domainId": "DATA",
-      "subcatName": "Ciclo de Vida e Descarte",
+      "subcatName": "Ciclo de Vida e Descarte Seguro",
       "definition": "Políticas de retenção, descarte seguro e minimização de dados",
       "objective": "Gerenciar adequadamente o ciclo de vida dos dados",
       "securityOutcome": "Reduz exposição ao minimizar dados desnecessários",
@@ -210,7 +220,7 @@
       "weight": 1.0,
       "ownershipType": "GRC",
       "riskSummary": "Retenção excessiva viola princípio de minimização e aumenta risco",
-      "frameworkRefs": ["LGPD Art. 16", "GDPR Art. 5(1)(e)", "ISO 27001 A.8.3"]
+      "frameworkRefs": ["LGPD Art. 16", "ISO 27001 A.8.3", "NIST SP 800-88"]
     },
     {
       "subcatId": "DEVELOP-01",
@@ -223,7 +233,7 @@
       "weight": 1.5,
       "ownershipType": "Engineering",
       "riskSummary": "Pipeline comprometido pode inserir backdoors em modelos",
-      "frameworkRefs": ["NIST AI RMF MANAGE 2.1-2.2", "OWASP ML Top 10", "NIST SSDF"]
+      "frameworkRefs": ["NIST SSDF", "OWASP ML Top 10", "SLSA", "NIST SP 800-53 SA"]
     },
     {
       "subcatId": "DEVELOP-02",
@@ -236,7 +246,7 @@
       "weight": 1.3,
       "ownershipType": "Engineering",
       "riskSummary": "Código não revisado ou dependências vulneráveis comprometem segurança",
-      "frameworkRefs": ["NIST SSDF", "SLSA", "OWASP Dependency Check"]
+      "frameworkRefs": ["NIST SSDF", "SLSA", "OWASP Top 10", "NIST SP 800-53 SA-11"]
     },
     {
       "subcatId": "DEVELOP-03",
@@ -249,7 +259,7 @@
       "weight": 1.0,
       "ownershipType": "Engineering",
       "riskSummary": "Sem versionamento, rollback e investigação são impossíveis",
-      "frameworkRefs": ["NIST AI RMF GOVERN 4.1-4.3", "MLOps Best Practices"]
+      "frameworkRefs": ["NIST AI RMF GOVERN 4.1-4.3", "ISO/IEC 42001 7.5", "NIST SP 800-53 CM"]
     },
     {
       "subcatId": "MEASURE-01",
@@ -262,7 +272,7 @@
       "weight": 1.3,
       "ownershipType": "Engineering",
       "riskSummary": "Modelos não testados são vulneráveis a evasão e manipulação",
-      "frameworkRefs": ["NIST AI RMF MEASURE 2.5-2.8", "MITRE ATLAS"]
+      "frameworkRefs": ["NIST AI RMF MEASURE 2.5-2.8", "MITRE ATLAS", "OWASP ML Top 10"]
     },
     {
       "subcatId": "MEASURE-02",
@@ -275,7 +285,7 @@
       "weight": 1.3,
       "ownershipType": "GRC",
       "riskSummary": "Vieses não detectados causam discriminação e violam regulações",
-      "frameworkRefs": ["NIST AI RMF MEASURE 2.6", "EU AI Act Art. 10"]
+      "frameworkRefs": ["NIST AI RMF MEASURE 2.6", "EU AI Act Art. 10", "ISO/IEC 23894"]
     },
     {
       "subcatId": "MEASURE-03",
@@ -288,7 +298,7 @@
       "weight": 1.2,
       "ownershipType": "GRC",
       "riskSummary": "Modelos inexplicáveis não podem ser auditados ou contestados",
-      "frameworkRefs": ["EU AI Act Art. 13-14", "NIST AI RMF MEASURE 2.9-2.10"]
+      "frameworkRefs": ["EU AI Act Art. 13-14", "NIST AI RMF MEASURE 2.9-2.10", "LGPD Art. 20"]
     },
     {
       "subcatId": "PROTECT-01",
@@ -301,7 +311,7 @@
       "weight": 1.4,
       "ownershipType": "Engineering",
       "riskSummary": "Ambiente comprometido expõe modelos e dados",
-      "frameworkRefs": ["NIST CSF PR", "CIS Controls", "ISO 27001 A.12"]
+      "frameworkRefs": ["NIST CSF PR", "CIS Controls", "ISO 27001 A.12", "NIST SP 800-53 SC"]
     },
     {
       "subcatId": "PROTECT-02",
@@ -314,33 +324,33 @@
       "weight": 1.5,
       "ownershipType": "Engineering",
       "riskSummary": "Acessos inadequados permitem comprometimento de confidencialidade",
-      "frameworkRefs": ["NIST SP 800-63B", "ISO 27001 A.9", "NIST CSF PR.AC"]
+      "frameworkRefs": ["NIST SP 800-63B", "ISO 27001 A.9", "NIST SP 800-53 AC", "Res. CMN 4.893"]
     },
     {
       "subcatId": "PROTECT-03",
       "domainId": "PROTECT",
-      "subcatName": "Guardrails e Proteção de APIs",
-      "definition": "Rate limiting, proteção contra extração e guardrails de LLM",
-      "objective": "Proteger APIs de inferência contra abusos",
-      "securityOutcome": "Modelos protegidos contra DoS, extração e prompt injection",
+      "subcatName": "Segurança de APIs e Guardrails de LLM",
+      "definition": "Rate limiting, proteção contra extração, input validation e guardrails de LLM",
+      "objective": "Proteger APIs de inferência contra abusos e ataques",
+      "securityOutcome": "Modelos protegidos contra DoS, extração, injection e abusos",
       "criticality": "High",
       "weight": 1.3,
       "ownershipType": "Engineering",
-      "riskSummary": "APIs desprotegidas são vulneráveis a DoS, extração e abusos",
-      "frameworkRefs": ["OWASP API Security", "OWASP LLM Top 10", "NIST AI RMF MANAGE 3.1-3.2"]
+      "riskSummary": "APIs desprotegidas são vulneráveis a DoS, extração e prompt injection",
+      "frameworkRefs": ["OWASP API Security Top 10", "OWASP LLM Top 10", "NIST AI RMF MANAGE 3.1-3.2"]
     },
     {
       "subcatId": "DETECT-01",
       "domainId": "DETECT",
-      "subcatName": "Monitoramento e Logging",
-      "definition": "Coleta, retenção e proteção de logs de inferência e operação",
-      "objective": "Manter visibilidade sobre operação de sistemas de IA",
+      "subcatName": "Logging e Auditoria",
+      "definition": "Coleta, retenção, proteção e análise de logs de inferência e operação",
+      "objective": "Manter visibilidade e capacidade de auditoria sobre sistemas de IA",
       "securityOutcome": "Atividades suspeitas são registradas para investigação",
       "criticality": "High",
       "weight": 1.2,
       "ownershipType": "Engineering",
-      "riskSummary": "Sem logs, investigações forenses são impossíveis",
-      "frameworkRefs": ["ISO 27001 A.12.4", "NIST CSF DE.CM"]
+      "riskSummary": "Sem logs adequados, investigações forenses são impossíveis",
+      "frameworkRefs": ["ISO 27001 A.12.4", "NIST CSF DE.CM", "NIST SP 800-53 AU"]
     },
     {
       "subcatId": "DETECT-02",
@@ -366,7 +376,7 @@
       "weight": 1.3,
       "ownershipType": "GRC",
       "riskSummary": "Resposta improvisada aumenta impacto de incidentes",
-      "frameworkRefs": ["NIST CSF RS", "ISO 27001 A.16", "NIST AI RMF MANAGE 4.1"]
+      "frameworkRefs": ["NIST CSF RS", "ISO 27001 A.16", "NIST AI RMF MANAGE 4.1", "NIST SP 800-53 IR"]
     },
     {
       "subcatId": "RESPOND-02",
@@ -379,46 +389,46 @@
       "weight": 1.0,
       "ownershipType": "Engineering",
       "riskSummary": "Sem DR, falhas podem ter impacto prolongado na operação",
-      "frameworkRefs": ["ISO 22301", "NIST CSF PR.IP-4, PR.IP-9"]
+      "frameworkRefs": ["ISO 22301", "NIST CSF PR.IP-4, PR.IP-9", "NIST SP 800-53 CP"]
     },
     {
       "subcatId": "SUPPLY-01",
       "domainId": "SUPPLY",
-      "subcatName": "Due Diligence de Fornecedores",
-      "definition": "Avaliação de práticas de segurança de fornecedores de IA",
+      "subcatName": "Due Diligence de Fornecedores de IA",
+      "definition": "Avaliação de práticas de segurança e conformidade de fornecedores de IA",
       "objective": "Garantir que fornecedores atendam requisitos de segurança",
       "securityOutcome": "Riscos de terceiros são conhecidos e mitigados contratualmente",
       "criticality": "High",
       "weight": 1.2,
       "ownershipType": "GRC",
       "riskSummary": "Fornecedores inseguros introduzem vulnerabilidades na cadeia",
-      "frameworkRefs": ["NIST AI RMF GOVERN 6.1-6.2", "ISO 27001 A.15"]
+      "frameworkRefs": ["NIST AI RMF GOVERN 6.1-6.2", "ISO 27001 A.15", "Res. CMN 4.893 (terceirização)"]
     },
     {
       "subcatId": "SUPPLY-02",
       "domainId": "SUPPLY",
       "subcatName": "Modelos e Componentes Externos",
-      "definition": "Inventário e gestão de modelos pré-treinados e bibliotecas de IA",
+      "definition": "Inventário, validação e gestão de modelos pré-treinados e bibliotecas de IA",
       "objective": "Conhecer e controlar componentes de IA de terceiros",
-      "securityOutcome": "Componentes externos são rastreados e verificados",
+      "securityOutcome": "Componentes externos são rastreados, validados e monitorados",
       "criticality": "High",
       "weight": 1.3,
       "ownershipType": "Engineering",
       "riskSummary": "Modelos externos podem conter backdoors ou vieses desconhecidos",
-      "frameworkRefs": ["NIST AI RMF MAP 3.1", "SBOM practices", "SLSA"]
+      "frameworkRefs": ["NIST AI RMF MAP 3.1", "SLSA", "SBOM practices"]
     },
     {
       "subcatId": "PEOPLE-01",
       "domainId": "PEOPLE",
-      "subcatName": "Treinamento e Conscientização",
-      "definition": "Programas de capacitação em segurança de IA para diferentes públicos",
-      "objective": "Garantir conhecimento adequado sobre riscos de IA",
+      "subcatName": "Capacitação e Conscientização",
+      "definition": "Programas de treinamento em segurança e uso responsável de IA",
+      "objective": "Garantir conhecimento adequado sobre riscos e uso seguro de IA",
       "securityOutcome": "Pessoas informadas cometem menos erros de segurança",
       "criticality": "Medium",
       "weight": 1.1,
       "ownershipType": "GRC",
       "riskSummary": "Equipes não treinadas criam e operam sistemas vulneráveis",
-      "frameworkRefs": ["NIST AI RMF GOVERN 5.1-5.2", "ISO 27001 A.7.2"]
+      "frameworkRefs": ["NIST AI RMF GOVERN 5.1-5.2", "ISO 27001 A.7.2", "NIST SP 800-53 AT"]
     },
     {
       "subcatId": "PEOPLE-02",
@@ -436,7 +446,7 @@
     {
       "subcatId": "PEOPLE-03",
       "domainId": "PEOPLE",
-      "subcatName": "Supervisão e Override Humano",
+      "subcatName": "Supervisão e Controle Humano",
       "definition": "Mecanismos de intervenção, revisão e controle humano sobre IA",
       "objective": "Manter controle humano sobre decisões críticas de IA",
       "securityOutcome": "Erros de IA podem ser corrigidos por intervenção humana",
@@ -446,5 +456,37 @@
       "riskSummary": "IA sem supervisão pode tomar decisões prejudiciais sem correção",
       "frameworkRefs": ["EU AI Act Art. 14", "NIST AI RMF GOVERN 3.3", "LGPD Art. 20"]
     }
-  ]
+  ],
+  "frameworkCategories": {
+    "AI_GOVERNANCE": {
+      "name": "Governança de IA",
+      "description": "Frameworks específicos para gestão e governança de sistemas de IA",
+      "frameworks": ["NIST AI RMF", "ISO/IEC 42001", "ISO/IEC 23894", "EU AI Act"]
+    },
+    "SECURITY_FOUNDATION": {
+      "name": "Segurança da Informação",
+      "description": "Frameworks fundamentais de segurança da informação",
+      "frameworks": ["ISO 27001", "NIST SP 800-53", "NIST CSF", "CIS Controls"]
+    },
+    "ENGINEERING": {
+      "name": "Engenharia Segura",
+      "description": "Práticas de desenvolvimento seguro e cadeia de suprimentos",
+      "frameworks": ["NIST SSDF", "SLSA", "OWASP Top 10", "OWASP ML Top 10"]
+    },
+    "PRIVACY": {
+      "name": "Privacidade",
+      "description": "Regulamentações e frameworks de privacidade",
+      "frameworks": ["LGPD", "GDPR", "NIST Privacy Framework"]
+    },
+    "FINANCIAL_BR": {
+      "name": "Regulamentação Financeira (Brasil)",
+      "description": "Requisitos específicos do setor financeiro brasileiro",
+      "frameworks": ["Res. CMN 4.893", "Res. CMN 4.557", "LC 105/2001"]
+    },
+    "THREAT_INTELLIGENCE": {
+      "name": "Inteligência de Ameaças",
+      "description": "Taxonomias e frameworks de ameaças específicas de IA",
+      "frameworks": ["MITRE ATLAS", "OWASP LLM Top 10", "OWASP API Security"]
+    }
+  }
 }

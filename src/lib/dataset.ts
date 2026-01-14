@@ -9,6 +9,7 @@ export interface Domain {
   nistAiRmfFunction?: string;
   strategicQuestion?: string;
   description?: string;
+  bankingRelevance?: string;
 }
 
 export interface Subcategory {
@@ -64,6 +65,12 @@ export interface EvidenceOption {
   label: string;
 }
 
+export interface FrameworkCategory {
+  name: string;
+  description: string;
+  frameworks: string[];
+}
+
 // Type assertions for imported data
 export const domains: Domain[] = taxonomyData.domains;
 export const subcategories: Subcategory[] = taxonomyData.subcategories as Subcategory[];
@@ -72,6 +79,8 @@ export const maturityLevels: MaturityLevel[] = maturityRefData.levels;
 export const criticalityLevels: CriticalityLevel[] = maturityRefData.criticalityLevels;
 export const responseOptions: ResponseOption[] = maturityRefData.responseOptions;
 export const evidenceOptions: EvidenceOption[] = maturityRefData.evidenceOptions;
+export const frameworkCategories: Record<string, FrameworkCategory> = 
+  (taxonomyData as any).frameworkCategories || {};
 
 // NIST AI RMF Functions for grouping
 export const nistAiRmfFunctions = ['GOVERN', 'MAP', 'MEASURE', 'MANAGE'] as const;
@@ -80,6 +89,17 @@ export type NistAiRmfFunction = typeof nistAiRmfFunctions[number];
 // Ownership types for role-based views
 export const ownershipTypes = ['Executive', 'GRC', 'Engineering'] as const;
 export type OwnershipType = typeof ownershipTypes[number];
+
+// Framework category IDs
+export const frameworkCategoryIds = [
+  'AI_GOVERNANCE',
+  'SECURITY_FOUNDATION', 
+  'ENGINEERING',
+  'PRIVACY',
+  'FINANCIAL_BR',
+  'THREAT_INTELLIGENCE'
+] as const;
+export type FrameworkCategoryId = typeof frameworkCategoryIds[number];
 
 // Helper functions
 export function getDomainById(domainId: string): Domain | undefined {
@@ -140,6 +160,44 @@ export function getQuestionsByOwnership(ownershipType: OwnershipType): Question[
   return questions.filter(q => q.ownershipType === ownershipType);
 }
 
+// Normalize framework name to category
+export function getFrameworkCategory(framework: string): FrameworkCategoryId | null {
+  const lowerFramework = framework.toLowerCase();
+  
+  if (lowerFramework.includes('nist ai rmf') || lowerFramework.includes('iso/iec 42001') || 
+      lowerFramework.includes('iso/iec 23894') || lowerFramework.includes('eu ai act')) {
+    return 'AI_GOVERNANCE';
+  }
+  if (lowerFramework.includes('iso 27001') || lowerFramework.includes('nist sp 800-53') || 
+      lowerFramework.includes('nist csf') || lowerFramework.includes('cis')) {
+    return 'SECURITY_FOUNDATION';
+  }
+  if (lowerFramework.includes('nist ssdf') || lowerFramework.includes('slsa') || 
+      lowerFramework.includes('owasp top 10') || lowerFramework.includes('owasp ml')) {
+    return 'ENGINEERING';
+  }
+  if (lowerFramework.includes('lgpd') || lowerFramework.includes('gdpr') || 
+      lowerFramework.includes('privacy')) {
+    return 'PRIVACY';
+  }
+  if (lowerFramework.includes('cmn') || lowerFramework.includes('bacen') || 
+      lowerFramework.includes('lc 105')) {
+    return 'FINANCIAL_BR';
+  }
+  if (lowerFramework.includes('mitre') || lowerFramework.includes('owasp llm') || 
+      lowerFramework.includes('owasp api')) {
+    return 'THREAT_INTELLIGENCE';
+  }
+  return null;
+}
+
+// Get questions by framework category
+export function getQuestionsByFrameworkCategory(categoryId: FrameworkCategoryId): Question[] {
+  return questions.filter(q => 
+    q.frameworks.some(fw => getFrameworkCategory(fw) === categoryId)
+  );
+}
+
 // Statistics
 export function getTotalQuestions(): number {
   return questions.length;
@@ -189,4 +247,13 @@ export function getQuestionCountByOwnership(): Record<OwnershipType, number> {
     }
   });
   return counts as Record<OwnershipType, number>;
+}
+
+// Get question count by framework category
+export function getQuestionCountByFrameworkCategory(): Record<FrameworkCategoryId, number> {
+  const counts: Record<string, number> = {};
+  frameworkCategoryIds.forEach(cat => {
+    counts[cat] = getQuestionsByFrameworkCategory(cat).length;
+  });
+  return counts as Record<FrameworkCategoryId, number>;
 }

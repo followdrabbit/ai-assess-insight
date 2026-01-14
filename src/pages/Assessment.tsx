@@ -1,17 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { useAnswersStore } from '@/lib/stores';
-import { 
-  fetchDomains, 
-  fetchSubcategories, 
-  fetchQuestions,
-  clearDataCache,
-  Domain,
-  Subcategory,
-  Question,
-  responseOptions, 
-  evidenceOptions 
-} from '@/lib/datasetData';
-import { questionBelongsToFrameworks, getFrameworkById } from '@/lib/frameworksData';
+import { domains, subcategories, questions, getSubcategoriesByDomain, responseOptions, evidenceOptions } from '@/lib/dataset';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
 import { importAnswersFromXLSX } from '@/lib/xlsxImport';
 import { Button } from '@/components/ui/button';
@@ -20,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { FrameworkSelector } from '@/components/FrameworkSelector';
+import { questionBelongsToFrameworks, getFrameworkById } from '@/lib/frameworks';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
@@ -29,78 +19,22 @@ export default function Assessment() {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const [showFrameworkSelector, setShowFrameworkSelector] = useState(selectedFrameworks.length === 0);
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  
-  // Database data state
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [selectedFrameworkNames, setSelectedFrameworkNames] = useState<string[]>([]);
-
-  // Load data from database
-  useEffect(() => {
-    async function loadData() {
-      setDataLoading(true);
-      try {
-        // Clear cache to ensure fresh data
-        clearDataCache();
-        
-        const [domainsData, subcatsData, questionsData] = await Promise.all([
-          fetchDomains(true),
-          fetchSubcategories(true),
-          fetchQuestions(true)
-        ]);
-        console.log('Assessment loaded data:', {
-          domains: domainsData.length,
-          subcategories: subcatsData.length,
-          questions: questionsData.length
-        });
-        setDomains(domainsData);
-        setSubcategories(subcatsData);
-        setQuestions(questionsData);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        toast.error('Erro ao carregar dados');
-      } finally {
-        setDataLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  // Load framework names when selected frameworks change
-  useEffect(() => {
-    async function loadFrameworkNames() {
-      const names: string[] = [];
-      for (const id of selectedFrameworks) {
-        const fw = await getFrameworkById(id);
-        if (fw) names.push(fw.shortName);
-      }
-      setSelectedFrameworkNames(names);
-    }
-    loadFrameworkNames();
-  }, [selectedFrameworks]);
-
-  // Helper to get subcategories by domain
-  const getSubcategoriesByDomain = (domainId: string) => {
-    return subcategories.filter(s => s.domainId === domainId);
-  };
 
   // Filter questions based on selected frameworks
   const filteredQuestions = useMemo(() => {
     if (selectedFrameworks.length === 0) return [];
     return questions.filter(q => questionBelongsToFrameworks(q.frameworks, selectedFrameworks));
-  }, [selectedFrameworks, questions]);
+  }, [selectedFrameworks]);
 
   // Group filtered questions by domain and subcategory
   const groupedQuestions = useMemo(() => {
     const groups: {
-      domain: Domain;
+      domain: typeof domains[0];
       answeredCount: number;
       totalCount: number;
       subcategories: {
-        subcat: Subcategory;
-        questions: Question[];
+        subcat: typeof subcategories[0];
+        questions: typeof questions;
         answeredCount: number;
       }[];
     }[] = [];
@@ -133,7 +67,7 @@ export default function Assessment() {
     });
 
     return groups;
-  }, [filteredQuestions, answers, domains, subcategories]);
+  }, [filteredQuestions, answers]);
 
   // Calculate metrics based on filtered questions
   const metrics = useMemo(() => {
@@ -211,7 +145,12 @@ export default function Assessment() {
     }
   };
 
-  if (isLoading || dataLoading) {
+  // Get framework names for display
+  const selectedFrameworkNames = selectedFrameworks
+    .map(id => getFrameworkById(id)?.shortName)
+    .filter(Boolean);
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-3">
@@ -459,22 +398,26 @@ export default function Assessment() {
                               </div>
                             </div>
 
-                            {/* Evidence selector (only if response is not NA) */}
+                            {/* Evidence selector - only show if response is not NA */}
                             {answer?.response && answer.response !== 'NA' && (
-                              <div className="mb-4">
-                                <label className="text-sm font-medium text-muted-foreground block mb-2">
+                              <div className="mb-4 pt-4 border-t border-dashed animate-fade-in">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">
                                   Evidência disponível?
                                 </label>
-                                <div className="grid grid-cols-4 gap-2">
+                                <div className="flex gap-2">
                                   {evidenceOptions.map(opt => (
                                     <button
                                       key={opt.value}
+                                      data-value={opt.value}
                                       onClick={() => setAnswer(q.questionId, { evidenceOk: opt.value as any })}
                                       className={cn(
-                                        "py-2 px-3 text-sm rounded-lg border transition-all duration-150",
+                                        "flex-1 py-2 px-3 text-sm font-medium rounded-lg border-2 transition-all",
+                                        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
                                         answer?.evidenceOk === opt.value 
-                                          ? "border-primary bg-primary/10 text-primary font-medium"
-                                          : "border-transparent bg-muted/50 text-muted-foreground hover:bg-accent"
+                                          ? opt.value === 'Sim' ? "border-green-500 bg-green-50 text-green-700" :
+                                            opt.value === 'Parcial' ? "border-yellow-500 bg-yellow-50 text-yellow-700" :
+                                            "border-red-500 bg-red-50 text-red-700"
+                                          : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                                       )}
                                     >
                                       {opt.label}
@@ -486,66 +429,65 @@ export default function Assessment() {
 
                             {/* Expandable details */}
                             <Collapsible open={isExpanded} onOpenChange={() => toggleQuestionExpanded(q.questionId)}>
-                              <CollapsibleTrigger className="text-sm text-primary hover:underline">
-                                {isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes e notas'}
+                              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 w-full">
+                                <span className="h-px flex-1 bg-border" />
+                                <span className="flex items-center gap-1.5 px-2">
+                                  {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes e observações'}
+                                  <span className="text-lg leading-none">{isExpanded ? '−' : '+'}</span>
+                                </span>
+                                <span className="h-px flex-1 bg-border" />
                               </CollapsibleTrigger>
-                              <CollapsibleContent className="mt-4 space-y-4">
-                                {/* Expected evidence */}
-                                {q.expectedEvidence && (
-                                  <div>
-                                    <label className="text-sm font-medium text-muted-foreground block mb-1">
-                                      Evidência esperada
-                                    </label>
-                                    <p className="text-sm bg-muted/50 p-3 rounded-lg">{q.expectedEvidence}</p>
+                              <CollapsibleContent className="animate-slide-up">
+                                <div className="grid gap-4 pt-4">
+                                  <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                        Evidências Esperadas
+                                      </label>
+                                      <p className="text-sm leading-relaxed bg-muted/50 rounded-lg p-3">
+                                        {q.expectedEvidence}
+                                      </p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                        Verificações
+                                      </label>
+                                      <p className="text-sm leading-relaxed bg-muted/50 rounded-lg p-3">
+                                        {q.imperativeChecks}
+                                      </p>
+                                    </div>
                                   </div>
-                                )}
-
-                                {/* Imperative checks */}
-                                {q.imperativeChecks && (
-                                  <div>
-                                    <label className="text-sm font-medium text-muted-foreground block mb-1">
-                                      Verificações imperativas
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      Riscos
                                     </label>
-                                    <p className="text-sm bg-muted/50 p-3 rounded-lg">{q.imperativeChecks}</p>
+                                    <p className="text-sm leading-relaxed bg-red-50 text-red-900 rounded-lg p-3 border border-red-100">
+                                      {q.riskSummary}
+                                    </p>
                                   </div>
-                                )}
-
-                                {/* Risk summary */}
-                                {q.riskSummary && (
-                                  <div>
-                                    <label className="text-sm font-medium text-muted-foreground block mb-1">
-                                      Resumo de risco
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      Frameworks Relacionados
                                     </label>
-                                    <p className="text-sm bg-amber-50 text-amber-900 p-3 rounded-lg">{q.riskSummary}</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {q.frameworks.map(fw => (
+                                        <Badge key={fw} variant="outline" className="text-xs font-normal">
+                                          {fw}
+                                        </Badge>
+                                      ))}
+                                    </div>
                                   </div>
-                                )}
-
-                                {/* Notes */}
-                                <div>
-                                  <label className="text-sm font-medium text-muted-foreground block mb-1">
-                                    Notas / Observações
-                                  </label>
-                                  <Textarea 
-                                    value={answer?.notes || ''}
-                                    onChange={(e) => setAnswer(q.questionId, { notes: e.target.value })}
-                                    placeholder="Adicione notas, justificativas ou observações..."
-                                    className="min-h-[80px]"
-                                  />
-                                </div>
-
-                                {/* Evidence links */}
-                                <div>
-                                  <label className="text-sm font-medium text-muted-foreground block mb-1">
-                                    Links de evidência
-                                  </label>
-                                  <Textarea 
-                                    value={answer?.evidenceLinks?.join('\n') || ''}
-                                    onChange={(e) => setAnswer(q.questionId, { 
-                                      evidenceLinks: e.target.value.split('\n').filter(l => l.trim()) 
-                                    })}
-                                    placeholder="Cole links de evidência (um por linha)..."
-                                    className="min-h-[60px] font-mono text-xs"
-                                  />
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      Observações
+                                    </label>
+                                    <Textarea
+                                      value={answer?.notes || ''}
+                                      onChange={e => setAnswer(q.questionId, { notes: e.target.value })}
+                                      placeholder="Adicione observações, links ou contexto adicional..."
+                                      className="min-h-[80px] resize-y"
+                                    />
+                                  </div>
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>
@@ -563,15 +505,28 @@ export default function Assessment() {
 
       {/* Empty state */}
       {groupedQuestions.length === 0 && (
-        <div className="text-center py-12 space-y-4">
-          <p className="text-muted-foreground">
-            Nenhuma pergunta encontrada para os frameworks selecionados.
+        <div className="text-center py-16 animate-fade-in">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">📋</span>
+          </div>
+          <h3 className="text-lg font-medium mb-2">Nenhuma pergunta encontrada</h3>
+          <p className="text-muted-foreground mb-6">
+            Selecione frameworks para carregar as perguntas da avaliação.
           </p>
           <Button onClick={() => setShowFrameworkSelector(true)}>
-            Alterar Frameworks
+            Selecionar Frameworks
           </Button>
         </div>
       )}
+
+      {/* Scroll to top button */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center"
+        aria-label="Voltar ao topo"
+      >
+        ↑
+      </button>
     </div>
   );
 }

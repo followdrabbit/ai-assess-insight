@@ -8,7 +8,7 @@ import {
   CoverageHelp, 
   EvidenceReadinessHelp 
 } from '@/components/HelpTooltip';
-import { FrameworkCategoryId } from '@/lib/datasetData';
+import { FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {

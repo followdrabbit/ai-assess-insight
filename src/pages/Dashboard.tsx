@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
-import { fetchDomains, fetchSubcategories, fetchQuestions, Domain, Subcategory, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, FrameworkCategoryId } from '@/lib/datasetData';
+import { domains, subcategories, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, FrameworkCategoryId, questions as defaultQuestions } from '@/lib/dataset';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ import {
 } from '@/components/HelpTooltip';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { fetchFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworksData';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {
@@ -62,18 +62,12 @@ export default function Dashboard() {
   const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
   const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
 
   // Load active questions and frameworks
   useEffect(() => {
     async function loadData() {
       try {
-        const [dbQuestions, dbDomains, dbSubcategories, dbFrameworks, customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
-          fetchQuestions(),
-          fetchDomains(),
-          fetchSubcategories(),
-          fetchFrameworks(),
+        const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
           getAllCustomQuestions(),
           getDisabledQuestions(),
           getEnabledFrameworks(),
@@ -81,12 +75,9 @@ export default function Dashboard() {
           getAllCustomFrameworks()
         ]);
 
-        setDomains(dbDomains);
-        setSubcategories(dbSubcategories);
-
         // Combine default and custom questions, excluding disabled ones
         const active: ActiveQuestion[] = [
-          ...dbQuestions
+          ...defaultQuestions
             .filter(q => !disabledQuestionIds.includes(q.questionId))
             .map(q => ({
               questionId: q.questionId,
@@ -113,7 +104,7 @@ export default function Dashboard() {
 
         // Combine default and custom frameworks, filter by enabled
         const allFrameworks: Framework[] = [
-          ...dbFrameworks,
+          ...defaultFrameworks,
           ...customFrameworks.map(cf => ({
             frameworkId: cf.frameworkId,
             frameworkName: cf.frameworkName,
@@ -135,11 +126,18 @@ export default function Dashboard() {
 
       } catch (error) {
         console.error('Error loading data:', error);
-        // On error, show empty state
+        // Fallback to default questions
         const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
-        setAllActiveQuestions([]);
+        setAllActiveQuestions(defaultQuestions.map(q => ({
+          questionId: q.questionId,
+          questionText: q.questionText,
+          subcatId: q.subcatId,
+          domainId: q.domainId,
+          ownershipType: q.ownershipType,
+          frameworks: q.frameworks || []
+        })));
         setEnabledFrameworkIds(defaultEnabledIds);
-        setEnabledFrameworks([]);
+        setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
       } finally {
         setDataLoading(false);
       }

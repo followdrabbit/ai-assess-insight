@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion } from '@/lib/scoring';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
-import { fetchQuestions } from '@/lib/datasetData';
+import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { fetchFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworksData';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 
 export default function DashboardExecutive() {
   const { answers, isLoading } = useAnswersStore();
@@ -21,19 +21,17 @@ export default function DashboardExecutive() {
   const loadData = useCallback(async () => {
     setQuestionsLoading(true);
     try {
-      const [dbQuestions, customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks, defaultFrameworks] = await Promise.all([
-        fetchQuestions(),
+      const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
         getAllCustomQuestions(),
         getDisabledQuestions(),
         getEnabledFrameworks(),
         getSelectedFrameworks(),
-        getAllCustomFrameworks(),
-        fetchFrameworks()
+        getAllCustomFrameworks()
       ]);
 
       // Combine default and custom questions, excluding disabled ones
       const active: ActiveQuestion[] = [
-        ...dbQuestions
+        ...defaultQuestions
           .filter(q => !disabledQuestionIds.includes(q.questionId))
           .map(q => ({
             questionId: q.questionId,
@@ -86,11 +84,18 @@ export default function DashboardExecutive() {
 
     } catch (error) {
       console.error('Error loading data:', error);
-      // On error, show empty state
+      // Fallback to default questions
       const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
-      setAllActiveQuestions([]);
+      setAllActiveQuestions(defaultQuestions.map(q => ({
+        questionId: q.questionId,
+        questionText: q.questionText,
+        subcatId: q.subcatId,
+        domainId: q.domainId,
+        ownershipType: q.ownershipType,
+        frameworks: q.frameworks || []
+      })));
       setEnabledFrameworkIds(defaultEnabledIds);
-      setEnabledFrameworks([]);
+      setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
     } finally {
       setQuestionsLoading(false);
     }

@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { fetchFrameworks, Framework } from '@/lib/frameworksData';
+import { frameworks as defaultFrameworks, Framework } from '@/lib/frameworks';
 import { 
   CustomFramework, 
   getAllCustomFrameworks, 
@@ -67,7 +67,6 @@ const audienceLabels: Record<AudienceType, string> = {
 };
 
 export function FrameworkManagement() {
-  const [defaultFrameworks, setDefaultFrameworks] = useState<Framework[]>([]);
   const [customFrameworks, setCustomFrameworks] = useState<CustomFramework[]>([]);
   const [disabledDefaultFrameworks, setDisabledDefaultFrameworks] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -76,31 +75,23 @@ export function FrameworkManagement() {
   const [isEditingDefault, setIsEditingDefault] = useState(false);
   const [formData, setFormData] = useState<FrameworkFormData>(emptyFormData);
   const [referencesText, setReferencesText] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [dbFrameworks, frameworks, disabledIds] = await Promise.all([
-        fetchFrameworks(),
-        getAllCustomFrameworks(),
-        getDisabledFrameworks()
-      ]);
-      setDefaultFrameworks(dbFrameworks);
-      setCustomFrameworks(frameworks);
-      // Track which default frameworks have custom overrides OR are disabled
-      const overriddenIds = new Set([
-        ...frameworks.map(f => f.frameworkId),
-        ...disabledIds
-      ]);
-      setDisabledDefaultFrameworks(overriddenIds);
-    } finally {
-      setIsLoading(false);
-    }
+    const [frameworks, disabledIds] = await Promise.all([
+      getAllCustomFrameworks(),
+      getDisabledFrameworks()
+    ]);
+    setCustomFrameworks(frameworks);
+    // Track which default frameworks have custom overrides OR are disabled
+    const overriddenIds = new Set([
+      ...frameworks.map(f => f.frameworkId),
+      ...disabledIds
+    ]);
+    setDisabledDefaultFrameworks(overriddenIds);
   };
 
   const allFrameworks = useMemo(() => [
@@ -108,7 +99,7 @@ export function FrameworkManagement() {
       .filter(f => !disabledDefaultFrameworks.has(f.frameworkId))
       .map(f => ({ ...f, isCustom: false as const, isDisabled: false })),
     ...customFrameworks.map(f => ({ ...f, isDisabled: false }))
-  ], [defaultFrameworks, customFrameworks, disabledDefaultFrameworks]);
+  ], [customFrameworks, disabledDefaultFrameworks]);
 
   const openNewDialog = () => {
     setEditingFramework(null);

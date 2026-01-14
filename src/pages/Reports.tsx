@@ -1,6 +1,6 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useAnswersStore } from '@/lib/stores';
-import { fetchDomains, Domain } from '@/lib/datasetData';
+import { domains } from '@/lib/dataset';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage } from '@/lib/scoring';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,6 @@ import { cn } from '@/lib/utils';
 
 export default function Reports() {
   const { answers, isLoading } = useAnswersStore();
-  const [domains, setDomains] = useState<Domain[]>([]);
-
-  useEffect(() => {
-    fetchDomains().then(setDomains).catch(console.error);
-  }, []);
 
   const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
   const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5), [answers]);

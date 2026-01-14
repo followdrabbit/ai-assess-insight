@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Answer } from './database';
-import { fetchQuestions, Question } from './datasetData';
+import { questions } from './dataset';
 
 const SUPPORTED_SCHEMA_VERSIONS = ['1.0.0'];
 
@@ -21,16 +21,6 @@ export interface ImportValidation {
   errors: string[];
   warnings: string[];
   columnMapping: Record<string, string>;
-}
-
-// Cache for questions
-let cachedQuestions: Question[] | null = null;
-
-async function loadQuestions(): Promise<Question[]> {
-  if (!cachedQuestions) {
-    cachedQuestions = await fetchQuestions();
-  }
-  return cachedQuestions;
 }
 
 // Validate file before import
@@ -129,11 +119,7 @@ export function validateImportFile(file: File): Promise<ImportValidation> {
 }
 
 // Import answers from XLSX file
-export async function importAnswersFromXLSX(file: File): Promise<ImportResult> {
-  // Load questions from database
-  const questions = await loadQuestions();
-  const validQuestionIds = new Set(questions.map(q => q.questionId));
-
+export function importAnswersFromXLSX(file: File): Promise<ImportResult> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     
@@ -145,6 +131,9 @@ export async function importAnswersFromXLSX(file: File): Promise<ImportResult> {
         const answers: Answer[] = [];
         const warnings: string[] = [];
         const errors: string[] = [];
+
+        // Get valid question IDs
+        const validQuestionIds = new Set(questions.map(q => q.questionId));
 
         // Parse Answers sheet
         if (!workbook.SheetNames.includes('Answers')) {
@@ -188,7 +177,7 @@ export async function importAnswersFromXLSX(file: File): Promise<ImportResult> {
 
           answers.push({
             questionId,
-            frameworkId: row.frameworkId?.toString() || 'NIST_AI_RMF',
+            frameworkId: row.frameworkId?.toString() || 'NIST_AI_RMF', // Default for backward compatibility
             response,
             evidenceOk,
             notes: row.notes?.toString() || '',
@@ -269,6 +258,3 @@ function normalizeEvidence(value: any): Answer['evidenceOk'] {
   
   return null;
 }
-
-// Pre-load questions cache
-loadQuestions().catch(console.error);

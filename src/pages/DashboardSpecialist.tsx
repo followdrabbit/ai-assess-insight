@@ -1,10 +1,11 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
-import { fetchDomains, Domain, maturityLevels, FrameworkCategoryId } from '@/lib/datasetData';
+import { domains, maturityLevels } from '@/lib/dataset';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
+import { FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,26 +58,6 @@ export default function DashboardSpecialist() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
 
-  // Domains state
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [domainsLoading, setDomainsLoading] = useState(true);
-
-  // Load domains from database
-  useEffect(() => {
-    async function loadDomains() {
-      setDomainsLoading(true);
-      try {
-        const data = await fetchDomains();
-        setDomains(data);
-      } catch (error) {
-        console.error('Error loading domains:', error);
-      } finally {
-        setDomainsLoading(false);
-      }
-    }
-    loadDomains();
-  }, []);
-
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
   const [criticalityFilter, setCriticalityFilter] = useState<CriticalityFilter>('all');
@@ -115,7 +96,7 @@ export default function DashboardSpecialist() {
   // Unique domains for filter
   const domainOptions = useMemo(() => {
     return domains.map(d => ({ id: d.domainId, name: d.domainName }));
-  }, [domains]);
+  }, []);
 
   // Filtered and sorted gaps
   const filteredGaps = useMemo(() => {

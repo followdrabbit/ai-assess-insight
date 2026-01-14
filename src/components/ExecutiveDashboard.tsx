@@ -176,11 +176,10 @@ export function ExecutiveDashboard({
       selectedFrameworkNames.has(fc.framework)
     );
 
-    // Roadmap items are already derived from gaps, so filter similarly
-    const filteredRoadmap = roadmap.filter(item => {
-      // Check if any gap in this domain belongs to selected frameworks
-      return filteredGaps.some(gap => gap.domainName === item.domain);
-    });
+    // Filter roadmap items - keep only items whose domain has active gaps in selected frameworks
+    // Also recalculate based on actual gap data for the selected frameworks
+    const domainsWithGaps = new Set(filteredGaps.map(gap => gap.domainName));
+    const filteredRoadmap = roadmap.filter(item => domainsWithGaps.has(item.domain));
 
     return { gaps: filteredGaps, coverage: filteredCoverage, roadmapItems: filteredRoadmap };
   }, [criticalGaps, frameworkCoverage, roadmap, selectedFrameworkIds, activeQuestions]);

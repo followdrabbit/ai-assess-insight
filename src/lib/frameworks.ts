@@ -85,12 +85,14 @@ const FRAMEWORK_PATTERNS: { pattern: RegExp; frameworkId: string }[] = [
   { pattern: /SBOM/i, frameworkId: 'NIST_SSDF' }, // Software Bill of Materials
   
   // Cloud/Infrastructure security
+  { pattern: /CSA\s*CCM/i, frameworkId: 'CSA_CCM' },
+  { pattern: /CSA\s*Cloud\s*Controls/i, frameworkId: 'CSA_CCM' },
   { pattern: /CSA\s*(AI)?/i, frameworkId: 'CSA_AI' },
   { pattern: /MITRE\s*ATLAS/i, frameworkId: 'CSA_AI' }, // MITRE ATLAS maps to CSA
-  { pattern: /NIST\s*(SP\s*)?800-53/i, frameworkId: 'CSA_AI' }, // NIST 800-53 maps to CSA
-  { pattern: /NIST\s*(SP\s*)?800-/i, frameworkId: 'CSA_AI' }, // Other NIST SPs
-  { pattern: /NIST\s*CSF/i, frameworkId: 'CSA_AI' }, // NIST CSF maps to CSA
-  { pattern: /CIS/i, frameworkId: 'CSA_AI' }, // CIS Benchmarks
+  { pattern: /NIST\s*(SP\s*)?800-53/i, frameworkId: 'CSA_CCM' }, // NIST 800-53 maps to CSA CCM
+  { pattern: /NIST\s*(SP\s*)?800-/i, frameworkId: 'CSA_CCM' }, // Other NIST SPs
+  { pattern: /NIST\s*CSF/i, frameworkId: 'CSA_CCM' }, // NIST CSF maps to CSA CCM
+  { pattern: /CIS/i, frameworkId: 'CSA_CCM' }, // CIS Benchmarks
   
   // OWASP - more specific patterns first
   { pattern: /OWASP\s*LLM\s*Top\s*10/i, frameworkId: 'OWASP_LLM' },

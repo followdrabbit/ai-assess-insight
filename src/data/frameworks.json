@@ -113,6 +113,20 @@
       "references": [
         "https://owasp.org/API-Security/"
       ]
+    },
+    {
+      "frameworkId": "CSA_CCM",
+      "frameworkName": "CSA Cloud Controls Matrix",
+      "shortName": "CSA CCM",
+      "description": "Framework de controles de segurança para cloud computing, com 17 domínios cobrindo governança, IAM, proteção de dados e infraestrutura.",
+      "targetAudience": ["GRC", "Engineering"],
+      "assessmentScope": "Controles de segurança cloud: identidade, criptografia, logging, BCM, compliance e infraestrutura",
+      "defaultEnabled": false,
+      "version": "4.0",
+      "category": "high-value",
+      "references": [
+        "https://cloudsecurityalliance.org/research/cloud-controls-matrix/"
+      ]
     }
   ]
 }

@@ -107,6 +107,15 @@
       "strategicQuestion": "As APIs de IA estão protegidas contra as principais vulnerabilidades?",
       "description": "Controles de autorização, autenticação, rate limiting, validação de entrada e proteção contra abusos de API",
       "bankingRelevance": "Essencial para proteção de APIs de modelos expostas a clientes e parceiros"
+    },
+    {
+      "domainId": "CCM",
+      "domainName": "Controles Cloud (CSA CCM)",
+      "order": 13,
+      "nistAiRmfFunction": "MANAGE",
+      "strategicQuestion": "A infraestrutura cloud de IA possui controles de segurança adequados?",
+      "description": "Controles de segurança cloud conforme CSA CCM: IAM, criptografia, logging, BCM, compliance e gestão de vulnerabilidades",
+      "bankingRelevance": "Crítico para conformidade com requisitos de cloud computing do BACEN e segurança de ambientes de IA em nuvem"
     }
   ],
   "subcategories": [
@@ -707,6 +716,84 @@
       "ownershipType": "Engineering",
       "riskSummary": "APIs shadow ou mal configuradas são vetores de ataque",
       "frameworkRefs": ["OWASP API Top 10 API8", "OWASP API Top 10 API9"]
+    },
+    {
+      "subcatId": "CCM-01",
+      "domainId": "CCM",
+      "subcatName": "Auditoria e Conformidade Cloud",
+      "definition": "Programas de auditoria e garantia de conformidade para ambientes cloud",
+      "objective": "Validar conformidade com políticas e regulamentações",
+      "securityOutcome": "Gaps de conformidade são identificados e tratados proativamente",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "GRC",
+      "riskSummary": "Sem auditoria, não-conformidades passam despercebidas",
+      "frameworkRefs": ["CSA CCM A&A", "CSA CCM GRC", "ISO 27001 9.2"]
+    },
+    {
+      "subcatId": "CCM-02",
+      "domainId": "CCM",
+      "subcatName": "Identidade e Acesso Cloud",
+      "definition": "Gestão de identidades, acessos e credenciais em ambientes cloud",
+      "objective": "Controlar acessos a recursos cloud de forma centralizada e segura",
+      "securityOutcome": "Apenas usuários autorizados acessam recursos, com privilégios mínimos",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "ownershipType": "Engineering",
+      "riskSummary": "IAM inadequado permite acessos não autorizados e movimentação lateral",
+      "frameworkRefs": ["CSA CCM IAM", "NIST SP 800-63", "ISO 27001 A.9"]
+    },
+    {
+      "subcatId": "CCM-03",
+      "domainId": "CCM",
+      "subcatName": "Proteção de Dados Cloud",
+      "definition": "Criptografia, classificação e proteção de dados em cloud",
+      "objective": "Proteger dados em repouso e em trânsito em ambientes cloud",
+      "securityOutcome": "Dados estão criptografados e classificados adequadamente",
+      "criticality": "Critical",
+      "weight": 1.5,
+      "ownershipType": "Engineering",
+      "riskSummary": "Dados não criptografados podem ser expostos em caso de breach",
+      "frameworkRefs": ["CSA CCM DSP", "ISO 27001 A.8.24", "NIST SP 800-53 SC"]
+    },
+    {
+      "subcatId": "CCM-04",
+      "domainId": "CCM",
+      "subcatName": "Continuidade e Recuperação Cloud",
+      "definition": "Planos de continuidade, backup e recuperação para serviços cloud",
+      "objective": "Garantir resiliência e capacidade de recuperação",
+      "securityOutcome": "Serviços podem ser recuperados em caso de desastre ou incidente",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "GRC",
+      "riskSummary": "Sem BCP/DR, interrupções podem causar impacto prolongado",
+      "frameworkRefs": ["CSA CCM BCR", "ISO 22301", "NIST SP 800-53 CP"]
+    },
+    {
+      "subcatId": "CCM-05",
+      "domainId": "CCM",
+      "subcatName": "Logging e Monitoramento Cloud",
+      "definition": "Coleta, retenção e análise de logs em ambientes cloud",
+      "objective": "Detectar e investigar incidentes em ambientes cloud",
+      "securityOutcome": "Atividades são registradas e analisadas para detecção de ameaças",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Engineering",
+      "riskSummary": "Sem logging adequado, incidentes não são detectados ou investigados",
+      "frameworkRefs": ["CSA CCM LOG", "NIST SP 800-53 AU", "ISO 27001 A.8.15"]
+    },
+    {
+      "subcatId": "CCM-06",
+      "domainId": "CCM",
+      "subcatName": "Vulnerabilidades e Mudanças Cloud",
+      "definition": "Gestão de vulnerabilidades e mudanças em infraestrutura cloud",
+      "objective": "Manter infraestrutura atualizada e mudanças controladas",
+      "securityOutcome": "Vulnerabilidades são remediadas e mudanças são rastreáveis",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Engineering",
+      "riskSummary": "Vulnerabilidades não remediadas e mudanças não controladas introduzem riscos",
+      "frameworkRefs": ["CSA CCM TVM", "CSA CCM CCC", "NIST SP 800-53 RA-5"]
     }
   ],
   "frameworkCategories": {
@@ -739,6 +826,11 @@
       "name": "OWASP LLM + API",
       "description": "Exposições técnicas e abusos específicos de LLM e APIs",
       "frameworks": ["OWASP Top 10 for LLM", "OWASP API Security Top 10"]
+    },
+    "CLOUD_CONTROLS": {
+      "name": "CSA CCM",
+      "description": "Controles de segurança para cloud computing conforme Cloud Controls Matrix",
+      "frameworks": ["CSA CCM", "CSA AI Security"]
     }
   }
 }

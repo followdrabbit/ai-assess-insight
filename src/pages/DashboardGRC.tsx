@@ -398,8 +398,35 @@ export default function DashboardGRC() {
     answered: om.answeredQuestions,
   }));
 
+  // Map framework IDs to their category IDs
+  const frameworkIdToCategoryId: Record<string, FrameworkCategoryId> = {
+    'NIST_AI_RMF': 'NIST_AI_RMF',
+    'ISO_27001_27002': 'SECURITY_BASELINE',
+    'ISO_23894': 'AI_RISK_MGMT',
+    'LGPD': 'PRIVACY_LGPD',
+    'NIST_SSDF': 'SECURE_DEVELOPMENT',
+    'CSA_CCM': 'SECURE_DEVELOPMENT',
+    'CSA_AI': 'SECURE_DEVELOPMENT',
+    'OWASP_LLM': 'THREAT_EXPOSURE',
+    'OWASP_API': 'THREAT_EXPOSURE'
+  };
+
+  // Get selected category IDs based on selected frameworks
+  const selectedCategoryIds = useMemo(() => {
+    const effectiveFrameworkIds = selectedFrameworkIds.length > 0 
+      ? selectedFrameworkIds 
+      : enabledFrameworks.map(f => f.frameworkId);
+    
+    const categoryIds = new Set<FrameworkCategoryId>();
+    effectiveFrameworkIds.forEach(fwId => {
+      const categoryId = frameworkIdToCategoryId[fwId];
+      if (categoryId) categoryIds.add(categoryId);
+    });
+    return categoryIds;
+  }, [selectedFrameworkIds, enabledFrameworks]);
+
   const frameworkCategoryData = metrics.frameworkCategoryMetrics
-    .filter(fc => fc.totalQuestions > 0)
+    .filter(fc => fc.totalQuestions > 0 && selectedCategoryIds.has(fc.categoryId))
     .map(fc => ({
       categoryId: fc.categoryId,
       name: frameworkCategoryLabels[fc.categoryId] || fc.categoryId,

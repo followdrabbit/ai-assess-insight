@@ -3,17 +3,7 @@ import {
   LayoutDashboard,
   ClipboardCheck,
   FileText,
-  ChevronDown,
   Shield,
-  Map,
-  Database,
-  Code,
-  Scale,
-  Lock,
-  Eye,
-  AlertTriangle,
-  Users,
-  Building2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -25,28 +15,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
-import taxonomy from '@/data/taxonomy.json';
-
-const domainIcons: Record<string, React.ElementType> = {
-  GOVERN: Shield,
-  MAP: Map,
-  DATA: Database,
-  DEVELOP: Code,
-  MEASURE: Scale,
-  PROTECT: Lock,
-  DETECT: Eye,
-  RESPOND: AlertTriangle,
-  SUPPLY: Building2,
-  PEOPLE: Users,
-};
 
 const mainNavItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -61,14 +32,6 @@ export function AppSidebar() {
   const isCollapsed = state === 'collapsed';
 
   const isActive = (path: string) => location.pathname === path;
-
-  const handleNavigation = (path: string, domainId?: string, subcatId?: string) => {
-    const params = new URLSearchParams();
-    if (domainId) params.set('domain', domainId);
-    if (subcatId) params.set('subcat', subcatId);
-    const queryString = params.toString();
-    navigate(queryString ? `${path}?${queryString}` : path);
-  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
@@ -101,74 +64,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Domains with Subcategories */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Domínios</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {taxonomy.domains.map((domain) => {
-                const Icon = domainIcons[domain.domainId] || Shield;
-                const subcats = taxonomy.subcategories.filter(
-                  (s) => s.domainId === domain.domainId
-                );
-                const isCurrentDomain = location.search.includes(`domain=${domain.domainId}`);
-
-                return (
-                  <Collapsible
-                    key={domain.domainId}
-                    asChild
-                    defaultOpen={isCurrentDomain}
-                    className="group/collapsible"
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                          tooltip={domain.domainName}
-                          className={cn(
-                            isCurrentDomain && 'bg-accent text-accent-foreground'
-                          )}
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span className="truncate">{domain.domainName}</span>
-                          <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {subcats.map((subcat) => {
-                            const isCurrentSubcat = location.search.includes(
-                              `subcat=${subcat.subcatId}`
-                            );
-                            return (
-                              <SidebarMenuSubItem key={subcat.subcatId}>
-                                <SidebarMenuSubButton
-                                  onClick={() =>
-                                    handleNavigation(
-                                      '/assessment',
-                                      domain.domainId,
-                                      subcat.subcatId
-                                    )
-                                  }
-                                  isActive={isCurrentSubcat}
-                                  className="cursor-pointer"
-                                >
-                                  <span className="truncate text-xs">
-                                    {subcat.subcatName}
-                                  </span>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            );
-                          })}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                );
-              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

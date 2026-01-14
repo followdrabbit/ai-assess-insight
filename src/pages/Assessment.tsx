@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { FrameworkSelector } from '@/components/FrameworkSelector';
-import { getFrameworkById } from '@/lib/frameworks';
+import { questionBelongsToFrameworks } from '@/lib/frameworks';
 
 export default function Assessment() {
   const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading, selectedFrameworks } = useAnswersStore();
@@ -22,18 +22,7 @@ export default function Assessment() {
   // Filter questions based on selected frameworks
   const filteredQuestions = useMemo(() => {
     if (selectedFrameworks.length === 0) return [];
-    return questions.filter(q => 
-      q.frameworks.some(fw => 
-        selectedFrameworks.some(selectedId => {
-          const framework = getFrameworkById(selectedId);
-          return framework && q.frameworks.some(qfw => 
-            qfw.toLowerCase().includes(framework.shortName.toLowerCase()) ||
-            framework.frameworkName.toLowerCase().includes(qfw.toLowerCase()) ||
-            qfw.toLowerCase().includes(framework.frameworkName.toLowerCase())
-          );
-        })
-      )
-    );
+    return questions.filter(q => questionBelongsToFrameworks(q.frameworks, selectedFrameworks));
   }, [selectedFrameworks]);
 
   const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);

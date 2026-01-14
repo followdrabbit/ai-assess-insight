@@ -1,7 +1,6 @@
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useAnswersStore } from '@/lib/stores';
 import { domains, subcategories, questions, getSubcategoriesByDomain, responseOptions, evidenceOptions } from '@/lib/dataset';
-import { calculateOverallMetrics } from '@/lib/scoring';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
 import { importAnswersFromXLSX } from '@/lib/xlsxImport';
 import { Button } from '@/components/ui/button';
@@ -12,12 +11,14 @@ import { cn } from '@/lib/utils';
 import { FrameworkSelector } from '@/components/FrameworkSelector';
 import { questionBelongsToFrameworks, getFrameworkById } from '@/lib/frameworks';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 export default function Assessment() {
   const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading, selectedFrameworks } = useAnswersStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const [showFrameworkSelector, setShowFrameworkSelector] = useState(selectedFrameworks.length === 0);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   // Filter questions based on selected frameworks
   const filteredQuestions = useMemo(() => {
@@ -29,9 +30,12 @@ export default function Assessment() {
   const groupedQuestions = useMemo(() => {
     const groups: {
       domain: typeof domains[0];
+      answeredCount: number;
+      totalCount: number;
       subcategories: {
         subcat: typeof subcategories[0];
         questions: typeof questions;
+        answeredCount: number;
       }[];
     }[] = [];
 
@@ -41,21 +45,29 @@ export default function Assessment() {
 
       const domainSubcats = getSubcategoriesByDomain(domain.domainId);
       const subcatGroups: typeof groups[0]['subcategories'] = [];
+      let domainAnswered = 0;
 
       domainSubcats.forEach(subcat => {
         const subcatQuestions = domainQuestions.filter(q => q.subcatId === subcat.subcatId);
         if (subcatQuestions.length > 0) {
-          subcatGroups.push({ subcat, questions: subcatQuestions });
+          const answered = subcatQuestions.filter(q => answers.has(q.questionId) && answers.get(q.questionId)?.response).length;
+          domainAnswered += answered;
+          subcatGroups.push({ subcat, questions: subcatQuestions, answeredCount: answered });
         }
       });
 
       if (subcatGroups.length > 0) {
-        groups.push({ domain, subcategories: subcatGroups });
+        groups.push({ 
+          domain, 
+          subcategories: subcatGroups,
+          answeredCount: domainAnswered,
+          totalCount: domainQuestions.length
+        });
       }
     });
 
     return groups;
-  }, [filteredQuestions]);
+  }, [filteredQuestions, answers]);
 
   // Calculate metrics based on filtered questions
   const metrics = useMemo(() => {
@@ -66,6 +78,26 @@ export default function Assessment() {
       coverage: filteredQuestions.length > 0 ? answered / filteredQuestions.length : 0,
     };
   }, [answers, filteredQuestions]);
+
+  // Track scroll position for active section highlight
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = document.querySelectorAll('[data-domain-id]');
+      let current = '';
+      
+      sections.forEach(section => {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= 200) {
+          current = section.getAttribute('data-domain-id') || '';
+        }
+      });
+      
+      setActiveSection(current);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleExport = () => {
     const blob = exportAnswersToXLSX(answers);
@@ -106,190 +138,387 @@ export default function Assessment() {
     });
   };
 
+  const scrollToSection = (domainId: string) => {
+    const element = document.querySelector(`[data-domain-id="${domainId}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // Get framework names for display
   const selectedFrameworkNames = selectedFrameworks
     .map(id => getFrameworkById(id)?.shortName)
-    .filter(Boolean)
-    .join(', ');
+    .filter(Boolean);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64">Carregando...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Carregando avaliação...</p>
+        </div>
+      </div>
+    );
   }
 
   // Show framework selector if no frameworks selected or user wants to change
   if (showFrameworkSelector) {
     return (
-      <div className="max-w-4xl mx-auto py-8">
+      <div className="max-w-4xl mx-auto py-8 animate-fade-in">
         <FrameworkSelector onStartAssessment={() => setShowFrameworkSelector(false)} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header with progress and actions */}
-      <div className="card-elevated p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">Avaliação de Segurança de IA</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {selectedFrameworkNames}
-            </p>
+    <div className="max-w-5xl mx-auto">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b -mx-4 px-4 py-4 mb-6">
+        <div className="max-w-5xl mx-auto">
+          {/* Top row: Title and Actions */}
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg font-semibold truncate">Avaliação de Segurança de IA</h1>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {selectedFrameworkNames.map(name => (
+                  <Badge key={name} variant="secondary" className="text-xs font-normal">
+                    {name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button onClick={() => setShowFrameworkSelector(true)} variant="outline" size="sm">
+                Alterar
+              </Button>
+              <Button onClick={handleExport} variant="outline" size="sm" className="hidden sm:inline-flex">
+                Exportar
+              </Button>
+            </div>
           </div>
-          <Button onClick={() => setShowFrameworkSelector(true)} variant="outline" size="sm">
-            Alterar Frameworks
-          </Button>
-        </div>
 
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Progresso</span>
-            <span className="font-medium">
-              {metrics.answeredQuestions} / {metrics.totalQuestions} ({Math.round(metrics.coverage * 100)}%)
-            </span>
+          {/* Progress bar with stats */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-4">
+                <span className="font-medium">
+                  {metrics.answeredQuestions} de {metrics.totalQuestions} respondidas
+                </span>
+                <span className={cn(
+                  "text-xs px-2 py-0.5 rounded-full font-medium",
+                  metrics.coverage === 1 ? "bg-green-100 text-green-700" :
+                  metrics.coverage >= 0.5 ? "bg-yellow-100 text-yellow-700" :
+                  "bg-muted text-muted-foreground"
+                )}>
+                  {Math.round(metrics.coverage * 100)}%
+                </span>
+              </div>
+            </div>
+            <Progress value={metrics.coverage * 100} className="h-2" />
           </div>
-          <Progress value={metrics.coverage * 100} className="h-2" />
-        </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          <Button onClick={handleExport} variant="outline" size="sm">Exportar XLSX</Button>
-          <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">Importar XLSX</Button>
-          <Button onClick={generateDemoData} variant="outline" size="sm">Dados Demo</Button>
-          <Button onClick={handleClear} variant="outline" size="sm" className="text-destructive">Limpar</Button>
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleImport} className="hidden" />
+          {/* Quick nav */}
+          <div className="flex gap-1 mt-4 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
+            {groupedQuestions.map(({ domain, answeredCount, totalCount }) => {
+              const isComplete = answeredCount === totalCount;
+              const isActive = activeSection === domain.domainId;
+              return (
+                <button
+                  key={domain.domainId}
+                  onClick={() => scrollToSection(domain.domainId)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+                    isActive 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-muted hover:bg-accent text-muted-foreground hover:text-foreground",
+                    isComplete && !isActive && "bg-green-100 text-green-700 hover:bg-green-200"
+                  )}
+                >
+                  <span className="truncate max-w-[120px]">{domain.domainName}</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full",
+                    isActive ? "bg-primary-foreground/20" : "bg-background"
+                  )}>
+                    {answeredCount}/{totalCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
+      {/* Secondary actions bar */}
+      <div className="flex flex-wrap items-center gap-2 mb-8 pb-4 border-b">
+        <span className="text-sm text-muted-foreground mr-2">Ações:</span>
+        <Button onClick={() => fileInputRef.current?.click()} variant="ghost" size="sm">
+          Importar XLSX
+        </Button>
+        <Button onClick={generateDemoData} variant="ghost" size="sm">
+          Dados Demo
+        </Button>
+        <Button onClick={handleClear} variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+          Limpar Tudo
+        </Button>
+        <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleImport} className="hidden" />
+      </div>
+
       {/* Questions grouped by Domain > Subcategory */}
-      {groupedQuestions.map(({ domain, subcategories: subcatGroups }) => (
-        <section key={domain.domainId} className="space-y-6">
-          {/* Domain Header */}
-          <div className="border-b pb-2">
-            <h2 className="text-lg font-semibold">{domain.domainName}</h2>
-            <p className="text-sm text-muted-foreground">{domain.description}</p>
-          </div>
-
-          {/* Subcategories */}
-          {subcatGroups.map(({ subcat, questions: subcatQuestions }) => (
-            <div key={subcat.subcatId} className="space-y-4">
-              {/* Subcategory Header */}
-              <div className="flex items-center gap-3">
-                <h3 className="text-base font-medium">{subcat.subcatName}</h3>
-                <span className={cn("criticality-badge", `criticality-${subcat.criticality.toLowerCase()}`)}>
-                  {subcat.criticality}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {subcatQuestions.length} pergunta{subcatQuestions.length !== 1 ? 's' : ''}
-                </span>
+      <div className="space-y-12">
+        {groupedQuestions.map(({ domain, subcategories: subcatGroups, answeredCount, totalCount }) => (
+          <section 
+            key={domain.domainId} 
+            data-domain-id={domain.domainId}
+            className="scroll-mt-48 animate-fade-in"
+          >
+            {/* Domain Header */}
+            <div className="mb-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold">{domain.domainName}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{domain.description}</p>
+                </div>
+                <div className="flex items-center gap-2 text-sm flex-shrink-0">
+                  <div className={cn(
+                    "px-3 py-1 rounded-full font-medium",
+                    answeredCount === totalCount 
+                      ? "bg-green-100 text-green-700" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {answeredCount}/{totalCount}
+                  </div>
+                </div>
               </div>
-
-              {/* Questions */}
-              <div className="space-y-3 pl-4 border-l-2 border-muted">
-                {subcatQuestions.map(q => {
-                  const answer = answers.get(q.questionId);
-                  const isExpanded = expandedQuestions.has(q.questionId);
-                  const answerStatus = answer?.response === 'Sim' ? 'answered' : answer?.response === 'Parcial' ? 'partial' : 'unanswered';
-
-                  return (
-                    <div key={q.questionId} className={cn("question-card", answerStatus)}>
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-mono text-muted-foreground">{q.questionId}</span>
-                        </div>
-                        <p className="font-medium">{q.questionText}</p>
-                      </div>
-
-                      {/* Response selector */}
-                      <div className="mb-4">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Resposta</label>
-                        <div className="flex flex-wrap gap-2">
-                          {responseOptions.map(opt => (
-                            <button
-                              key={opt.value}
-                              data-value={opt.value}
-                              onClick={() => setAnswer(q.questionId, { response: opt.value as any })}
-                              className={cn("response-option", answer?.response === opt.value && "selected")}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Evidence selector */}
-                      {answer?.response && answer.response !== 'NA' && (
-                        <div className="mb-4">
-                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">Evidência disponível?</label>
-                          <div className="flex flex-wrap gap-2">
-                            {evidenceOptions.map(opt => (
-                              <button
-                                key={opt.value}
-                                data-value={opt.value}
-                                onClick={() => setAnswer(q.questionId, { evidenceOk: opt.value as any })}
-                                className={cn("response-option", answer?.evidenceOk === opt.value && "selected")}
-                              >
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Expandable details */}
-                      <Collapsible open={isExpanded} onOpenChange={() => toggleQuestionExpanded(q.questionId)}>
-                        <CollapsibleTrigger className="collapsible-trigger">
-                          <span>{isExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}</span>
-                          <span className="text-xs">{isExpanded ? '−' : '+'}</span>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-3 mt-3">
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evidências esperadas</label>
-                            <p className="text-sm mt-1">{q.expectedEvidence}</p>
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Verificações</label>
-                            <p className="text-sm mt-1">{q.imperativeChecks}</p>
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Riscos</label>
-                            <p className="text-sm mt-1">{q.riskSummary}</p>
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frameworks</label>
-                            <p className="text-sm mt-1">{q.frameworks.join(', ')}</p>
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Observações</label>
-                            <Textarea
-                              value={answer?.notes || ''}
-                              onChange={e => setAnswer(q.questionId, { notes: e.target.value })}
-                              placeholder="Adicione observações..."
-                              className="mt-1"
-                              rows={2}
-                            />
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  );
-                })}
+              <div className="mt-3">
+                <Progress 
+                  value={totalCount > 0 ? (answeredCount / totalCount) * 100 : 0} 
+                  className="h-1" 
+                />
               </div>
             </div>
-          ))}
-        </section>
-      ))}
+
+            {/* Subcategories */}
+            <div className="space-y-8">
+              {subcatGroups.map(({ subcat, questions: subcatQuestions, answeredCount: subcatAnswered }) => (
+                <div key={subcat.subcatId}>
+                  {/* Subcategory Header */}
+                  <div className="flex items-center gap-3 mb-4 pb-2 border-b border-dashed">
+                    <h3 className="text-base font-medium">{subcat.subcatName}</h3>
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-[10px] uppercase",
+                        subcat.criticality === 'Critical' && "border-red-300 text-red-700 bg-red-50",
+                        subcat.criticality === 'High' && "border-orange-300 text-orange-700 bg-orange-50",
+                        subcat.criticality === 'Medium' && "border-blue-300 text-blue-700 bg-blue-50",
+                        subcat.criticality === 'Low' && "border-gray-300 text-gray-600 bg-gray-50"
+                      )}
+                    >
+                      {subcat.criticality}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {subcatAnswered}/{subcatQuestions.length} respondidas
+                    </span>
+                  </div>
+
+                  {/* Questions */}
+                  <div className="space-y-4">
+                    {subcatQuestions.map((q, idx) => {
+                      const answer = answers.get(q.questionId);
+                      const isExpanded = expandedQuestions.has(q.questionId);
+                      const hasResponse = !!answer?.response;
+                      const answerStatus = answer?.response === 'Sim' ? 'answered' : 
+                                          answer?.response === 'Parcial' ? 'partial' : 
+                                          answer?.response === 'Não' ? 'negative' : 'unanswered';
+
+                      return (
+                        <div 
+                          key={q.questionId} 
+                          className={cn(
+                            "group rounded-lg border bg-card transition-all duration-200",
+                            "hover:shadow-md",
+                            hasResponse ? "border-l-4" : "border-l-4 border-l-muted",
+                            answerStatus === 'answered' && "border-l-green-500",
+                            answerStatus === 'partial' && "border-l-yellow-500",
+                            answerStatus === 'negative' && "border-l-red-400"
+                          )}
+                        >
+                          <div className="p-5">
+                            {/* Question header */}
+                            <div className="flex items-start gap-4 mb-4">
+                              <div className={cn(
+                                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0",
+                                hasResponse 
+                                  ? answerStatus === 'answered' ? "bg-green-100 text-green-700" :
+                                    answerStatus === 'partial' ? "bg-yellow-100 text-yellow-700" :
+                                    answerStatus === 'negative' ? "bg-red-100 text-red-700" :
+                                    "bg-gray-100 text-gray-600"
+                                  : "bg-muted text-muted-foreground"
+                              )}>
+                                {idx + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium leading-relaxed">{q.questionText}</p>
+                                <span className="text-xs font-mono text-muted-foreground mt-1 block">
+                                  {q.questionId}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Response selector */}
+                            <div className="mb-4">
+                              <div className="grid grid-cols-4 gap-2">
+                                {responseOptions.map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    data-value={opt.value}
+                                    onClick={() => setAnswer(q.questionId, { response: opt.value as any })}
+                                    className={cn(
+                                      "py-2.5 px-3 text-sm font-medium rounded-lg border-2 transition-all duration-150",
+                                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                                      answer?.response === opt.value 
+                                        ? opt.value === 'Sim' ? "border-green-500 bg-green-50 text-green-700" :
+                                          opt.value === 'Parcial' ? "border-yellow-500 bg-yellow-50 text-yellow-700" :
+                                          opt.value === 'Não' ? "border-red-500 bg-red-50 text-red-700" :
+                                          "border-gray-400 bg-gray-100 text-gray-600"
+                                        : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    )}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Evidence selector - only show if response is not NA */}
+                            {answer?.response && answer.response !== 'NA' && (
+                              <div className="mb-4 pt-4 border-t border-dashed animate-fade-in">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">
+                                  Evidência disponível?
+                                </label>
+                                <div className="flex gap-2">
+                                  {evidenceOptions.map(opt => (
+                                    <button
+                                      key={opt.value}
+                                      data-value={opt.value}
+                                      onClick={() => setAnswer(q.questionId, { evidenceOk: opt.value as any })}
+                                      className={cn(
+                                        "flex-1 py-2 px-3 text-sm font-medium rounded-lg border-2 transition-all",
+                                        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                                        answer?.evidenceOk === opt.value 
+                                          ? opt.value === 'Sim' ? "border-green-500 bg-green-50 text-green-700" :
+                                            opt.value === 'Parcial' ? "border-yellow-500 bg-yellow-50 text-yellow-700" :
+                                            "border-red-500 bg-red-50 text-red-700"
+                                          : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                                      )}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Expandable details */}
+                            <Collapsible open={isExpanded} onOpenChange={() => toggleQuestionExpanded(q.questionId)}>
+                              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 w-full">
+                                <span className="h-px flex-1 bg-border" />
+                                <span className="flex items-center gap-1.5 px-2">
+                                  {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes e observações'}
+                                  <span className="text-lg leading-none">{isExpanded ? '−' : '+'}</span>
+                                </span>
+                                <span className="h-px flex-1 bg-border" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="animate-slide-up">
+                                <div className="grid gap-4 pt-4">
+                                  <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                        Evidências Esperadas
+                                      </label>
+                                      <p className="text-sm leading-relaxed bg-muted/50 rounded-lg p-3">
+                                        {q.expectedEvidence}
+                                      </p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                        Verificações
+                                      </label>
+                                      <p className="text-sm leading-relaxed bg-muted/50 rounded-lg p-3">
+                                        {q.imperativeChecks}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      Riscos
+                                    </label>
+                                    <p className="text-sm leading-relaxed bg-red-50 text-red-900 rounded-lg p-3 border border-red-100">
+                                      {q.riskSummary}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      Frameworks Relacionados
+                                    </label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {q.frameworks.map(fw => (
+                                        <Badge key={fw} variant="outline" className="text-xs font-normal">
+                                          {fw}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      Observações
+                                    </label>
+                                    <Textarea
+                                      value={answer?.notes || ''}
+                                      onChange={e => setAnswer(q.questionId, { notes: e.target.value })}
+                                      placeholder="Adicione observações, links ou contexto adicional..."
+                                      className="min-h-[80px] resize-y"
+                                    />
+                                  </div>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
 
       {/* Empty state */}
       {groupedQuestions.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Nenhuma pergunta encontrada para os frameworks selecionados.</p>
-          <Button onClick={() => setShowFrameworkSelector(true)} variant="outline" className="mt-4">
+        <div className="text-center py-16 animate-fade-in">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">📋</span>
+          </div>
+          <h3 className="text-lg font-medium mb-2">Nenhuma pergunta encontrada</h3>
+          <p className="text-muted-foreground mb-6">
+            Selecione frameworks para carregar as perguntas da avaliação.
+          </p>
+          <Button onClick={() => setShowFrameworkSelector(true)}>
             Selecionar Frameworks
           </Button>
         </div>
       )}
+
+      {/* Scroll to top button */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center"
+        aria-label="Voltar ao topo"
+      >
+        ↑
+      </button>
     </div>
   );
 }

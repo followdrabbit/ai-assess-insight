@@ -141,13 +141,14 @@ export function ExecutiveDashboard({
 
   // Filter questions and gaps by selected frameworks
   const filteredByFramework = useMemo(() => {
-    if (selectedFrameworkIds.length === 0) {
-      return { gaps: criticalGaps, coverage: frameworkCoverage, roadmapItems: roadmap };
-    }
-
-    const selectedSet = new Set(selectedFrameworkIds);
+    // Use enabled frameworks as default when no specific selection
+    const effectiveFrameworkIds = selectedFrameworkIds.length > 0 
+      ? selectedFrameworkIds 
+      : enabledFrameworks.map(f => f.frameworkId);
     
-    // Filter gaps - only show gaps from questions that belong to selected frameworks
+    const selectedSet = new Set(effectiveFrameworkIds);
+    
+    // Filter gaps - only show gaps from questions that belong to selected/enabled frameworks
     const filteredGaps = criticalGaps.filter(gap => {
       const question = activeQuestions.find(q => q.questionId === gap.questionId);
       if (!question) return false;
@@ -169,7 +170,7 @@ export function ExecutiveDashboard({
     };
     
     const selectedFrameworkNames = new Set(
-      selectedFrameworkIds.map(id => frameworkIdToName[id]).filter(Boolean)
+      effectiveFrameworkIds.map(id => frameworkIdToName[id]).filter(Boolean)
     );
     
     const filteredCoverage = frameworkCoverage.filter(fc => 
@@ -177,12 +178,11 @@ export function ExecutiveDashboard({
     );
 
     // Filter roadmap items - keep only items whose domain has active gaps in selected frameworks
-    // Also recalculate based on actual gap data for the selected frameworks
     const domainsWithGaps = new Set(filteredGaps.map(gap => gap.domainName));
     const filteredRoadmap = roadmap.filter(item => domainsWithGaps.has(item.domain));
 
     return { gaps: filteredGaps, coverage: filteredCoverage, roadmapItems: filteredRoadmap };
-  }, [criticalGaps, frameworkCoverage, roadmap, selectedFrameworkIds, activeQuestions]);
+  }, [criticalGaps, frameworkCoverage, roadmap, selectedFrameworkIds, activeQuestions, enabledFrameworks]);
 
   // Apply additional filters to gaps
   const filteredGaps = useMemo(() => {

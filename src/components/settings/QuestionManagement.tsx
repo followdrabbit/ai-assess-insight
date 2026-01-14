@@ -220,10 +220,15 @@ export function QuestionManagement() {
     }
   };
 
-  const handleDelete = async (questionId: string) => {
+  const handleDelete = async (questionId: string, isCustom: boolean) => {
     try {
-      await deleteCustomQuestion(questionId);
-      toast.success('Pergunta removida com sucesso');
+      if (isCustom) {
+        await deleteCustomQuestion(questionId);
+        toast.success('Pergunta personalizada removida com sucesso');
+      } else {
+        await disableDefaultQuestion(questionId);
+        toast.success('Pergunta padrão desabilitada com sucesso');
+      }
       await loadData();
     } catch (error) {
       toast.error('Erro ao remover pergunta');
@@ -568,7 +573,7 @@ interface QuestionsListProps {
     isDisabled: boolean;
   }>;
   onEdit: (question: QuestionsListProps['questions'][0]) => void;
-  onDelete: (questionId: string) => void;
+  onDelete: (questionId: string, isCustom: boolean) => void;
   onToggleDisable: (questionId: string, isDisabled: boolean, isCustom: boolean) => void;
   onDuplicate: (question: QuestionsListProps['questions'][0]) => void;
 }
@@ -647,29 +652,33 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                   >
                     Editar
                   </Button>
-                  {q.isCustom && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-destructive">
-                          Excluir
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir pergunta?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. A pergunta será permanentemente removida.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDelete(q.questionId)}>
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-destructive">
+                        Excluir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {q.isCustom ? 'Excluir pergunta?' : 'Desabilitar pergunta padrão?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {q.isCustom ? (
+                            'Você deseja excluir permanentemente esta pergunta personalizada? Esta ação não pode ser desfeita.'
+                          ) : (
+                            'Você deseja desabilitar esta pergunta padrão? Ela será removida da avaliação mas poderá ser restaurada posteriormente.'
+                          )}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(q.questionId, q.isCustom)}>
+                          {q.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardContent>

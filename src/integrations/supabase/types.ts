@@ -200,6 +200,21 @@ export type Database = {
         }
         Relationships: []
       }
+      disabled_frameworks: {
+        Row: {
+          disabled_at: string | null
+          framework_id: string
+        }
+        Insert: {
+          disabled_at?: string | null
+          framework_id: string
+        }
+        Update: {
+          disabled_at?: string | null
+          framework_id?: string
+        }
+        Relationships: []
+      }
       disabled_questions: {
         Row: {
           disabled_at: string | null

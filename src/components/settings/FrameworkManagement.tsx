@@ -18,7 +18,10 @@ import {
   getAllCustomFrameworks, 
   createCustomFramework, 
   updateCustomFramework, 
-  deleteCustomFramework 
+  deleteCustomFramework,
+  getDisabledFrameworks,
+  disableDefaultFramework,
+  enableDefaultFramework
 } from '@/lib/database';
 
 type AudienceType = 'Executive' | 'GRC' | 'Engineering';
@@ -73,22 +76,28 @@ export function FrameworkManagement() {
   const [referencesText, setReferencesText] = useState('');
 
   useEffect(() => {
-    loadCustomFrameworks();
+    loadData();
   }, []);
 
-  const loadCustomFrameworks = async () => {
-    const frameworks = await getAllCustomFrameworks();
+  const loadData = async () => {
+    const [frameworks, disabledIds] = await Promise.all([
+      getAllCustomFrameworks(),
+      getDisabledFrameworks()
+    ]);
     setCustomFrameworks(frameworks);
-    // Track which default frameworks have custom overrides
-    const overriddenIds = new Set(frameworks.map(f => f.frameworkId));
+    // Track which default frameworks have custom overrides OR are disabled
+    const overriddenIds = new Set([
+      ...frameworks.map(f => f.frameworkId),
+      ...disabledIds
+    ]);
     setDisabledDefaultFrameworks(overriddenIds);
   };
 
   const allFrameworks = useMemo(() => [
     ...defaultFrameworks
       .filter(f => !disabledDefaultFrameworks.has(f.frameworkId))
-      .map(f => ({ ...f, isCustom: false as const })),
-    ...customFrameworks
+      .map(f => ({ ...f, isCustom: false as const, isDisabled: false })),
+    ...customFrameworks.map(f => ({ ...f, isDisabled: false }))
   ], [customFrameworks, disabledDefaultFrameworks]);
 
   const openNewDialog = () => {
@@ -169,7 +178,7 @@ export function FrameworkManagement() {
         });
         toast.success('Framework criado com sucesso');
       }
-      await loadCustomFrameworks();
+      await loadData();
       setIsDialogOpen(false);
       setIsEditingDefault(false);
     } catch (error) {
@@ -178,13 +187,29 @@ export function FrameworkManagement() {
     }
   };
 
-  const handleDelete = async (frameworkId: string) => {
+  const handleDelete = async (frameworkId: string, isCustom: boolean) => {
     try {
-      await deleteCustomFramework(frameworkId);
-      toast.success('Framework removido com sucesso');
-      await loadCustomFrameworks();
+      if (isCustom) {
+        await deleteCustomFramework(frameworkId);
+        toast.success('Framework personalizado removido com sucesso');
+      } else {
+        await disableDefaultFramework(frameworkId);
+        toast.success('Framework padrão desabilitado com sucesso');
+      }
+      await loadData();
     } catch (error) {
       toast.error('Erro ao remover framework');
+      console.error(error);
+    }
+  };
+
+  const handleRestore = async (frameworkId: string) => {
+    try {
+      await enableDefaultFramework(frameworkId);
+      toast.success('Framework restaurado com sucesso');
+      await loadData();
+    } catch (error) {
+      toast.error('Erro ao restaurar framework');
       console.error(error);
     }
   };
@@ -251,33 +276,42 @@ export function FrameworkManagement() {
                   <Button variant="outline" size="sm" onClick={() => openEditDialog(fw)}>
                     Editar
                   </Button>
-                  {fw.isCustom && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">Excluir</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir framework?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. O framework "{fw.shortName}" será 
-                            permanentemente removido. Perguntas associadas não serão afetadas.
-                            {disabledDefaultFrameworks.has(fw.frameworkId) && (
-                              <span className="block mt-2 text-foreground">
-                                O framework padrão original será restaurado.
-                              </span>
-                            )}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(fw.frameworkId)}>
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">Excluir</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {fw.isCustom ? 'Excluir framework?' : 'Desabilitar framework padrão?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {fw.isCustom ? (
+                            <>
+                              Você deseja excluir permanentemente o framework "{fw.shortName}"?
+                              Esta ação não pode ser desfeita. Perguntas associadas não serão afetadas.
+                              {defaultFrameworks.some(df => df.frameworkId === fw.frameworkId) && (
+                                <span className="block mt-2 text-foreground">
+                                  O framework padrão original será restaurado.
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              Você deseja desabilitar o framework padrão "{fw.shortName}"?
+                              Ele será removido da avaliação mas poderá ser restaurado posteriormente.
+                            </>
+                          )}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(fw.frameworkId, fw.isCustom)}>
+                          {fw.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>

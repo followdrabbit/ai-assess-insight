@@ -150,6 +150,32 @@
       "frameworkRefs": ["LGPD", "Res. CMN 4.893", "Res. CMN 4.557", "EU AI Act"]
     },
     {
+      "subcatId": "GOVERN-04",
+      "domainId": "GOVERN",
+      "subcatName": "Tolerância e Priorização de Riscos",
+      "definition": "Definição de apetite a risco e critérios de priorização para decisões de IA",
+      "objective": "Estabelecer limites claros de risco aceitável e priorização",
+      "securityOutcome": "Decisões de risco são consistentes com estratégia organizacional",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Executive",
+      "riskSummary": "Sem tolerância definida, decisões de risco são inconsistentes e ad-hoc",
+      "frameworkRefs": ["NIST AI RMF GOVERN 1.3-1.4", "ISO 31000", "ISO/IEC 23894"]
+    },
+    {
+      "subcatId": "GOVERN-05",
+      "domainId": "GOVERN",
+      "subcatName": "Decommissioning e Ciclo de Vida",
+      "definition": "Processos para descontinuação segura de sistemas de IA",
+      "objective": "Garantir descomissionamento seguro e completo",
+      "securityOutcome": "Sistemas descontinuados não deixam dados ou acessos residuais",
+      "criticality": "Medium",
+      "weight": 1.0,
+      "ownershipType": "GRC",
+      "riskSummary": "Descomissionamento inadequado mantém riscos de sistemas obsoletos",
+      "frameworkRefs": ["NIST AI RMF GOVERN 1.7", "ISO 27001 A.8.3"]
+    },
+    {
       "subcatId": "MAP-01",
       "domainId": "MAP",
       "subcatName": "Inventário e Classificação de Sistemas de IA",
@@ -187,6 +213,58 @@
       "ownershipType": "GRC",
       "riskSummary": "Sem AIA, impactos em direitos fundamentais e operações podem não ser identificados",
       "frameworkRefs": ["EU AI Act Art. 9", "NIST AI RMF MAP 1.5", "LGPD Art. 38"]
+    },
+    {
+      "subcatId": "MAP-04",
+      "domainId": "MAP",
+      "subcatName": "Requisitos e Contexto de Sistema",
+      "definition": "Documentação de requisitos, contexto sociotécnico e benefícios vs riscos",
+      "objective": "Definir claramente escopo, propósito e trade-offs de cada sistema",
+      "securityOutcome": "Sistemas são desenvolvidos com requisitos claros e contexto documentado",
+      "criticality": "High",
+      "weight": 1.2,
+      "ownershipType": "Engineering",
+      "riskSummary": "Requisitos mal definidos levam a sistemas inadequados ao contexto",
+      "frameworkRefs": ["NIST AI RMF MAP 1.3-1.4", "ISO/IEC 42001"]
+    },
+    {
+      "subcatId": "MAP-05",
+      "domainId": "MAP",
+      "subcatName": "Dimensões de Modelo e Limitações",
+      "definition": "Documentação de algoritmos escolhidos, limitações conhecidas e contexto de uso",
+      "objective": "Conhecer limitações do modelo para definir uso apropriado",
+      "securityOutcome": "Limitações são conhecidas e comunicadas aos usuários",
+      "criticality": "High",
+      "weight": 1.2,
+      "ownershipType": "Engineering",
+      "riskSummary": "Uso fora das limitações causa falhas e resultados incorretos",
+      "frameworkRefs": ["NIST AI RMF MAP 3.1-3.2", "ISO/IEC 42001 6.1"]
+    },
+    {
+      "subcatId": "MAP-06",
+      "domainId": "MAP",
+      "subcatName": "Outputs e Contexto Pós-Deploy",
+      "definition": "Análise de tarefas, outputs e impactos após implantação",
+      "objective": "Entender como outputs são usados e seus impactos reais",
+      "securityOutcome": "Impactos reais são monitorados e ajustados conforme necessário",
+      "criticality": "Medium",
+      "weight": 1.1,
+      "ownershipType": "GRC",
+      "riskSummary": "Outputs podem ter impactos não previstos no contexto real",
+      "frameworkRefs": ["NIST AI RMF MAP 4.1-4.3"]
+    },
+    {
+      "subcatId": "MAP-07",
+      "domainId": "MAP",
+      "subcatName": "Avaliação de Trustworthiness",
+      "definition": "Avaliação de gaps de confiabilidade e decisões sobre implantação",
+      "objective": "Determinar se sistema atende requisitos de trustworthiness",
+      "securityOutcome": "Sistemas não confiáveis não são implantados",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "GRC",
+      "riskSummary": "Sistemas com gaps de trustworthiness podem causar danos",
+      "frameworkRefs": ["NIST AI RMF MAP 5.1-5.3"]
     },
     {
       "subcatId": "DATA-01",
@@ -317,6 +395,45 @@
       "ownershipType": "GRC",
       "riskSummary": "Modelos inexplicáveis não podem ser auditados ou contestados",
       "frameworkRefs": ["EU AI Act Art. 13-14", "NIST AI RMF MEASURE 2.9-2.10", "LGPD Art. 20"]
+    },
+    {
+      "subcatId": "MEASURE-04",
+      "domainId": "MEASURE",
+      "subcatName": "Métricas de Trustworthiness",
+      "definition": "Métricas de performance, robustez, segurança, resiliência e confiabilidade",
+      "objective": "Medir características de trustworthiness de forma objetiva",
+      "securityOutcome": "Trustworthiness é medida e monitorada continuamente",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "Engineering",
+      "riskSummary": "Sem métricas, degradação de trustworthiness não é detectada",
+      "frameworkRefs": ["NIST AI RMF MEASURE 2.1-2.4", "NIST AI RMF MEASURE 2.11-2.13"]
+    },
+    {
+      "subcatId": "MEASURE-05",
+      "domainId": "MEASURE",
+      "subcatName": "Auditorias e Revisão Independente",
+      "definition": "Auditorias internas, externas e consultas a stakeholders",
+      "objective": "Validar sistemas através de revisão independente",
+      "securityOutcome": "Problemas são identificados por perspectivas independentes",
+      "criticality": "High",
+      "weight": 1.3,
+      "ownershipType": "GRC",
+      "riskSummary": "Sem revisão independente, problemas sistêmicos não são detectados",
+      "frameworkRefs": ["NIST AI RMF MEASURE 3.1-3.3", "EU AI Act Art. 61"]
+    },
+    {
+      "subcatId": "MEASURE-06",
+      "domainId": "MEASURE",
+      "subcatName": "Monitoramento Contínuo e Feedback",
+      "definition": "Tracking de impacto, loops de feedback e monitoramento pós-deploy",
+      "objective": "Monitorar performance e impacto em produção continuamente",
+      "securityOutcome": "Problemas em produção são detectados e corrigidos rapidamente",
+      "criticality": "High",
+      "weight": 1.2,
+      "ownershipType": "Engineering",
+      "riskSummary": "Sem monitoramento contínuo, degradação não é detectada",
+      "frameworkRefs": ["NIST AI RMF MEASURE 4.1-4.3"]
     },
     {
       "subcatId": "PROTECT-01",

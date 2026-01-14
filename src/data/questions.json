@@ -111,6 +111,72 @@
       "ownershipType": "GRC"
     },
     {
+      "questionId": "GOVERN-04-Q01",
+      "subcatId": "GOVERN-04",
+      "domainId": "GOVERN",
+      "questionText": "Existe definição formal de apetite e tolerância a riscos de IA aprovada pela alta gestão?",
+      "expectedEvidence": "Documento de risk appetite com níveis de tolerância por tipo de risco de IA, aprovado pelo board",
+      "imperativeChecks": "Verificar aprovação executiva, comunicação e uso efetivo em decisões",
+      "riskSummary": "Sem tolerância definida, decisões de risco são inconsistentes e subjetivas",
+      "frameworks": ["NIST AI RMF GOVERN 1.3", "ISO 31000", "ISO/IEC 23894"],
+      "ownershipType": "Executive"
+    },
+    {
+      "questionId": "GOVERN-04-Q02",
+      "subcatId": "GOVERN-04",
+      "domainId": "GOVERN",
+      "questionText": "Existem critérios claros para priorização de riscos de IA?",
+      "expectedEvidence": "Metodologia de priorização com critérios de impacto, probabilidade e urgência",
+      "imperativeChecks": "Verificar uso consistente dos critérios em avaliações de risco",
+      "riskSummary": "Sem critérios de priorização, recursos são alocados inadequadamente",
+      "frameworks": ["NIST AI RMF GOVERN 1.4", "ISO 31000"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "GOVERN-04-Q03",
+      "subcatId": "GOVERN-04",
+      "domainId": "GOVERN",
+      "questionText": "Os limiares de risco aceitável são revisados periodicamente?",
+      "expectedEvidence": "Registros de revisão de tolerância a risco com frequência definida",
+      "imperativeChecks": "Verificar gatilhos de revisão e ajustes realizados conforme contexto",
+      "riskSummary": "Limiares desatualizados não refletem mudanças no ambiente de risco",
+      "frameworks": ["NIST AI RMF GOVERN 1.3", "ISO 31000 6.4"],
+      "ownershipType": "Executive"
+    },
+    {
+      "questionId": "GOVERN-05-Q01",
+      "subcatId": "GOVERN-05",
+      "domainId": "GOVERN",
+      "questionText": "Existe processo formal para descomissionamento de sistemas de IA?",
+      "expectedEvidence": "Procedimento de decommissioning com checklist, responsáveis e critérios de conclusão",
+      "imperativeChecks": "Verificar execução em sistemas descontinuados recentemente",
+      "riskSummary": "Sistemas não descomissionados adequadamente mantêm riscos residuais",
+      "frameworks": ["NIST AI RMF GOVERN 1.7", "ISO 27001 A.8.3"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "GOVERN-05-Q02",
+      "subcatId": "GOVERN-05",
+      "domainId": "GOVERN",
+      "questionText": "O processo de decommissioning inclui revogação de acessos e exclusão de dados?",
+      "expectedEvidence": "Checklist com itens de revogação de acessos, exclusão de dados e confirmação",
+      "imperativeChecks": "Verificar evidência de execução completa em descomissionamentos anteriores",
+      "riskSummary": "Acessos e dados residuais mantêm exposição após desativação",
+      "frameworks": ["NIST AI RMF GOVERN 1.7", "LGPD Art. 16"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "GOVERN-05-Q03",
+      "subcatId": "GOVERN-05",
+      "domainId": "GOVERN",
+      "questionText": "Os modelos descontinuados são arquivados com documentação para auditoria futura?",
+      "expectedEvidence": "Repositório de modelos arquivados com metadados, documentação e período de retenção",
+      "imperativeChecks": "Verificar capacidade de recuperação para investigações e requisitos legais",
+      "riskSummary": "Sem arquivo, investigações futuras ou requisitos legais não podem ser atendidos",
+      "frameworks": ["NIST AI RMF GOVERN 4.3", "EU AI Act Art. 12"],
+      "ownershipType": "Engineering"
+    },
+    {
       "questionId": "MAP-01-Q01",
       "subcatId": "MAP-01",
       "domainId": "MAP",
@@ -196,6 +262,138 @@
       "imperativeChecks": "Verificar representatividade dos grupos analisados e consulta a especialistas",
       "riskSummary": "Impactos desproporcionais em grupos vulneráveis geram riscos legais e reputacionais",
       "frameworks": ["EU AI Act Art. 9", "NIST AI RMF MAP 1.5"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MAP-04-Q01",
+      "subcatId": "MAP-04",
+      "domainId": "MAP",
+      "questionText": "Os requisitos funcionais e não-funcionais de cada sistema de IA são documentados formalmente?",
+      "expectedEvidence": "Especificação de requisitos com critérios de aceitação, restrições e dependências",
+      "imperativeChecks": "Verificar completude, aprovação por stakeholders e rastreabilidade",
+      "riskSummary": "Requisitos mal definidos levam a sistemas que não atendem às necessidades",
+      "frameworks": ["NIST AI RMF MAP 1.3", "ISO/IEC 42001 6.1"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MAP-04-Q02",
+      "subcatId": "MAP-04",
+      "domainId": "MAP",
+      "questionText": "O contexto sociotécnico de uso do sistema de IA é analisado e documentado?",
+      "expectedEvidence": "Análise de stakeholders, ambiente operacional, interações humanas e impactos sociais",
+      "imperativeChecks": "Verificar consideração de fatores humanos e contexto organizacional",
+      "riskSummary": "Sistemas desenvolvidos sem entender contexto falham em produção",
+      "frameworks": ["NIST AI RMF MAP 1.2", "ISO/IEC 23894"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MAP-04-Q03",
+      "subcatId": "MAP-04",
+      "domainId": "MAP",
+      "questionText": "A análise de benefícios vs riscos é realizada antes da implementação de sistemas de IA?",
+      "expectedEvidence": "Documentação de trade-offs, benefícios esperados, riscos identificados e decisão justificada",
+      "imperativeChecks": "Verificar aprovação formal e reavaliação periódica do trade-off",
+      "riskSummary": "Implementação sem análise de trade-off pode não justificar os riscos assumidos",
+      "frameworks": ["NIST AI RMF MAP 1.4", "ISO 31000"],
+      "ownershipType": "Executive"
+    },
+    {
+      "questionId": "MAP-05-Q01",
+      "subcatId": "MAP-05",
+      "domainId": "MAP",
+      "questionText": "A escolha de algoritmos e arquiteturas de modelo é documentada com justificativa?",
+      "expectedEvidence": "Documentação de alternativas consideradas, critérios de seleção e justificativa técnica",
+      "imperativeChecks": "Verificar consideração de trade-offs de interpretabilidade, performance e fairness",
+      "riskSummary": "Seleção de algoritmo sem critérios pode resultar em modelo inadequado",
+      "frameworks": ["NIST AI RMF MAP 3.1", "ISO/IEC 42001"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MAP-05-Q02",
+      "subcatId": "MAP-05",
+      "domainId": "MAP",
+      "questionText": "As limitações conhecidas do modelo são documentadas e comunicadas aos usuários?",
+      "expectedEvidence": "Documentação de limitações, edge cases, cenários de falha e instruções de uso",
+      "imperativeChecks": "Verificar clareza, acessibilidade e compreensão pelos usuários",
+      "riskSummary": "Uso do modelo fora de suas limitações causa resultados incorretos",
+      "frameworks": ["NIST AI RMF MAP 3.2", "EU AI Act Art. 13"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MAP-05-Q03",
+      "subcatId": "MAP-05",
+      "domainId": "MAP",
+      "questionText": "As limitações de dados de treinamento e seus impactos no modelo são conhecidos?",
+      "expectedEvidence": "Análise de representatividade, gaps de dados e impactos nas predições",
+      "imperativeChecks": "Verificar documentação de vieses conhecidos e limitações de generalização",
+      "riskSummary": "Limitações de dados não documentadas causam falhas inesperadas",
+      "frameworks": ["NIST AI RMF MAP 3.2", "EU AI Act Art. 10"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MAP-06-Q01",
+      "subcatId": "MAP-06",
+      "domainId": "MAP",
+      "questionText": "As tarefas que o sistema de IA executa são mapeadas e documentadas claramente?",
+      "expectedEvidence": "Inventário de tasks com inputs, outputs, decisões e ações resultantes",
+      "imperativeChecks": "Verificar completude do mapeamento e alinhamento com uso real",
+      "riskSummary": "Tasks não mapeadas podem ter impactos não previstos",
+      "frameworks": ["NIST AI RMF MAP 4.1"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MAP-06-Q02",
+      "subcatId": "MAP-06",
+      "domainId": "MAP",
+      "questionText": "As limitações dos outputs do modelo são documentadas e comunicadas?",
+      "expectedEvidence": "Documentação de incertezas, margem de erro, casos de baixa confiança",
+      "imperativeChecks": "Verificar que usuários entendem limitações dos outputs",
+      "riskSummary": "Outputs aceitos sem entender limitações causam decisões incorretas",
+      "frameworks": ["NIST AI RMF MAP 4.2", "EU AI Act Art. 13"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MAP-06-Q03",
+      "subcatId": "MAP-06",
+      "domainId": "MAP",
+      "questionText": "O comportamento do sistema é monitorado no contexto pós-deploy para validar premissas?",
+      "expectedEvidence": "Métricas de monitoramento pós-deploy, comparação com premissas, ajustes realizados",
+      "imperativeChecks": "Verificar identificação de desvios e ações corretivas",
+      "riskSummary": "Premissas de design podem não se confirmar em produção",
+      "frameworks": ["NIST AI RMF MAP 4.3", "NIST AI RMF MEASURE 4.1"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MAP-07-Q01",
+      "subcatId": "MAP-07",
+      "domainId": "MAP",
+      "questionText": "É realizada avaliação de gaps de trustworthiness antes da implantação?",
+      "expectedEvidence": "Checklist de trustworthiness com avaliação de cada dimensão (valid, reliable, safe, secure, fair, transparent, accountable, privacy)",
+      "imperativeChecks": "Verificar cobertura de todas as dimensões NIST e tratamento de gaps",
+      "riskSummary": "Gaps de trustworthiness não identificados causam problemas em produção",
+      "frameworks": ["NIST AI RMF MAP 5.1", "NIST AI RMF 3.1-3.7"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MAP-07-Q02",
+      "subcatId": "MAP-07",
+      "domainId": "MAP",
+      "questionText": "Os riscos residuais após mitigações são documentados e aceitos formalmente?",
+      "expectedEvidence": "Registro de riscos residuais com justificativa, aprovação e monitoramento",
+      "imperativeChecks": "Verificar aprovação por nível adequado e reavaliação periódica",
+      "riskSummary": "Riscos residuais não aceitos formalmente não têm accountability clara",
+      "frameworks": ["NIST AI RMF MAP 5.2", "ISO 31000"],
+      "ownershipType": "Executive"
+    },
+    {
+      "questionId": "MAP-07-Q03",
+      "subcatId": "MAP-07",
+      "domainId": "MAP",
+      "questionText": "Existe critério de go/no-go para deploy baseado em avaliação de trustworthiness?",
+      "expectedEvidence": "Critérios de aprovação para deploy, gate de decisão documentado, registros de decisões",
+      "imperativeChecks": "Verificar aplicação consistente e registros de sistemas não aprovados",
+      "riskSummary": "Sem critérios claros, sistemas inadequados são implantados",
+      "frameworks": ["NIST AI RMF MAP 5.3", "NIST AI RMF MANAGE 2.2"],
       "ownershipType": "GRC"
     },
     {
@@ -518,6 +716,127 @@
       "ownershipType": "GRC"
     },
     {
+      "questionId": "MEASURE-04-Q01",
+      "subcatId": "MEASURE-04",
+      "domainId": "MEASURE",
+      "questionText": "Existem métricas definidas para avaliar a performance do modelo em produção?",
+      "expectedEvidence": "KPIs de performance (accuracy, precision, recall, F1) com thresholds e monitoramento",
+      "imperativeChecks": "Verificar alinhamento com requisitos de negócio e atualização de baselines",
+      "riskSummary": "Performance não medida pode degradar sem detecção",
+      "frameworks": ["NIST AI RMF MEASURE 2.1", "ISO/IEC 42001"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MEASURE-04-Q02",
+      "subcatId": "MEASURE-04",
+      "domainId": "MEASURE",
+      "questionText": "A robustez do modelo é testada contra variações de dados de entrada?",
+      "expectedEvidence": "Testes de robustez com perturbações, noise e edge cases documentados",
+      "imperativeChecks": "Verificar cobertura de cenários e critérios de aceitação",
+      "riskSummary": "Modelos não robustos falham com variações normais de entrada",
+      "frameworks": ["NIST AI RMF MEASURE 2.2", "MITRE ATLAS"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MEASURE-04-Q03",
+      "subcatId": "MEASURE-04",
+      "domainId": "MEASURE",
+      "questionText": "Existem métricas de segurança específicas para sistemas de IA?",
+      "expectedEvidence": "KPIs de segurança (taxa de ataques bloqueados, tempo de detecção, cobertura de controles)",
+      "imperativeChecks": "Verificar monitoramento contínuo e ações para desvios",
+      "riskSummary": "Sem métricas de segurança, eficácia dos controles não é medida",
+      "frameworks": ["NIST AI RMF MEASURE 2.4", "NIST CSF"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MEASURE-04-Q04",
+      "subcatId": "MEASURE-04",
+      "domainId": "MEASURE",
+      "questionText": "A resiliência do sistema de IA é testada sob condições de stress?",
+      "expectedEvidence": "Testes de stress, chaos engineering, recuperação de falhas documentados",
+      "imperativeChecks": "Verificar comportamento sob carga extrema e recuperação",
+      "riskSummary": "Sistemas não resilientes falham sob condições adversas",
+      "frameworks": ["NIST AI RMF MEASURE 2.12", "NIST CSF PR.DS"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MEASURE-04-Q05",
+      "subcatId": "MEASURE-04",
+      "domainId": "MEASURE",
+      "questionText": "A confiabilidade do sistema (uptime, availability) é medida e atende SLAs?",
+      "expectedEvidence": "Métricas de availability, SLAs definidos, histórico de cumprimento",
+      "imperativeChecks": "Verificar aderência aos SLAs e ações para desvios",
+      "riskSummary": "Baixa confiabilidade impacta operações dependentes do sistema",
+      "frameworks": ["NIST AI RMF MEASURE 2.13", "ISO 27001 A.17"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MEASURE-05-Q01",
+      "subcatId": "MEASURE-05",
+      "domainId": "MEASURE",
+      "questionText": "Os sistemas de IA de alto risco passam por auditoria interna periódica?",
+      "expectedEvidence": "Plano de auditoria, relatórios de auditoria, findings e remediações",
+      "imperativeChecks": "Verificar frequência, cobertura e tratamento de findings",
+      "riskSummary": "Sem auditoria interna, problemas sistêmicos não são detectados",
+      "frameworks": ["NIST AI RMF MEASURE 3.1", "ISO 27001 9.2"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MEASURE-05-Q02",
+      "subcatId": "MEASURE-05",
+      "domainId": "MEASURE",
+      "questionText": "Existem auditorias externas ou revisões independentes de sistemas de IA críticos?",
+      "expectedEvidence": "Relatórios de auditoria externa, certificações, avaliações de terceiros",
+      "imperativeChecks": "Verificar independência do auditor e tratamento de recomendações",
+      "riskSummary": "Revisão apenas interna pode não identificar problemas sistêmicos",
+      "frameworks": ["NIST AI RMF MEASURE 3.2", "EU AI Act Art. 61"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MEASURE-05-Q03",
+      "subcatId": "MEASURE-05",
+      "domainId": "MEASURE",
+      "questionText": "Stakeholders afetados são consultados na avaliação de sistemas de IA?",
+      "expectedEvidence": "Registros de consultas, feedback de usuários e afetados, incorporação de inputs",
+      "imperativeChecks": "Verificar representatividade e uso efetivo do feedback",
+      "riskSummary": "Avaliação sem input de afetados pode ignorar impactos reais",
+      "frameworks": ["NIST AI RMF MEASURE 3.3", "EU AI Act Art. 9"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MEASURE-06-Q01",
+      "subcatId": "MEASURE-06",
+      "domainId": "MEASURE",
+      "questionText": "Existe monitoramento contínuo de drift de dados e modelo em produção?",
+      "expectedEvidence": "Dashboard de drift monitoring, alertas configurados, ações de retreinamento",
+      "imperativeChecks": "Verificar detecção de drift de distribuição e performance",
+      "riskSummary": "Drift não detectado degrada performance silenciosamente",
+      "frameworks": ["NIST AI RMF MEASURE 4.1", "MLOps Best Practices"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "MEASURE-06-Q02",
+      "subcatId": "MEASURE-06",
+      "domainId": "MEASURE",
+      "questionText": "O impacto real do sistema em produção é rastreado e comparado com expectativas?",
+      "expectedEvidence": "Métricas de impacto de negócio, comparação com business case, relatórios periódicos",
+      "imperativeChecks": "Verificar alinhamento de resultados com objetivos definidos",
+      "riskSummary": "Sistemas podem não entregar valor esperado sem tracking de impacto",
+      "frameworks": ["NIST AI RMF MEASURE 4.2", "ISO/IEC 42001"],
+      "ownershipType": "GRC"
+    },
+    {
+      "questionId": "MEASURE-06-Q03",
+      "subcatId": "MEASURE-06",
+      "domainId": "MEASURE",
+      "questionText": "Existem mecanismos de feedback de usuários para melhoria contínua do modelo?",
+      "expectedEvidence": "Canal de feedback, processo de incorporação, registros de melhorias implementadas",
+      "imperativeChecks": "Verificar uso efetivo do feedback e ciclo de melhoria",
+      "riskSummary": "Sem feedback, problemas do mundo real não são incorporados",
+      "frameworks": ["NIST AI RMF MEASURE 4.3", "MLOps Best Practices"],
+      "ownershipType": "Engineering"
+    },
+    {
       "questionId": "PROTECT-01-Q01",
       "subcatId": "PROTECT-01",
       "domainId": "PROTECT",
@@ -735,6 +1054,39 @@
       "imperativeChecks": "Verificar última data de teste e resultados obtidos",
       "riskSummary": "Sem DR testado, falhas podem ter impacto prolongado e irrecuperável",
       "frameworks": ["ISO 22301", "NIST CSF PR.IP-9"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "RESPOND-02-Q03",
+      "subcatId": "RESPOND-02",
+      "domainId": "RESPOND",
+      "questionText": "Existe alocação formal de recursos (orçamento, pessoas) para tratamento de riscos de IA?",
+      "expectedEvidence": "Orçamento dedicado, headcount alocado, plano de recursos por prioridade de risco",
+      "imperativeChecks": "Verificar adequação de recursos às prioridades de risco identificadas",
+      "riskSummary": "Sem recursos dedicados, tratamento de riscos não é executado efetivamente",
+      "frameworks": ["NIST AI RMF MANAGE 1.2", "ISO 31000"],
+      "ownershipType": "Executive"
+    },
+    {
+      "questionId": "RESPOND-02-Q04",
+      "subcatId": "RESPOND-02",
+      "domainId": "RESPOND",
+      "questionText": "Existem planos de fallback para quando sistemas de IA falham ou se comportam inadequadamente?",
+      "expectedEvidence": "Procedimentos de fallback documentados, processos manuais alternativos, testes realizados",
+      "imperativeChecks": "Verificar capacidade de operação sem IA e tempo de ativação do fallback",
+      "riskSummary": "Sem fallback, falhas de IA interrompem operações críticas",
+      "frameworks": ["NIST AI RMF MANAGE 1.4", "ISO 22301"],
+      "ownershipType": "Engineering"
+    },
+    {
+      "questionId": "RESPOND-02-Q05",
+      "subcatId": "RESPOND-02",
+      "domainId": "RESPOND",
+      "questionText": "Os planos de fallback são testados periodicamente para validar efetividade?",
+      "expectedEvidence": "Registros de testes de fallback, resultados, melhorias implementadas",
+      "imperativeChecks": "Verificar frequência de testes e capacidade operacional comprovada",
+      "riskSummary": "Fallbacks não testados podem falhar quando necessários",
+      "frameworks": ["NIST AI RMF MANAGE 1.4", "ISO 22301 8.5"],
       "ownershipType": "Engineering"
     },
     {

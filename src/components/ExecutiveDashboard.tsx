@@ -594,7 +594,10 @@ export function ExecutiveDashboard({
       {/* Charts Row */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* NIST AI RMF Radar */}
-        <div className="card-elevated p-6">
+        <div 
+          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}
+        >
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-sm">Funções NIST AI RMF</h3>
             <NistFunctionHelp />
@@ -636,7 +639,10 @@ export function ExecutiveDashboard({
         </div>
 
         {/* Domain Bar Chart */}
-        <div className="card-elevated p-6">
+        <div 
+          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}
+        >
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-sm">Maturidade por Domínio</h3>
             {nistFilter !== 'all' && (
@@ -680,7 +686,10 @@ export function ExecutiveDashboard({
         </div>
 
         {/* Risk Distribution Pie */}
-        <div className="card-elevated p-6">
+        <div 
+          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}
+        >
           <h3 className="font-semibold text-sm mb-4">Distribuição de Riscos</h3>
           {riskDistribution.length > 0 ? (
             <>
@@ -744,13 +753,17 @@ export function ExecutiveDashboard({
 
       {/* Framework Coverage */}
       {filteredByFramework.coverage.length > 0 && (
-        <div className="card-elevated p-6">
+        <div 
+          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '600ms', animationFillMode: 'backwards' }}
+        >
           <h3 className="font-semibold mb-4">Cobertura por Framework</h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredByFramework.coverage.map(fc => (
+            {filteredByFramework.coverage.map((fc, idx) => (
               <div 
                 key={fc.framework} 
-                className="p-4 bg-muted/50 rounded-lg"
+                className="p-4 bg-muted/50 rounded-lg animate-in fade-in-0 zoom-in-95 duration-300"
+                style={{ animationDelay: `${700 + idx * 50}ms`, animationFillMode: 'backwards' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-sm truncate" title={fc.framework}>
@@ -779,13 +792,17 @@ export function ExecutiveDashboard({
       )}
 
       {/* Framework Category Maturity */}
-      <div className="card-elevated p-6">
+      <div 
+        className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '700ms', animationFillMode: 'backwards' }}
+      >
         <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {frameworkCategoryData.map(fc => (
+          {frameworkCategoryData.map((fc, idx) => (
             <div 
               key={fc.categoryId} 
-              className="p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+              className="p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-all cursor-pointer animate-in fade-in-0 zoom-in-95 duration-300 hover:scale-[1.02]"
+              style={{ animationDelay: `${800 + idx * 50}ms`, animationFillMode: 'backwards' }}
               onClick={() => navigate('/assessment')}
             >
               <div className="flex items-center justify-between mb-2">
@@ -816,7 +833,10 @@ export function ExecutiveDashboard({
 
       {/* Strategic Roadmap */}
       {filteredByFramework.roadmapItems.length > 0 && (
-        <div className="card-elevated p-6">
+        <div 
+          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '850ms', animationFillMode: 'backwards' }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold">Roadmap Estratégico</h3>
@@ -835,7 +855,7 @@ export function ExecutiveDashboard({
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
-            {['immediate', 'short', 'medium'].map(priority => {
+            {['immediate', 'short', 'medium'].map((priority, idx) => {
               const items = filteredByFramework.roadmapItems.filter(r => r.priority === priority);
               const config = {
                 immediate: { label: '0-30 dias', color: 'border-red-500', bg: 'bg-red-50 dark:bg-red-950/20' },
@@ -844,11 +864,19 @@ export function ExecutiveDashboard({
               }[priority]!;
               
               return (
-                <div key={priority} className={cn("rounded-lg p-4 border-l-4", config.color, config.bg)}>
+                <div 
+                  key={priority} 
+                  className={cn(
+                    "rounded-lg p-4 border-l-4 animate-in fade-in-0 slide-in-from-left-4 duration-400",
+                    config.color, 
+                    config.bg
+                  )}
+                  style={{ animationDelay: `${950 + idx * 100}ms`, animationFillMode: 'backwards' }}
+                >
                   <h4 className="font-medium text-sm mb-3">{config.label}</h4>
                   <div className="space-y-2">
-                    {items.length > 0 ? items.map((item, idx) => (
-                      <div key={idx} className="text-xs">
+                    {items.length > 0 ? items.map((item, itemIdx) => (
+                      <div key={itemIdx} className="text-xs">
                         <p className="font-medium">{item.action}</p>
                         <p className="text-muted-foreground mt-0.5">{item.domain} · {item.ownershipType}</p>
                       </div>
@@ -864,7 +892,10 @@ export function ExecutiveDashboard({
       )}
 
       {/* Critical Gaps with Filters */}
-      <div className="card-elevated p-6">
+      <div 
+        className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '1000ms', animationFillMode: 'backwards' }}
+      >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
           <div>
             <h3 className="font-semibold">Gaps Críticos</h3>

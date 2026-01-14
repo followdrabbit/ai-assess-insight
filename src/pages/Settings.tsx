@@ -16,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
+import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
+import { QuestionManagement } from '@/components/settings/QuestionManagement';
 
 const categoryLabels: Record<string, { label: string; description: string }> = {
   core: { 
@@ -271,8 +273,10 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="frameworks" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
-          <TabsTrigger value="frameworks">Frameworks</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+          <TabsTrigger value="frameworks">Habilitar</TabsTrigger>
+          <TabsTrigger value="manage-frameworks">Frameworks</TabsTrigger>
+          <TabsTrigger value="manage-questions">Perguntas</TabsTrigger>
           <TabsTrigger value="data">Dados</TabsTrigger>
           <TabsTrigger value="general">Geral</TabsTrigger>
           <TabsTrigger value="about">Sobre</TabsTrigger>
@@ -372,6 +376,16 @@ export default function Settings() {
               </ul>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* MANAGE FRAMEWORKS TAB */}
+        <TabsContent value="manage-frameworks" className="space-y-6">
+          <FrameworkManagement />
+        </TabsContent>
+
+        {/* MANAGE QUESTIONS TAB */}
+        <TabsContent value="manage-questions" className="space-y-6">
+          <QuestionManagement />
         </TabsContent>
 
         {/* DATA TAB */}

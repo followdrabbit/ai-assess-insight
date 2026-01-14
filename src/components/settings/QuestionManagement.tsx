@@ -526,7 +526,13 @@ interface QuestionsListProps {
     questionId: string;
     questionText: string;
     domainId: string;
+    subcatId: string;
+    expectedEvidence: string;
+    imperativeChecks: string;
+    riskSummary: string;
     frameworks: string[];
+    ownershipType?: 'Executive' | 'GRC' | 'Engineering';
+    criticality?: 'Low' | 'Medium' | 'High' | 'Critical';
     isCustom: boolean;
     isDisabled: boolean;
   }>;
@@ -603,7 +609,7 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                   >
                     {q.isDisabled ? 'Habilitar' : 'Desabilitar'}
                   </Button>
-                  {q.isCustom && (
+                  {q.isCustom ? (
                     <>
                       <Button 
                         variant="ghost" 
@@ -634,6 +640,15 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                         </AlertDialogContent>
                       </AlertDialog>
                     </>
+                  ) : (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => onDuplicate(q)}
+                      title="Perguntas padrão não podem ser editadas diretamente. Use 'Duplicar' para criar uma cópia editável."
+                    >
+                      Editar como Cópia
+                    </Button>
                   )}
                 </div>
               </div>

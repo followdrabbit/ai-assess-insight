@@ -10,7 +10,7 @@ import {
   NistFunctionHelp 
 } from '@/components/HelpTooltip';
 import { OverallMetrics, CriticalGap, RoadmapItem, FrameworkCoverage } from '@/lib/scoring';
-import { FrameworkCategoryId } from '@/lib/dataset';
+import { FrameworkCategoryId } from '@/lib/datasetData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,8 +32,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Framework, getFrameworkById } from '@/lib/frameworks';
-import { getQuestionFrameworkIds } from '@/lib/frameworks';
+import { Framework, getFrameworkById } from '@/lib/frameworksData';
+import { getQuestionFrameworkIds } from '@/lib/frameworksData';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {

@@ -12,8 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { questions as defaultQuestions, domains, Question } from '@/lib/dataset';
-import { frameworks as defaultFrameworks } from '@/lib/frameworks';
+import { fetchQuestions, fetchDomains, Question, Domain } from '@/lib/datasetData';
+import { fetchFrameworks } from '@/lib/frameworksData';
 import { 
   CustomQuestion, 
   getAllCustomQuestions, 
@@ -69,6 +69,9 @@ const ownershipLabels: Record<OwnershipType, string> = {
 };
 
 export function QuestionManagement() {
+  const [defaultQuestions, setDefaultQuestions] = useState<Question[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [defaultFrameworks, setDefaultFrameworks] = useState<{ frameworkId: string; shortName: string }[]>([]);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [disabledQuestionIds, setDisabledQuestionIds] = useState<string[]>([]);
   const [customFrameworksList, setCustomFrameworksList] = useState<{ frameworkId: string; shortName: string }[]>([]);
@@ -79,26 +82,38 @@ export function QuestionManagement() {
   const [frameworksText, setFrameworksText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDomain, setFilterDomain] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [questions, disabled, customFw] = await Promise.all([
-      getAllCustomQuestions(),
-      getDisabledQuestions(),
-      getAllCustomFrameworks()
-    ]);
-    setCustomQuestions(questions);
-    setDisabledQuestionIds(disabled);
-    setCustomFrameworksList(customFw.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })));
+    setIsLoading(true);
+    try {
+      const [dbQuestions, dbDomains, dbFrameworks, questions, disabled, customFw] = await Promise.all([
+        fetchQuestions(),
+        fetchDomains(),
+        fetchFrameworks(),
+        getAllCustomQuestions(),
+        getDisabledQuestions(),
+        getAllCustomFrameworks()
+      ]);
+      setDefaultQuestions(dbQuestions);
+      setDomains(dbDomains);
+      setDefaultFrameworks(dbFrameworks.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })));
+      setCustomQuestions(questions);
+      setDisabledQuestionIds(disabled);
+      setCustomFrameworksList(customFw.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const allFrameworkOptions = useMemo(() => [
-    ...defaultFrameworks.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })),
+    ...defaultFrameworks,
     ...customFrameworksList
-  ], [customFrameworksList]);
+  ], [defaultFrameworks, customFrameworksList]);
 
   // Combine default and custom questions with disabled status
   const allQuestions = useMemo(() => {
@@ -115,7 +130,7 @@ export function QuestionManagement() {
       isDisabled: q.isDisabled || false
     }));
     return [...defaultWithStatus, ...customWithStatus];
-  }, [customQuestions, disabledQuestionIds]);
+  }, [defaultQuestions, customQuestions, disabledQuestionIds]);
 
   // Filtered questions
   const filteredQuestions = useMemo(() => {

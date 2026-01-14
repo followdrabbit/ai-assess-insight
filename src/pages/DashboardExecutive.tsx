@@ -86,18 +86,11 @@ export default function DashboardExecutive() {
 
     } catch (error) {
       console.error('Error loading data:', error);
-      // Fallback to default questions
+      // On error, show empty state
       const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
-      setAllActiveQuestions(defaultQuestions.map(q => ({
-        questionId: q.questionId,
-        questionText: q.questionText,
-        subcatId: q.subcatId,
-        domainId: q.domainId,
-        ownershipType: q.ownershipType,
-        frameworks: q.frameworks || []
-      })));
+      setAllActiveQuestions([]);
       setEnabledFrameworkIds(defaultEnabledIds);
-      setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
+      setEnabledFrameworks([]);
     } finally {
       setQuestionsLoading(false);
     }

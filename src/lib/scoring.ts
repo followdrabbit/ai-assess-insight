@@ -1,11 +1,8 @@
 import { Answer } from './database';
 import {
-  domains,
-  subcategories,
-  questions,
-  getSubcategoriesByDomain,
-  getQuestionsBySubcategory,
-  getQuestionsByDomain,
+  Domain,
+  Subcategory,
+  Question,
   getResponseScore,
   getEvidenceMultiplier,
   getMaturityLevel,
@@ -18,13 +15,45 @@ import {
   frameworkCategoryIds,
   getFrameworkCategory,
   frameworkCategories,
-} from './dataset';
+} from './datasetData';
+
+// Cache for data used by scoring functions
+let cachedDomains: Domain[] = [];
+let cachedSubcategories: Subcategory[] = [];
+let cachedQuestions: Question[] = [];
+
+// Initialize cache (should be called after app loads)
+export async function initializeScoringCache(): Promise<void> {
+  const { fetchDomains, fetchSubcategories, fetchQuestions } = await import('./datasetData');
+  [cachedDomains, cachedSubcategories, cachedQuestions] = await Promise.all([
+    fetchDomains(),
+    fetchSubcategories(),
+    fetchQuestions()
+  ]);
+}
+
+// Get cached data (falls back to empty arrays if not initialized)
+function getDomains(): Domain[] { return cachedDomains; }
+function getSubcategories(): Subcategory[] { return cachedSubcategories; }
+function getQuestions(): Question[] { return cachedQuestions; }
+
+function getSubcategoriesByDomain(domainId: string): Subcategory[] {
+  return cachedSubcategories.filter(s => s.domainId === domainId);
+}
+
+function getQuestionsBySubcategory(subcatId: string): Question[] {
+  return cachedQuestions.filter(q => q.subcatId === subcatId);
+}
+
+function getQuestionsByDomain(domainId: string): Question[] {
+  return cachedQuestions.filter(q => q.domainId === domainId);
+}
 
 // Combine framework tags from question-level mapping and subcategory references.
 // This ensures regulatory references (e.g., BACEN/CMN) defined at subcategory level
 // are reflected consistently in analytics without duplicating them across all questions.
 function getFrameworkTagsForQuestion(q: { questionId: string; subcatId: string; frameworks: string[] }): string[] {
-  const subcat = subcategories.find(s => s.subcatId === q.subcatId);
+  const subcat = getSubcategories().find(s => s.subcatId === q.subcatId);
   const combined = new Set<string>();
 
   (q.frameworks || []).forEach(fw => fw && combined.add(fw));
@@ -160,7 +189,7 @@ export function calculateSubcategoryMetrics(
   subcatId: string,
   answersMap: Map<string, Answer>
 ): SubcategoryMetrics {
-  const subcat = subcategories.find(s => s.subcatId === subcatId);
+  const subcat = getSubcategories().find(s => s.subcatId === subcatId);
   const subcatQuestions = getQuestionsBySubcategory(subcatId);
   
   if (!subcat) {
@@ -224,7 +253,7 @@ export function calculateDomainMetrics(
   domainId: string,
   answersMap: Map<string, Answer>
 ): DomainMetrics {
-  const domain = domains.find(d => d.domainId === domainId);
+  const domain = getDomains().find(d => d.domainId === domainId);
   const domainSubcats = getSubcategoriesByDomain(domainId);
   const domainQuestions = getQuestionsByDomain(domainId);
   
@@ -313,7 +342,7 @@ export function calculateOwnershipMetrics(
   answersMap: Map<string, Answer>
 ): OwnershipMetrics[] {
   return ownershipTypes.map(ownerType => {
-    const ownerQuestions = questions.filter(q => q.ownershipType === ownerType);
+    const ownerQuestions = getQuestions().filter(q => q.ownershipType === ownerType);
     
     let totalScore = 0;
     let answeredCount = 0;
@@ -351,7 +380,7 @@ export function calculateFrameworkCategoryMetrics(
   answersMap: Map<string, Answer>
 ): FrameworkCategoryMetrics[] {
   return frameworkCategoryIds.map(categoryId => {
-    const categoryQuestions = questions.filter(q =>
+    const categoryQuestions = getQuestions().filter(q =>
       getFrameworkTagsForQuestion(q).some(fw => getFrameworkCategory(fw) === categoryId)
     );
 
@@ -406,15 +435,15 @@ export function calculateOverallMetrics(
     ? activeQuestionsCountOrQuestions.length
     : activeQuestionsCountOrQuestions;
 
-  const questionsToAnalyze = activeQuestions ?? questions;
+  const questionsToAnalyze = activeQuestions ?? getQuestions();
 
   // Domain metrics filtered by the active question set (enabled frameworks/custom questions)
-  const domainMetrics: DomainMetrics[] = domains
+  const domainMetrics: DomainMetrics[] = getDomains()
     .map(d => {
       const domainQuestions = questionsToAnalyze.filter(q => q.domainId === d.domainId);
       if (domainQuestions.length === 0) return null;
 
-      const domainSubcats = subcategories.filter(
+      const domainSubcats = getSubcategories().filter(
         s => s.domainId === d.domainId && domainQuestions.some(q => q.subcatId === s.subcatId)
       );
 
@@ -668,11 +697,11 @@ export function getCriticalGaps(
   const gaps: CriticalGap[] = [];
 
   // Use provided active questions or fall back to default questions
-  const questionsToAnalyze = activeQuestions || questions;
+  const questionsToAnalyze = activeQuestions || getQuestions();
 
   questionsToAnalyze.forEach(q => {
-    const subcat = subcategories.find(s => s.subcatId === q.subcatId);
-    const domain = domains.find(d => d.domainId === q.domainId);
+    const subcat = getSubcategories().find(s => s.subcatId === q.subcatId);
+    const domain = getDomains().find(d => d.domainId === q.domainId);
     const answer = answersMap.get(q.questionId);
 
     if (!subcat || !domain) return;
@@ -745,7 +774,7 @@ export function getFrameworkCoverage(
   }>();
 
   // Use provided active questions or fall back to default questions
-  const questionsToAnalyze = activeQuestions || questions;
+  const questionsToAnalyze = activeQuestions || getQuestions();
 
   questionsToAnalyze.forEach(q => {
     getFrameworkTagsForQuestion(q).forEach(fw => {
@@ -859,7 +888,7 @@ export function generateRoadmap(
   domainGaps.forEach((domainGapList, domainId) => {
     if (itemCount >= maxItems) return;
 
-    const domain = domains.find(d => d.domainId === domainId);
+    const domain = getDomains().find(d => d.domainId === domainId);
     if (!domain) return;
 
     // Take top gaps per domain

@@ -451,6 +451,41 @@ export async function enableDefaultQuestion(questionId: string): Promise<void> {
   await logChange('question', questionId, 'enable', { questionId });
 }
 
+// ============ DISABLED DEFAULT FRAMEWORKS ============
+export async function getDisabledFrameworks(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('disabled_frameworks')
+    .select('framework_id');
+  
+  if (error) throw error;
+  return (data || []).map(d => d.framework_id);
+}
+
+export async function disableDefaultFramework(frameworkId: string): Promise<void> {
+  const { error } = await supabase
+    .from('disabled_frameworks')
+    .upsert({ framework_id: frameworkId });
+  
+  if (error) throw error;
+  await logChange('framework', frameworkId, 'disable', { frameworkId });
+  
+  // Also remove from enabled frameworks if present
+  const enabledFrameworks = await getEnabledFrameworks();
+  if (enabledFrameworks.includes(frameworkId)) {
+    await setEnabledFrameworks(enabledFrameworks.filter(id => id !== frameworkId));
+  }
+}
+
+export async function enableDefaultFramework(frameworkId: string): Promise<void> {
+  const { error } = await supabase
+    .from('disabled_frameworks')
+    .delete()
+    .eq('framework_id', frameworkId);
+  
+  if (error) throw error;
+  await logChange('framework', frameworkId, 'enable', { frameworkId });
+}
+
 // ============ CHANGE LOGS ============
 export async function logChange(
   entityType: ChangeLog['entityType'],

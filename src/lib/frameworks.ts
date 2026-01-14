@@ -58,57 +58,60 @@ export function isAuthoritativeFramework(frameworkId: string): boolean {
 
 // Map question framework strings to framework IDs
 // Questions have strings like "NIST AI RMF GOVERN 1.1", "ISO 27001 A.5.1", etc.
-// Order matters - more specific patterns should come first
+// STRICT MATCHING: Only map to frameworks that are explicitly referenced
+// Do NOT map to other frameworks (e.g., don't map NIST CSF to CSA_CCM)
 const FRAMEWORK_PATTERNS: { pattern: RegExp; frameworkId: string }[] = [
   // NIST AI RMF - primary AI governance framework
   { pattern: /NIST\s*AI\s*RMF/i, frameworkId: 'NIST_AI_RMF' },
   
-  // ISO standards
-  { pattern: /ISO\s*\/?\s*IEC?\s*42001/i, frameworkId: 'NIST_AI_RMF' }, // Map 42001 to NIST AI RMF (AI governance)
+  // ISO/IEC 42001 - AI Management System (maps to NIST AI RMF as they're complementary)
+  { pattern: /ISO\s*\/?\s*IEC?\s*42001/i, frameworkId: 'NIST_AI_RMF' },
+  
+  // ISO/IEC 23894 - AI Risk Management
   { pattern: /ISO\s*\/?\s*IEC?\s*23894/i, frameworkId: 'ISO_23894' },
   { pattern: /ISO\s*23894/i, frameworkId: 'ISO_23894' },
+  
+  // ISO 27001/27002 - Information Security
   { pattern: /ISO\s*\/?\s*IEC?\s*27001/i, frameworkId: 'ISO_27001_27002' },
   { pattern: /ISO\s*27001/i, frameworkId: 'ISO_27001_27002' },
   { pattern: /ISO\s*27002/i, frameworkId: 'ISO_27001_27002' },
-  { pattern: /ISO\s*31000/i, frameworkId: 'ISO_23894' }, // Risk management maps to ISO 23894
-  { pattern: /ISO\s*22301/i, frameworkId: 'ISO_27001_27002' }, // Business continuity
-  { pattern: /ISO\s*8000/i, frameworkId: 'NIST_AI_RMF' }, // Data quality maps to AI RMF
   
-  // Privacy/Data Protection
+  // LGPD - Brazilian Data Protection
   { pattern: /LGPD/i, frameworkId: 'LGPD' },
-  { pattern: /GDPR/i, frameworkId: 'LGPD' }, // Map GDPR to LGPD (privacy framework)
-  { pattern: /NIST\s*Privacy/i, frameworkId: 'LGPD' }, // Privacy framework maps to LGPD
   
-  // Development security
+  // NIST SSDF - Secure Software Development
   { pattern: /NIST\s*SSDF/i, frameworkId: 'NIST_SSDF' },
-  { pattern: /SLSA/i, frameworkId: 'NIST_SSDF' }, // Supply chain maps to SSDF
-  { pattern: /SBOM/i, frameworkId: 'NIST_SSDF' }, // Software Bill of Materials
+  { pattern: /SSDF/i, frameworkId: 'NIST_SSDF' },
   
-  // Cloud/Infrastructure security
+  // CSA CCM - Cloud Controls Matrix
   { pattern: /CSA\s*CCM/i, frameworkId: 'CSA_CCM' },
   { pattern: /CSA\s*Cloud\s*Controls/i, frameworkId: 'CSA_CCM' },
-  { pattern: /CSA\s*(AI)?/i, frameworkId: 'CSA_AI' },
-  { pattern: /MITRE\s*ATLAS/i, frameworkId: 'CSA_AI' }, // MITRE ATLAS maps to CSA
-  { pattern: /NIST\s*(SP\s*)?800-53/i, frameworkId: 'CSA_CCM' }, // NIST 800-53 maps to CSA CCM
-  { pattern: /NIST\s*(SP\s*)?800-/i, frameworkId: 'CSA_CCM' }, // Other NIST SPs
-  { pattern: /NIST\s*CSF/i, frameworkId: 'CSA_CCM' }, // NIST CSF maps to CSA CCM
-  { pattern: /CIS/i, frameworkId: 'CSA_CCM' }, // CIS Benchmarks
   
-  // OWASP - more specific patterns first
-  { pattern: /OWASP\s*LLM\s*Top\s*10/i, frameworkId: 'OWASP_LLM' },
+  // CSA AI - Cloud Security Alliance AI guidance
+  { pattern: /CSA\s*AI/i, frameworkId: 'CSA_AI' },
+  
+  // OWASP LLM Top 10
+  { pattern: /OWASP\s*LLM/i, frameworkId: 'OWASP_LLM' },
   { pattern: /OWASP\s*(Top\s*10\s*(for\s*)?)?LLM/i, frameworkId: 'OWASP_LLM' },
-  { pattern: /LLM0[1-9]/i, frameworkId: 'OWASP_LLM' }, // LLM01, LLM02, etc.
+  { pattern: /LLM0[1-9]/i, frameworkId: 'OWASP_LLM' },
   { pattern: /LLM10/i, frameworkId: 'OWASP_LLM' },
-  { pattern: /OWASP\s*API\s*(Security\s*)?(Top\s*10)?/i, frameworkId: 'OWASP_API' },
-  { pattern: /API[1-9]:/i, frameworkId: 'OWASP_API' }, // API1:2023, API2:2023, etc.
+  
+  // OWASP API Security
+  { pattern: /OWASP\s*API/i, frameworkId: 'OWASP_API' },
+  { pattern: /API[1-9]:/i, frameworkId: 'OWASP_API' },
   { pattern: /API10:/i, frameworkId: 'OWASP_API' },
-  { pattern: /OWASP\s*ML/i, frameworkId: 'OWASP_LLM' }, // OWASP ML Top 10
   
-  // EU AI Act - maps to NIST AI RMF (governance)
-  { pattern: /EU\s*AI\s*Act/i, frameworkId: 'NIST_AI_RMF' },
-  
-  // IEEE EAD (Ethically Aligned Design) - maps to AI RMF
-  { pattern: /IEEE\s*EAD/i, frameworkId: 'NIST_AI_RMF' },
+  // NOTE: The following frameworks are intentionally NOT mapped to other frameworks
+  // to ensure strict filtering. If a question only references these, it won't appear
+  // unless explicitly enabled:
+  // - ISO 31000 (standalone risk management)
+  // - NIST CSF (standalone cybersecurity framework)
+  // - NIST 800-53 (standalone security controls)
+  // - EU AI Act (standalone regulation)
+  // - GDPR (use LGPD for privacy)
+  // - CIS Benchmarks (infrastructure hardening)
+  // - MITRE ATLAS (adversarial threats)
+  // - SLSA, SBOM (supply chain - use NIST SSDF)
 ];
 
 /**

@@ -14,6 +14,7 @@ import {
   CriticalGapsHelp,
   NistFunctionHelp 
 } from '@/components/HelpTooltip';
+import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {
@@ -55,9 +56,9 @@ export default function Dashboard() {
   const [persona, setPersona] = useState<PersonaType>('executive');
 
   const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
-  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5).slice(0, 10), [answers]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers).slice(0, 8), [answers]);
-  const roadmap = useMemo(() => generateRoadmap(answers, 5), [answers]);
+  const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5), [answers]);
+  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers), [answers]);
+  const roadmap = useMemo(() => generateRoadmap(answers, 10), [answers]);
 
   // Data for charts
   const domainChartData = metrics.domainMetrics.map(dm => ({
@@ -130,214 +131,12 @@ export default function Dashboard() {
 
       {/* Executive View */}
       {persona === 'executive' && (
-        <>
-          {/* Executive KPI Cards */}
-          <div className="stats-grid">
-            <div className="kpi-card">
-              <div className="flex items-center justify-between mb-1">
-                <div className="kpi-label">Score Geral</div>
-                <MaturityScoreHelp />
-              </div>
-              <div className="kpi-value" style={{ color: metrics.maturityLevel.color }}>
-                {Math.round(metrics.overallScore * 100)}%
-              </div>
-              <div className={cn("maturity-badge mt-2", `maturity-${metrics.maturityLevel.level}`)}>
-                Nível {metrics.maturityLevel.level}: {metrics.maturityLevel.name}
-              </div>
-            </div>
-
-            <div className="kpi-card">
-              <div className="flex items-center justify-between mb-1">
-                <div className="kpi-label">Gaps Críticos</div>
-                <CriticalGapsHelp />
-              </div>
-              <div className="kpi-value text-destructive">{metrics.criticalGaps}</div>
-              <div className="text-sm text-muted-foreground mt-2">
-                Requerem ação prioritária
-              </div>
-            </div>
-
-            <div className="kpi-card">
-              <div className="flex items-center justify-between mb-1">
-                <div className="kpi-label">Cobertura</div>
-                <CoverageHelp />
-              </div>
-              <div className="kpi-value">{Math.round(metrics.coverage * 100)}%</div>
-              <div className="text-sm text-muted-foreground mt-2">
-                {metrics.answeredQuestions} de {metrics.totalQuestions} perguntas
-              </div>
-            </div>
-
-            <div className="kpi-card">
-              <div className="flex items-center justify-between mb-1">
-                <div className="kpi-label">Prontidão de Evidências</div>
-                <EvidenceReadinessHelp />
-              </div>
-              <div className="kpi-value">{Math.round(metrics.evidenceReadiness * 100)}%</div>
-              <div className="text-sm text-muted-foreground mt-2">
-                Documentação disponível
-              </div>
-            </div>
-          </div>
-
-          {/* NIST AI RMF and Domain Charts */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* NIST AI RMF Radar */}
-            <div className="card-elevated p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Maturidade por Função NIST AI RMF</h3>
-                <NistFunctionHelp />
-              </div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={nistFunctionData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="function" tick={{ fontSize: 12 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Radar
-                      name="Score"
-                      dataKey="score"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.3}
-                    />
-                    <Tooltip formatter={(value: number) => [`${value}%`, 'Score']} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Domain Bar Chart */}
-            <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Maturidade por Domínio (Top 5)</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={domainChartData.slice(0, 5)} 
-                    layout="vertical" 
-                    margin={{ left: 10, right: 20 }}
-                  >
-                    <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} />
-                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
-                    <Tooltip 
-                      formatter={(value: number) => [`${value}%`, 'Score']}
-                      labelFormatter={(label) => domainChartData.find(d => d.name === label)?.fullName || label}
-                    />
-                    <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                      {domainChartData.slice(0, 5).map((entry, index) => (
-                        <Cell key={index} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* Framework Category Maturity */}
-          <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Visão consolidada do alinhamento com frameworks de referência agrupados por categoria
-            </p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {frameworkCategoryData.map(fc => (
-                <div key={fc.categoryId} className="p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-sm">{fc.name}</span>
-                    <span 
-                      className="text-lg font-bold"
-                      style={{ color: fc.maturityLevel.color }}
-                    >
-                      {fc.score}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-2">
-                    <div 
-                      className="h-full transition-all" 
-                      style={{ 
-                        width: `${fc.score}%`,
-                        backgroundColor: fc.maturityLevel.color 
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{fc.answeredQuestions}/{fc.totalQuestions} perguntas</span>
-                    <span>{fc.coverage}% cobertura</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Strategic Roadmap */}
-          {roadmap.length > 0 && (
-            <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Roadmap Estratégico (30/60/90 dias)</h3>
-              <div className="space-y-3">
-                {roadmap.map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    className={cn(
-                      "flex items-start gap-4 p-3 rounded-lg border-l-4",
-                      item.priority === 'immediate' ? 'border-l-red-500 bg-red-50 dark:bg-red-950/20' :
-                      item.priority === 'short' ? 'border-l-amber-500 bg-amber-50 dark:bg-amber-950/20' :
-                      'border-l-blue-500 bg-blue-50 dark:bg-blue-950/20'
-                    )}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={cn(
-                          "text-xs font-medium px-2 py-0.5 rounded",
-                          item.priority === 'immediate' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                          item.priority === 'short' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
-                          'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                        )}>
-                          {item.timeframe}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{item.domain}</span>
-                      </div>
-                      <p className="font-medium text-sm">{item.action}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{item.impact}</p>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.ownershipType}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Top Critical Gaps - Executive Summary */}
-          {criticalGaps.length > 0 && (
-            <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Top 5 Gaps Críticos</h3>
-              <div className="space-y-2">
-                {criticalGaps.slice(0, 5).map((gap, idx) => (
-                  <div 
-                    key={gap.questionId}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-muted-foreground">{idx + 1}</span>
-                      <div>
-                        <p className="font-medium text-sm">{gap.subcatName}</p>
-                        <p className="text-xs text-muted-foreground">{gap.domainName}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={cn("criticality-badge", `criticality-${gap.criticality.toLowerCase()}`)}>
-                        {gap.criticality}
-                      </span>
-                      <span className="font-mono text-sm">{Math.round(gap.effectiveScore * 100)}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        <ExecutiveDashboard 
+          metrics={metrics}
+          criticalGaps={criticalGaps}
+          roadmap={roadmap}
+          frameworkCoverage={frameworkCoverage}
+        />
       )}
 
       {/* GRC View */}

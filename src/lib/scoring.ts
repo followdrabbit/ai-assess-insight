@@ -391,29 +391,205 @@ export function calculateFrameworkCategoryMetrics(
 // Calculate overall metrics
 export function calculateOverallMetrics(
   answersMap: Map<string, Answer>,
-  activeQuestionsCount?: number
+  activeQuestionsCountOrQuestions?: number | ActiveQuestion[],
+  activeQuestionsMaybe?: ActiveQuestion[]
 ): OverallMetrics {
-  const domainMetrics = domains.map(d => 
-    calculateDomainMetrics(d.domainId, answersMap)
-  );
+  // Backwards-compatible parameter handling:
+  // - calculateOverallMetrics(answers, count)
+  // - calculateOverallMetrics(answers, activeQuestions)
+  // - calculateOverallMetrics(answers, count, activeQuestions)
+  const activeQuestions: ActiveQuestion[] | undefined = Array.isArray(activeQuestionsCountOrQuestions)
+    ? activeQuestionsCountOrQuestions
+    : activeQuestionsMaybe;
+
+  const activeQuestionsCount: number | undefined = Array.isArray(activeQuestionsCountOrQuestions)
+    ? activeQuestionsCountOrQuestions.length
+    : activeQuestionsCountOrQuestions;
+
+  const questionsToAnalyze = activeQuestions ?? questions;
+
+  // Domain metrics filtered by the active question set (enabled frameworks/custom questions)
+  const domainMetrics: DomainMetrics[] = domains
+    .map(d => {
+      const domainQuestions = questionsToAnalyze.filter(q => q.domainId === d.domainId);
+      if (domainQuestions.length === 0) return null;
+
+      const domainSubcats = subcategories.filter(
+        s => s.domainId === d.domainId && domainQuestions.some(q => q.subcatId === s.subcatId)
+      );
+
+      const subcategoryMetrics = domainSubcats.map(s => {
+        const subcatQuestions = domainQuestions.filter(q => q.subcatId === s.subcatId);
+
+        let totalEffectiveScore = 0;
+        let applicableCount = 0;
+        let answeredCount = 0;
+        let criticalGaps = 0;
+
+        subcatQuestions.forEach(q => {
+          const answer = answersMap.get(q.questionId);
+          const scoreData = calculateQuestionScore(answer);
+
+          if (answer?.response) {
+            answeredCount++;
+          }
+
+          if (scoreData.isApplicable) {
+            applicableCount++;
+            if (scoreData.effectiveScore !== null) {
+              totalEffectiveScore += scoreData.effectiveScore;
+
+              // Count critical gaps (low score in high/critical subcategory)
+              if (
+                scoreData.effectiveScore < 0.5 &&
+                (s.criticality === 'High' || s.criticality === 'Critical')
+              ) {
+                criticalGaps++;
+              }
+            }
+          }
+        });
+
+        const score = applicableCount > 0 && answeredCount > 0 ? totalEffectiveScore / applicableCount : 0;
+        const coverage = applicableCount > 0 ? answeredCount / applicableCount : 0;
+
+        return {
+          subcatId: s.subcatId,
+          subcatName: s.subcatName,
+          domainId: s.domainId,
+          score,
+          maturityLevel: getMaturityLevel(score),
+          totalQuestions: subcatQuestions.length,
+          answeredQuestions: answeredCount,
+          applicableQuestions: applicableCount,
+          coverage,
+          criticality: s.criticality,
+          weight: s.weight,
+          criticalGaps,
+          ownershipType: s.ownershipType,
+        } as SubcategoryMetrics;
+      });
+
+      // Weighted average across subcategories
+      let totalWeightedScore = 0;
+      let totalWeight = 0;
+      let totalAnswered = 0;
+      let totalApplicable = 0;
+      let totalCriticalGaps = 0;
+
+      subcategoryMetrics.forEach(sm => {
+        if (sm.applicableQuestions > 0 && sm.answeredQuestions > 0) {
+          totalWeightedScore += sm.score * sm.weight;
+          totalWeight += sm.weight;
+        }
+        totalAnswered += sm.answeredQuestions;
+        totalApplicable += sm.applicableQuestions;
+        totalCriticalGaps += sm.criticalGaps;
+      });
+
+      const score = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
+      const coverage = totalApplicable > 0 ? totalAnswered / totalApplicable : 0;
+
+      return {
+        domainId: d.domainId,
+        domainName: d.domainName,
+        nistFunction: d.nistAiRmfFunction,
+        score,
+        maturityLevel: getMaturityLevel(score),
+        totalQuestions: domainQuestions.length,
+        answeredQuestions: totalAnswered,
+        applicableQuestions: totalApplicable,
+        coverage,
+        subcategoryMetrics,
+        criticalGaps: totalCriticalGaps,
+      } as DomainMetrics;
+    })
+    .filter((x): x is DomainMetrics => Boolean(x));
 
   const nistFunctionMetrics = calculateNistFunctionMetrics(answersMap, domainMetrics);
-  const ownershipMetrics = calculateOwnershipMetrics(answersMap);
-  const frameworkCategoryMetrics = calculateFrameworkCategoryMetrics(answersMap);
 
-  // Weighted average across domains (using average subcategory weight per domain)
+  // Ownership + Framework Category metrics must also respect active question set
+  const ownershipMetrics: OwnershipMetrics[] = ownershipTypes.map(ownerType => {
+    const ownerQuestions = questionsToAnalyze.filter(q => q.ownershipType === ownerType);
+
+    let totalScore = 0;
+    let answeredCount = 0;
+    let applicableCount = 0;
+
+    ownerQuestions.forEach(q => {
+      const answer = answersMap.get(q.questionId);
+      const scoreData = calculateQuestionScore(answer);
+
+      if (scoreData.isApplicable) {
+        applicableCount++;
+        if (scoreData.effectiveScore !== null) {
+          totalScore += scoreData.effectiveScore;
+          answeredCount++;
+        }
+      }
+    });
+
+    const score = answeredCount > 0 ? totalScore / answeredCount : 0;
+    const coverage = applicableCount > 0 ? answeredCount / applicableCount : 0;
+
+    return {
+      ownershipType: ownerType,
+      score,
+      maturityLevel: getMaturityLevel(score),
+      totalQuestions: ownerQuestions.length,
+      answeredQuestions: answeredCount,
+      coverage,
+    };
+  });
+
+  const frameworkCategoryMetrics: FrameworkCategoryMetrics[] = frameworkCategoryIds.map(categoryId => {
+    const categoryQuestions = questionsToAnalyze.filter(q =>
+      getFrameworkTagsForQuestion(q).some(fw => getFrameworkCategory(fw) === categoryId)
+    );
+
+    let totalScore = 0;
+    let answeredCount = 0;
+    let applicableCount = 0;
+
+    categoryQuestions.forEach(q => {
+      const answer = answersMap.get(q.questionId);
+      const scoreData = calculateQuestionScore(answer);
+
+      if (scoreData.isApplicable) {
+        applicableCount++;
+        if (scoreData.effectiveScore !== null) {
+          totalScore += scoreData.effectiveScore;
+          answeredCount++;
+        }
+      }
+    });
+
+    const score = answeredCount > 0 ? totalScore / answeredCount : 0;
+    const coverage = applicableCount > 0 ? answeredCount / applicableCount : 0;
+    const categoryInfo = frameworkCategories[categoryId];
+
+    return {
+      categoryId,
+      categoryName: categoryInfo?.name || categoryId,
+      score,
+      maturityLevel: getMaturityLevel(score),
+      totalQuestions: categoryQuestions.length,
+      answeredQuestions: answeredCount,
+      coverage,
+    };
+  });
+
+  // Weighted average across domains
   let totalWeightedScore = 0;
   let totalWeight = 0;
   let totalAnswered = 0;
   let totalApplicable = 0;
   let totalCriticalGaps = 0;
-  let totalEvidenceScore = 0;
-  let evidenceCount = 0;
 
   domainMetrics.forEach(dm => {
-    const avgWeight = dm.subcategoryMetrics.reduce((sum, sm) => sum + sm.weight, 0) / 
-                      (dm.subcategoryMetrics.length || 1);
-    
+    const avgWeight =
+      dm.subcategoryMetrics.reduce((sum, sm) => sum + sm.weight, 0) / (dm.subcategoryMetrics.length || 1);
+
     if (dm.applicableQuestions > 0 && dm.answeredQuestions > 0) {
       totalWeightedScore += dm.score * avgWeight;
       totalWeight += avgWeight;
@@ -423,9 +599,12 @@ export function calculateOverallMetrics(
     totalCriticalGaps += dm.criticalGaps;
   });
 
-  // Calculate evidence readiness
-  answersMap.forEach(answer => {
-    if (answer.response && answer.response !== 'NA') {
+  // Evidence readiness should only consider the active question set
+  let totalEvidenceScore = 0;
+  let evidenceCount = 0;
+  questionsToAnalyze.forEach(q => {
+    const answer = answersMap.get(q.questionId);
+    if (answer?.response && answer.response !== 'NA') {
       const multiplier = getEvidenceMultiplier(answer.evidenceOk || 'Não');
       if (multiplier !== null) {
         totalEvidenceScore += multiplier;
@@ -435,18 +614,17 @@ export function calculateOverallMetrics(
   });
 
   const overallScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
-  // Use the provided active questions count if available, otherwise fall back to total applicable
-  const totalQuestionsForCoverage = activeQuestionsCount ?? totalApplicable;
+  const totalQuestionsForCoverage = activeQuestionsCount ?? questionsToAnalyze.length;
   const coverage = totalQuestionsForCoverage > 0 ? totalAnswered / totalQuestionsForCoverage : 0;
   const evidenceReadiness = evidenceCount > 0 ? totalEvidenceScore / evidenceCount : 0;
 
   return {
     overallScore,
     maturityLevel: getMaturityLevel(overallScore),
-    totalQuestions: activeQuestionsCount ?? questions.length,
+    totalQuestions: activeQuestionsCount ?? questionsToAnalyze.length,
     answeredQuestions: totalAnswered,
     applicableQuestions: totalApplicable,
-    coverage: Math.min(coverage, 1), // Cap at 100%
+    coverage: Math.min(coverage, 1),
     evidenceReadiness,
     criticalGaps: totalCriticalGaps,
     domainMetrics,

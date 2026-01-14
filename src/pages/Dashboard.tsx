@@ -492,10 +492,10 @@ export default function Dashboard() {
 
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Cobertura por Framework</h3>
-              <div className="space-y-3">
-                {frameworkCoverage.slice(0, 8).map(fw => (
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
+                {frameworkCoverage.map(fw => (
                   <div key={fw.framework} className="flex items-center justify-between">
-                    <span className="text-sm truncate flex-1">{fw.framework}</span>
+                    <span className="text-sm truncate flex-1" title={fw.framework}>{fw.framework}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-muted-foreground">
                         {fw.answeredQuestions}/{fw.totalQuestions}

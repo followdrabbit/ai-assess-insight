@@ -92,6 +92,7 @@ export default function DashboardSpecialist() {
   const [selectedHeatmapDomain, setSelectedHeatmapDomain] = useState<string>('all');
   const [expandedFrameworks, setExpandedFrameworks] = useState<Set<string>>(new Set());
   const [selectedResponseType, setSelectedResponseType] = useState<string | null>(null);
+  const [selectedCriticality, setSelectedCriticality] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   // Load active questions and frameworks
@@ -346,6 +347,49 @@ export default function DashboardSpecialist() {
       criticalityBreakdown,
     };
   }, [selectedResponseType, responseDistribution, questionsForDashboard, answers, domains, allCriticalGaps, metrics.totalQuestions]);
+
+  // Selected criticality details for modal
+  const selectedCriticalityDetails = useMemo(() => {
+    if (!selectedCriticality) return null;
+
+    const criticalityGaps = allCriticalGaps.filter(g => g.criticality === selectedCriticality);
+    if (criticalityGaps.length === 0) return null;
+
+    // Group by domain
+    const byDomain: Record<string, typeof criticalityGaps> = {};
+    criticalityGaps.forEach(g => {
+      const domainData = domains.find(d => d.domainId === g.domainId);
+      const domainName = domainData?.domainName || g.domainId;
+      if (!byDomain[domainName]) byDomain[domainName] = [];
+      byDomain[domainName].push(g);
+    });
+
+    // Group by response
+    const byResponse = {
+      'Não': criticalityGaps.filter(g => g.response === 'Não').length,
+      'Parcial': criticalityGaps.filter(g => g.response === 'Parcial').length,
+      'Não respondido': criticalityGaps.filter(g => g.response === 'Não respondido').length,
+    };
+
+    // Get color
+    const colorMap: Record<string, string> = {
+      'Critical': 'hsl(0, 72%, 51%)',
+      'High': 'hsl(25, 95%, 53%)',
+      'Medium': 'hsl(217, 91%, 60%)',
+      'Low': 'hsl(220, 9%, 46%)',
+    };
+
+    return {
+      criticality: selectedCriticality,
+      color: colorMap[selectedCriticality] || 'hsl(220, 9%, 46%)',
+      count: criticalityGaps.length,
+      percent: allCriticalGaps.length > 0 ? (criticalityGaps.length / allCriticalGaps.length) * 100 : 0,
+      gaps: criticalityGaps,
+      byDomain,
+      byResponse,
+      domainsCount: Object.keys(byDomain).length,
+    };
+  }, [selectedCriticality, allCriticalGaps, domains]);
 
   // Unique domains for filter - only from filtered questions
   const domainOptions = useMemo(() => {
@@ -1058,6 +1102,7 @@ export default function DashboardSpecialist() {
 
             <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-right-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
               <h3 className="font-semibold mb-4">Resumo por Criticidade</h3>
+              <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
               <div className="space-y-4">
                 {['Critical', 'High', 'Medium', 'Low'].map((crit, idx) => {
                   const count = allCriticalGaps.filter(g => g.criticality === crit).length;
@@ -1065,8 +1110,9 @@ export default function DashboardSpecialist() {
                   return (
                     <div 
                       key={crit}
-                      className="animate-in fade-in-0 slide-in-from-right-2 duration-300"
+                      className="animate-in fade-in-0 slide-in-from-right-2 duration-300 cursor-pointer hover:opacity-80 transition-opacity"
                       style={{ animationDelay: `${400 + idx * 100}ms`, animationFillMode: 'backwards' }}
+                      onClick={() => count > 0 && setSelectedCriticality(crit)}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className={cn("criticality-badge", `criticality-${crit.toLowerCase()}`)}>
@@ -1595,6 +1641,151 @@ export default function DashboardSpecialist() {
                     {selectedResponseDetails.responseKey === 'Não respondido' ? 'Iniciar Avaliação' : 'Revisar Primeira'}
                   </Button>
                 )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Criticality Details Modal */}
+      <Dialog open={!!selectedCriticality} onOpenChange={(open) => !open && setSelectedCriticality(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedCriticalityDetails && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedCriticalityDetails.color }}
+                  >
+                    {selectedCriticalityDetails.count}
+                  </div>
+                  <div>
+                    <DialogTitle className="text-left">
+                      Gaps de Criticidade: {selectedCriticalityDetails.criticality}
+                    </DialogTitle>
+                    <DialogDescription className="text-left">
+                      {selectedCriticalityDetails.count} gaps ({selectedCriticalityDetails.percent.toFixed(1)}% do total)
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold" style={{ color: selectedCriticalityDetails.color }}>
+                    {selectedCriticalityDetails.count}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Total de Gaps</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{selectedCriticalityDetails.domainsCount}</div>
+                  <div className="text-xs text-muted-foreground">Domínios Afetados</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{selectedCriticalityDetails.percent.toFixed(0)}%</div>
+                  <div className="text-xs text-muted-foreground">do Total</div>
+                </div>
+              </div>
+
+              {/* Response breakdown */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
+                <h4 className="font-medium text-sm mb-2">Por Status de Resposta</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(selectedCriticalityDetails.byResponse).map(([key, value]) => (
+                    value > 0 && (
+                      <div 
+                        key={key} 
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium",
+                          key === 'Não' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                          key === 'Parcial' && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+                          key === 'Não respondido' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}
+                      >
+                        {key}: {value}
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Gaps by Domain */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
+                <h4 className="font-medium text-sm mb-2">
+                  Gaps por Domínio ({selectedCriticalityDetails.gaps.length})
+                </h4>
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {Object.entries(selectedCriticalityDetails.byDomain).map(([domainName, gaps], domainIdx) => (
+                    <Collapsible 
+                      key={domainName}
+                      defaultOpen={domainIdx === 0}
+                      className="animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                      style={{ animationDelay: `${350 + domainIdx * 50}ms`, animationFillMode: 'backwards' }}
+                    >
+                      <CollapsibleTrigger className="w-full p-3 bg-muted/30 rounded-lg flex items-center justify-between hover:bg-muted/50 transition-colors">
+                        <span className="font-medium text-sm">{domainName}</span>
+                        <span className="text-xs text-muted-foreground">{gaps.length} gaps</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="space-y-2 mt-2 pl-2">
+                          {gaps.map((gap) => (
+                            <div 
+                              key={gap.questionId} 
+                              className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-mono text-xs text-muted-foreground">{gap.questionId}</span>
+                                  <span className={cn(
+                                    "text-xs px-2 py-0.5 rounded",
+                                    gap.response === 'Não' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                    gap.response === 'Parcial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                  )}>
+                                    {gap.response}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mb-1">{gap.subcatName}</p>
+                                <p className="text-sm line-clamp-2">{gap.questionText}</p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="shrink-0"
+                                onClick={() => {
+                                  setSelectedCriticality(null);
+                                  navigate(`/assessment?questionId=${gap.questionId}`);
+                                }}
+                              >
+                                Revisar
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-6 flex justify-end gap-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedCriticality(null)}
+                >
+                  Fechar
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setSelectedCriticality(null);
+                    setCriticalityFilter(selectedCriticalityDetails.criticality as CriticalityFilter);
+                  }}
+                >
+                  Filtrar por Esta Criticidade
+                </Button>
               </div>
             </>
           )}

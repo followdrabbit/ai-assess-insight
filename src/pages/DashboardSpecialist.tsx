@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
-import { domains, maturityLevels } from '@/lib/dataset';
+import { domains, maturityLevels, FrameworkCategoryId } from '@/lib/dataset';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, ActiveQuestion } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
-import { FrameworkCategoryId } from '@/lib/dataset';
+import { useMaturitySnapshots } from '@/hooks/useMaturitySnapshots';
+import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -74,6 +75,9 @@ const criticalityOrder: Record<string, number> = {
 export default function DashboardSpecialist() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
+
+  // Initialize snapshot capturing
+  useMaturitySnapshots();
 
   // Framework states
   const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
@@ -2547,6 +2551,9 @@ export default function DashboardSpecialist() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Maturity Trend Chart */}
+      <MaturityTrendChart className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" />
     </div>
   );
 }

@@ -519,3 +519,145 @@ export async function getChangeLogs(limit: number = 100): Promise<ChangeLog[]> {
     createdAt: row.created_at
   }));
 }
+
+// ============ MATURITY SNAPSHOTS ============
+export interface MaturitySnapshot {
+  id: string;
+  snapshotDate: string;
+  snapshotType: 'automatic' | 'manual';
+  overallScore: number;
+  overallCoverage: number;
+  evidenceReadiness: number;
+  maturityLevel: number;
+  totalQuestions: number;
+  answeredQuestions: number;
+  criticalGaps: number;
+  domainMetrics: DomainSnapshot[];
+  frameworkMetrics: FrameworkSnapshot[];
+  frameworkCategoryMetrics: FrameworkCategorySnapshot[];
+  createdAt: string;
+}
+
+export interface DomainSnapshot {
+  domainId: string;
+  domainName: string;
+  score: number;
+  coverage: number;
+  criticalGaps: number;
+}
+
+export interface FrameworkSnapshot {
+  framework: string;
+  score: number;
+  coverage: number;
+  totalQuestions: number;
+  answeredQuestions: number;
+}
+
+export interface FrameworkCategorySnapshot {
+  categoryId: string;
+  categoryName: string;
+  score: number;
+  coverage: number;
+}
+
+export async function getMaturitySnapshots(daysBack: number = 90): Promise<MaturitySnapshot[]> {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+  
+  const { data, error } = await supabase
+    .from('maturity_snapshots')
+    .select('*')
+    .gte('snapshot_date', startDate.toISOString().split('T')[0])
+    .order('snapshot_date', { ascending: true });
+  
+  if (error) throw error;
+  
+  return (data || []).map(row => ({
+    id: row.id,
+    snapshotDate: row.snapshot_date,
+    snapshotType: row.snapshot_type as 'automatic' | 'manual',
+    overallScore: Number(row.overall_score),
+    overallCoverage: Number(row.overall_coverage),
+    evidenceReadiness: Number(row.evidence_readiness),
+    maturityLevel: row.maturity_level,
+    totalQuestions: row.total_questions,
+    answeredQuestions: row.answered_questions,
+    criticalGaps: row.critical_gaps,
+    domainMetrics: (row.domain_metrics as unknown as DomainSnapshot[]) || [],
+    frameworkMetrics: (row.framework_metrics as unknown as FrameworkSnapshot[]) || [],
+    frameworkCategoryMetrics: (row.framework_category_metrics as unknown as FrameworkCategorySnapshot[]) || [],
+    createdAt: row.created_at || ''
+  }));
+}
+
+export async function saveMaturitySnapshot(
+  snapshot: Omit<MaturitySnapshot, 'id' | 'createdAt'>,
+  forceInsert: boolean = false
+): Promise<void> {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Check if we already have a snapshot for today with same type
+  if (!forceInsert && snapshot.snapshotType === 'automatic') {
+    const { data: existing } = await supabase
+      .from('maturity_snapshots')
+      .select('id')
+      .eq('snapshot_date', today)
+      .eq('snapshot_type', 'automatic')
+      .maybeSingle();
+    
+    if (existing) {
+      // Update existing snapshot
+      const { error } = await supabase
+        .from('maturity_snapshots')
+        .update({
+          overall_score: snapshot.overallScore,
+          overall_coverage: snapshot.overallCoverage,
+          evidence_readiness: snapshot.evidenceReadiness,
+          maturity_level: snapshot.maturityLevel,
+          total_questions: snapshot.totalQuestions,
+          answered_questions: snapshot.answeredQuestions,
+          critical_gaps: snapshot.criticalGaps,
+          domain_metrics: JSON.stringify(snapshot.domainMetrics),
+          framework_metrics: JSON.stringify(snapshot.frameworkMetrics),
+          framework_category_metrics: JSON.stringify(snapshot.frameworkCategoryMetrics)
+        })
+        .eq('id', existing.id);
+      
+      if (error) throw error;
+      return;
+    }
+  }
+  
+  // Insert new snapshot
+  const { error } = await supabase
+    .from('maturity_snapshots')
+    .insert([{
+      snapshot_date: snapshot.snapshotDate || today,
+      snapshot_type: snapshot.snapshotType,
+      overall_score: snapshot.overallScore,
+      overall_coverage: snapshot.overallCoverage,
+      evidence_readiness: snapshot.evidenceReadiness,
+      maturity_level: snapshot.maturityLevel,
+      total_questions: snapshot.totalQuestions,
+      answered_questions: snapshot.answeredQuestions,
+      critical_gaps: snapshot.criticalGaps,
+      domain_metrics: JSON.stringify(snapshot.domainMetrics),
+      framework_metrics: JSON.stringify(snapshot.frameworkMetrics),
+      framework_category_metrics: JSON.stringify(snapshot.frameworkCategoryMetrics)
+    }]);
+  
+  if (error) throw error;
+}
+
+export async function getLastSnapshotDate(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('maturity_snapshots')
+    .select('snapshot_date')
+    .order('snapshot_date', { ascending: false })
+    .limit(1)
+    .single();
+  
+  if (error || !data) return null;
+  return data.snapshot_date;
+}

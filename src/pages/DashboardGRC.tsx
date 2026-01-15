@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, ActiveQuestion } from '@/lib/scoring';
 import { cn } from '@/lib/utils';
+import { useMaturitySnapshots } from '@/hooks/useMaturitySnapshots';
+import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { 
   MaturityScoreHelp, 
   CoverageHelp, 
@@ -70,6 +72,9 @@ type SortOrder = 'asc' | 'desc';
 export default function DashboardGRC() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
+
+  // Initialize snapshot capturing
+  useMaturitySnapshots();
 
   // Framework states
   const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
@@ -1877,6 +1882,9 @@ export default function DashboardGRC() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Maturity Trend Chart */}
+      <MaturityTrendChart className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" />
     </div>
   );
 }

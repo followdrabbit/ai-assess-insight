@@ -361,13 +361,17 @@ export function ExecutiveDashboard({
     downloadHtmlReport({
       dashboardType: 'executive',
       metrics,
-      criticalGaps: filteredByFramework.gaps,
+      criticalGaps: filteredGaps,
       frameworkCoverage: filteredByFramework.coverage,
       selectedFrameworks: selectedFws,
       roadmap: filteredByFramework.roadmapItems,
+      frameworkCategoryData,
+      nistFunctionData,
+      riskDistribution,
+      coverageStats,
       generatedAt: new Date()
     });
-  }, [metrics, filteredByFramework, enabledFrameworks, selectedFrameworkIds]);
+  }, [metrics, filteredGaps, filteredByFramework, enabledFrameworks, selectedFrameworkIds, frameworkCategoryData, nistFunctionData, riskDistribution, coverageStats]);
 
   return (
     <div className="space-y-6">

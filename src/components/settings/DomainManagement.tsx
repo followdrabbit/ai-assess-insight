@@ -1,6 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
+import { 
+  exportDomainConfig, 
+  downloadDomainConfig, 
+  validateImportFile, 
+  importDomainConfig,
+  DomainConfigExport,
+  ValidationResult
+} from '@/lib/domainConfigExport';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,7 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, Save, Plus, Trash2, AlertTriangle, FolderTree, BookOpen, HelpCircle } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, Save, Plus, Trash2, AlertTriangle, FolderTree, BookOpen, HelpCircle, Download, Upload, FileJson, CheckCircle2, XCircle } from 'lucide-react';
 import { questions } from '@/lib/dataset';
 import { frameworks } from '@/lib/frameworks';
 
@@ -86,6 +95,20 @@ export function DomainManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createStep, setCreateStep] = useState<'basics' | 'taxonomy' | 'review'>('basics');
   const [deletingDomain, setDeletingDomain] = useState<SecurityDomain | null>(null);
+  
+  // Import/Export state
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importValidation, setImportValidation] = useState<ValidationResult | null>(null);
+  const [importConfig, setImportConfig] = useState<DomainConfigExport | null>(null);
+  const [importOptions, setImportOptions] = useState({
+    newDomainId: '',
+    newDomainName: '',
+    importFrameworks: true,
+    importQuestions: true
+  });
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
   
   const [editFormData, setEditFormData] = useState({
     domainName: '',
@@ -386,6 +409,100 @@ export function DomainManagement() {
     return ['AI_SECURITY', 'CLOUD_SECURITY', 'DEVSECOPS'].includes(domainId);
   };
 
+  // Export domain configuration
+  const handleExportDomain = async (domain: SecurityDomain) => {
+    setExporting(domain.domainId);
+    try {
+      const config = await exportDomainConfig(domain.domainId);
+      if (config) {
+        downloadDomainConfig(config);
+        toast.success(`Configuração de "${domain.domainName}" exportada com sucesso`);
+      } else {
+        toast.error('Erro ao exportar configuração do domínio');
+      }
+    } catch (error) {
+      console.error('Error exporting domain:', error);
+      toast.error('Erro ao exportar configuração do domínio');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  // Handle import file selection
+  const handleImportFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = await validateImportFile(file);
+    setImportValidation(validation);
+
+    if (validation.isValid && validation.config) {
+      setImportConfig(validation.config);
+      setImportOptions({
+        newDomainId: '',
+        newDomainName: validation.config.securityDomain.domainName + ' (Importado)',
+        importFrameworks: true,
+        importQuestions: true
+      });
+      setShowImportDialog(true);
+    } else {
+      toast.error(validation.errors[0] || 'Arquivo inválido');
+    }
+
+    // Reset file input
+    if (importFileRef.current) {
+      importFileRef.current.value = '';
+    }
+  };
+
+  // Execute import
+  const handleImport = async () => {
+    if (!importConfig) return;
+
+    setImporting(true);
+    try {
+      const result = await importDomainConfig(importConfig, {
+        newDomainId: importOptions.newDomainId || undefined,
+        newDomainName: importOptions.newDomainName || undefined,
+        importFrameworks: importOptions.importFrameworks,
+        importQuestions: importOptions.importQuestions
+      });
+
+      if (result.success) {
+        toast.success(
+          `Domínio importado com sucesso! ${result.stats.taxonomyDomains} áreas, ${result.stats.subcategories} subcategorias, ${result.stats.frameworks} frameworks, ${result.stats.questions} perguntas.`
+        );
+        setShowImportDialog(false);
+        setImportConfig(null);
+        setImportValidation(null);
+        await loadDomains();
+      } else {
+        toast.error(result.errors[0] || 'Erro ao importar domínio');
+      }
+
+      if (result.warnings.length > 0) {
+        result.warnings.forEach(w => toast.warning(w));
+      }
+    } catch (error) {
+      console.error('Error importing domain:', error);
+      toast.error('Erro ao importar configuração do domínio');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const resetImportDialog = () => {
+    setShowImportDialog(false);
+    setImportConfig(null);
+    setImportValidation(null);
+    setImportOptions({
+      newDomainId: '',
+      newDomainName: '',
+      importFrameworks: true,
+      importQuestions: true
+    });
+  };
+
   const saveEditedDomain = async () => {
     if (!editingDomain) return;
 
@@ -475,12 +592,23 @@ export function DomainManagement() {
                 </CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => handleExportDomain(domain)}
+                className="h-8 w-8"
+                disabled={exporting === domain.domainId}
+                title="Exportar configuração"
+              >
+                <Download className={cn("h-4 w-4", exporting === domain.domainId && "animate-pulse")} />
+              </Button>
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => openEditDialog(domain)}
                 className="h-8 w-8"
+                title="Editar domínio"
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -490,6 +618,7 @@ export function DomainManagement() {
                   size="icon"
                   onClick={() => setDeletingDomain(domain)}
                   className="h-8 w-8 text-destructive hover:text-destructive"
+                  title="Excluir domínio"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -556,10 +685,23 @@ export function DomainManagement() {
                 Gerencie os domínios de governança de segurança disponíveis na plataforma
               </CardDescription>
             </div>
-            <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Domínio
-            </Button>
+            <div className="flex items-center gap-2">
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".json"
+                onChange={handleImportFileSelect}
+                className="hidden"
+              />
+              <Button variant="outline" onClick={() => importFileRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />
+                Importar
+              </Button>
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Domínio
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -1128,6 +1270,158 @@ export function DomainManagement() {
             <Button onClick={saveEditedDomain} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
               Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Domain Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={(open) => { if (!open) resetImportDialog(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileJson className="h-5 w-5" />
+              Importar Configuração de Domínio
+            </DialogTitle>
+            <DialogDescription>
+              Configure as opções de importação para o domínio selecionado
+            </DialogDescription>
+          </DialogHeader>
+
+          {importConfig && (
+            <div className="space-y-4">
+              {/* Source Info */}
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileJson className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">Arquivo de Origem</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Domínio:</span>{' '}
+                    {importConfig.metadata.sourceDomainName}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Exportado:</span>{' '}
+                    {new Date(importConfig.metadata.exportedAt).toLocaleDateString('pt-BR')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="p-2 rounded bg-muted/30">
+                  <div className="text-lg font-bold">{importConfig.taxonomy?.domains?.length || 0}</div>
+                  <div className="text-xs text-muted-foreground">Áreas</div>
+                </div>
+                <div className="p-2 rounded bg-muted/30">
+                  <div className="text-lg font-bold">{importConfig.taxonomy?.subcategories?.length || 0}</div>
+                  <div className="text-xs text-muted-foreground">Subcategorias</div>
+                </div>
+                <div className="p-2 rounded bg-muted/30">
+                  <div className="text-lg font-bold">{importConfig.frameworks?.length || 0}</div>
+                  <div className="text-xs text-muted-foreground">Frameworks</div>
+                </div>
+                <div className="p-2 rounded bg-muted/30">
+                  <div className="text-lg font-bold">{importConfig.questions?.length || 0}</div>
+                  <div className="text-xs text-muted-foreground">Perguntas</div>
+                </div>
+              </div>
+
+              {/* Warnings */}
+              {importValidation?.warnings && importValidation.warnings.length > 0 && (
+                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                  <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 text-sm font-medium mb-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Avisos
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    {importValidation.warnings.map((w, i) => (
+                      <li key={i}>• {w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Import Options */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="newDomainName">Nome do Novo Domínio</Label>
+                  <Input
+                    id="newDomainName"
+                    value={importOptions.newDomainName}
+                    onChange={(e) => setImportOptions(prev => ({ ...prev, newDomainName: e.target.value }))}
+                    placeholder="Nome do domínio importado"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newDomainId">ID do Domínio (opcional)</Label>
+                  <Input
+                    id="newDomainId"
+                    value={importOptions.newDomainId}
+                    onChange={(e) => setImportOptions(prev => ({ 
+                      ...prev, 
+                      newDomainId: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') 
+                    }))}
+                    placeholder="Deixe em branco para gerar automaticamente"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Apenas letras maiúsculas, números e underscores
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="importFrameworks"
+                      checked={importOptions.importFrameworks}
+                      onCheckedChange={(checked) => setImportOptions(prev => ({ 
+                        ...prev, 
+                        importFrameworks: checked === true 
+                      }))}
+                    />
+                    <Label htmlFor="importFrameworks" className="text-sm font-normal cursor-pointer">
+                      Importar Frameworks ({importConfig.frameworks?.length || 0})
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="importQuestions"
+                      checked={importOptions.importQuestions}
+                      onCheckedChange={(checked) => setImportOptions(prev => ({ 
+                        ...prev, 
+                        importQuestions: checked === true 
+                      }))}
+                    />
+                    <Label htmlFor="importQuestions" className="text-sm font-normal cursor-pointer">
+                      Importar Perguntas ({importConfig.questions?.length || 0})
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={resetImportDialog}>
+              Cancelar
+            </Button>
+            <Button onClick={handleImport} disabled={importing || !importOptions.newDomainName.trim()}>
+              {importing ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Importar Domínio
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

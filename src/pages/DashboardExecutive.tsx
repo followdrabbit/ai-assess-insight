@@ -5,12 +5,14 @@ import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generat
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds, getFrameworksBySecurityDomain } from '@/lib/frameworks';
 import { useMaturitySnapshots } from '@/hooks/useMaturitySnapshots';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
+import { DomainSwitcher } from '@/components/DomainSwitcher';
+import { getSecurityDomainById, DEFAULT_SECURITY_DOMAINS, SecurityDomain } from '@/lib/securityDomains';
 
 export default function DashboardExecutive() {
-  const { answers, isLoading } = useAnswersStore();
+  const { answers, isLoading, selectedSecurityDomain } = useAnswersStore();
   const navigate = useNavigate();
   
   // Initialize snapshot capturing
@@ -21,11 +23,16 @@ export default function DashboardExecutive() {
   const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
   const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+  const [currentDomainInfo, setCurrentDomainInfo] = useState<SecurityDomain | null>(null);
 
-  // Load active questions and frameworks
+  // Load active questions and frameworks - filtered by security domain
   const loadData = useCallback(async () => {
     setQuestionsLoading(true);
     try {
+      // Load domain info
+      const domainInfo = await getSecurityDomainById(selectedSecurityDomain);
+      setCurrentDomainInfo(domainInfo || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) || null);
+
       const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
         getAllCustomQuestions(),
         getDisabledQuestions(),
@@ -33,6 +40,14 @@ export default function DashboardExecutive() {
         getSelectedFrameworks(),
         getAllCustomFrameworks()
       ]);
+
+      // Get frameworks for the current security domain
+      const domainFrameworkIds = new Set(
+        getFrameworksBySecurityDomain(selectedSecurityDomain).map(f => f.frameworkId)
+      );
+
+      // Filter enabled frameworks to only those in the current domain
+      const domainEnabledIds = enabledIds.filter(id => domainFrameworkIds.has(id));
 
       // Combine default and custom questions, excluding disabled ones
       const active: ActiveQuestion[] = [
@@ -59,9 +74,9 @@ export default function DashboardExecutive() {
       ];
 
       setAllActiveQuestions(active);
-      setEnabledFrameworkIds(enabledIds);
+      setEnabledFrameworkIds(domainEnabledIds);
 
-      // Combine default and custom frameworks, filter by enabled
+      // Combine default and custom frameworks, filter by enabled AND domain
       const allFrameworks: Framework[] = [
         ...defaultFrameworks,
         ...customFrameworks.map(cf => ({
@@ -78,19 +93,21 @@ export default function DashboardExecutive() {
         }))
       ];
 
-      const enabledSet = new Set(enabledIds);
+      const enabledSet = new Set(domainEnabledIds);
       const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
       setEnabledFrameworks(enabled);
 
-      // If some selected frameworks are no longer enabled, drop them from selection
-      const enabledIdSet = new Set(enabledIds);
-      const sanitizedSelected = (selectedIds || []).filter(id => enabledIdSet.has(id));
+      // Sanitize selected frameworks - only keep those in current domain
+      const sanitizedSelected = (selectedIds || []).filter(id => enabledSet.has(id));
       setSelectedFrameworkIds(sanitizedSelected);
 
     } catch (error) {
       console.error('Error loading data:', error);
-      // Fallback to default questions
-      const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+      // Fallback
+      const domainFrameworkIds = getFrameworksBySecurityDomain(selectedSecurityDomain).map(f => f.frameworkId);
+      const defaultEnabledIds = domainFrameworkIds.filter(id => 
+        ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD', 'CSA_CCM', 'NIST_SSDF'].includes(id)
+      );
       setAllActiveQuestions(defaultQuestions.map(q => ({
         questionId: q.questionId,
         questionText: q.questionText,
@@ -100,13 +117,13 @@ export default function DashboardExecutive() {
         frameworks: q.frameworks || []
       })));
       setEnabledFrameworkIds(defaultEnabledIds);
-      setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
+      setEnabledFrameworks(defaultFrameworks.filter(f => defaultEnabledIds.includes(f.frameworkId)));
     } finally {
       setQuestionsLoading(false);
     }
-  }, []);
+  }, [selectedSecurityDomain]);
 
-  // Initial load
+  // Reload when security domain changes
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -197,11 +214,14 @@ export default function DashboardExecutive() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard Executivo</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Visão estratégica para CISO e liderança de segurança
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard Executivo</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Visão estratégica para CISO e liderança de segurança
+          </p>
+        </div>
+        <DomainSwitcher variant="badge" />
       </div>
 
 

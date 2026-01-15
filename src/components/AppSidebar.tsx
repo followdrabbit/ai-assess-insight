@@ -2,7 +2,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ClipboardCheck,
-  FileText,
   Shield,
   Home,
   ChevronDown,
@@ -160,18 +159,6 @@ export function AppSidebar() {
                 >
                   <ClipboardCheck className="h-4 w-4" />
                   <span>Avaliação</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              {/* Reports */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => navigate('/reports')}
-                  isActive={isActive('/reports')}
-                  tooltip="Relatórios"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>Relatórios</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 

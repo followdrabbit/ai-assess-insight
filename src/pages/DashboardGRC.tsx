@@ -951,86 +951,90 @@ export default function DashboardGRC() {
                   onOpenChange={() => toggleDomainExpanded(dm.domainId)}
                 >
                   <div 
-                    className="card-elevated overflow-hidden animate-in fade-in-0 slide-in-from-left-4 duration-400"
+                    className="card-elevated overflow-hidden animate-in fade-in-0 slide-in-from-left-4 duration-400 cursor-pointer hover:border-primary/30 transition-all"
                     style={{ animationDelay: `${500 + idx * 50}ms`, animationFillMode: 'backwards' }}
+                    onClick={() => setSelectedDomain(dm.domainId)}
                   >
-                    <CollapsibleTrigger className="w-full">
-                      <div className="p-4 flex items-center justify-between hover:bg-accent/30 transition-colors">
-                        <div className="flex items-center gap-4 flex-1">
-                          <div className="text-left">
-                            <h4 className="font-medium">{dm.domainName}</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs px-2 py-0.5 rounded bg-muted">
-                                {dm.nistFunction || '-'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {dm.totalQuestions} perguntas
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-6">
-                          {/* Coverage */}
-                          <div className="text-center min-w-[80px]">
-                            <div className="text-xs text-muted-foreground mb-1">Cobertura</div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-blue-500" 
-                                  style={{ width: `${dm.coverage * 100}%` }}
-                                />
-                              </div>
-                              <span className="font-mono text-xs">{Math.round(dm.coverage * 100)}%</span>
-                            </div>
-                          </div>
-
-                          {/* Maturity */}
-                          <div className="text-center min-w-[80px]">
-                            <div className="text-xs text-muted-foreground mb-1">Maturidade</div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full" 
-                                  style={{ 
-                                    width: `${dm.score * 100}%`,
-                                    backgroundColor: dm.maturityLevel.color 
-                                  }}
-                                />
-                              </div>
-                              <span className="font-mono text-xs">{Math.round(dm.score * 100)}%</span>
-                            </div>
-                          </div>
-
-                          {/* Gaps */}
-                          <div className="text-center min-w-[60px]">
-                            <div className="text-xs text-muted-foreground mb-1">Gaps</div>
-                            <span className={cn(
-                              "font-mono text-sm font-medium",
-                              dm.criticalGaps > 0 ? "text-destructive" : "text-muted-foreground"
-                            )}>
-                              {dm.criticalGaps}
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="text-left">
+                          <h4 className="font-medium">{dm.domainName}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs px-2 py-0.5 rounded bg-muted">
+                              {dm.nistFunction || '-'}
                             </span>
+                            <span className="text-xs text-muted-foreground">
+                              {dm.totalQuestions} perguntas
+                            </span>
+                            <span className="text-xs text-primary/70 ml-1">Clique para detalhes</span>
                           </div>
-
-                          {/* Status */}
-                          <span className={cn(
-                            "text-xs px-2 py-1 rounded min-w-[80px] text-center",
-                            status === 'incomplete' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
-                            status === 'at-risk' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                            'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                          )}>
-                            {status === 'incomplete' ? 'Incompleto' :
-                             status === 'at-risk' ? 'Em Risco' : 'Adequado'}
-                          </span>
-
-                          {/* Expand indicator */}
-                          <span className="text-muted-foreground">
-                            {isExpanded ? '−' : '+'}
-                          </span>
                         </div>
                       </div>
-                    </CollapsibleTrigger>
+                        
+                      <div className="flex items-center gap-6">
+                        {/* Coverage */}
+                        <div className="text-center min-w-[80px]">
+                          <div className="text-xs text-muted-foreground mb-1">Cobertura</div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-500" 
+                                style={{ width: `${dm.coverage * 100}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs">{Math.round(dm.coverage * 100)}%</span>
+                          </div>
+                        </div>
+
+                        {/* Maturity */}
+                        <div className="text-center min-w-[80px]">
+                          <div className="text-xs text-muted-foreground mb-1">Maturidade</div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full" 
+                                style={{ 
+                                  width: `${dm.score * 100}%`,
+                                  backgroundColor: dm.maturityLevel.color 
+                                }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs">{Math.round(dm.score * 100)}%</span>
+                          </div>
+                        </div>
+
+                        {/* Gaps */}
+                        <div className="text-center min-w-[60px]">
+                          <div className="text-xs text-muted-foreground mb-1">Gaps</div>
+                          <span className={cn(
+                            "font-mono text-sm font-medium",
+                            dm.criticalGaps > 0 ? "text-destructive" : "text-muted-foreground"
+                          )}>
+                            {dm.criticalGaps}
+                          </span>
+                        </div>
+
+                        {/* Status */}
+                        <span className={cn(
+                          "text-xs px-2 py-1 rounded min-w-[80px] text-center",
+                          status === 'incomplete' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
+                          status === 'at-risk' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                          'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                        )}>
+                          {status === 'incomplete' ? 'Incompleto' :
+                           status === 'at-risk' ? 'Em Risco' : 'Adequado'}
+                        </span>
+
+                        {/* Expand indicator */}
+                        <CollapsibleTrigger asChild onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <span className="text-muted-foreground text-lg">
+                              {isExpanded ? '−' : '+'}
+                            </span>
+                          </Button>
+                        </CollapsibleTrigger>
+                      </div>
+                    </div>
 
                     <CollapsibleContent>
                       <div className="border-t border-border bg-muted/30 p-4">
@@ -1694,6 +1698,175 @@ export default function DashboardGRC() {
                     onClick={() => {
                       setSelectedFramework(null);
                       navigate(`/assessment?questionId=${selectedFrameworkDetails.questions[0].questionId}`);
+                    }}
+                  >
+                    Iniciar Avaliação
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Domain Details Dialog */}
+      <Dialog open={!!selectedDomain} onOpenChange={(open) => !open && setSelectedDomain(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedDomainDetails && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedDomainDetails.maturityLevel?.color || 'hsl(var(--primary))' }}
+                  >
+                    {Math.round(selectedDomainDetails.score * 100)}%
+                  </div>
+                  <div>
+                    <DialogTitle className="text-left">{selectedDomainDetails.domainName}</DialogTitle>
+                    <DialogDescription className="text-left">
+                      {selectedDomainDetails.description || `${selectedDomainDetails.totalQuestions} perguntas`}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-4 gap-3 mt-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold" style={{ color: selectedDomainDetails.maturityLevel?.color }}>
+                    {Math.round(selectedDomainDetails.score * 100)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold text-primary">
+                    {Math.round(selectedDomainDetails.coverage * 100)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold">
+                    {selectedDomainDetails.answeredQuestions}/{selectedDomainDetails.totalQuestions}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold text-destructive">
+                    {selectedDomainDetails.gaps.length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Gaps</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">Progresso da Avaliação</span>
+                  <span className="font-medium">{selectedDomainDetails.answeredQuestions} de {selectedDomainDetails.totalQuestions}</span>
+                </div>
+                <Progress value={selectedDomainDetails.coverage * 100} className="h-2" />
+              </div>
+
+              {/* Response Breakdown */}
+              <div className="mt-4">
+                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(selectedDomainDetails.responseBreakdown).map(([key, value]) => (
+                    value > 0 && (
+                      <div 
+                        key={key} 
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium",
+                          key === 'Sim' && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+                          key === 'Parcial' && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+                          key === 'Não' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                          key === 'NA' && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+                          key === 'Não respondido' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}
+                      >
+                        {key}: {value}
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Gaps by Criticality */}
+              <div className="mt-4">
+                <h4 className="font-medium text-sm mb-2">Gaps por Criticidade</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {selectedDomainDetails.gapsByCriticality.Critical > 0 && (
+                    <div className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
+                      Crítico: {selectedDomainDetails.gapsByCriticality.Critical}
+                    </div>
+                  )}
+                  {selectedDomainDetails.gapsByCriticality.High > 0 && (
+                    <div className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                      Alto: {selectedDomainDetails.gapsByCriticality.High}
+                    </div>
+                  )}
+                  {selectedDomainDetails.gapsByCriticality.Medium > 0 && (
+                    <div className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                      Médio: {selectedDomainDetails.gapsByCriticality.Medium}
+                    </div>
+                  )}
+                  {selectedDomainDetails.gapsByCriticality.Low > 0 && (
+                    <div className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                      Baixo: {selectedDomainDetails.gapsByCriticality.Low}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Gaps List */}
+              {selectedDomainDetails.gaps.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium text-sm mb-2">
+                    Gaps Identificados ({selectedDomainDetails.gaps.length})
+                  </h4>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {selectedDomainDetails.gaps.slice(0, 15).map((gap) => (
+                      <div 
+                        key={gap.questionId} 
+                        className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs text-muted-foreground">{gap.questionId}</span>
+                            <span className={cn("criticality-badge text-xs", `criticality-${gap.criticality.toLowerCase()}`)}>
+                              {gap.criticality}
+                            </span>
+                          </div>
+                          <p className="text-sm line-clamp-2">{gap.questionText}</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => {
+                            setSelectedDomain(null);
+                            navigate(`/assessment?questionId=${gap.questionId}`);
+                          }}
+                        >
+                          Revisar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSelectedDomain(null)}>
+                  Fechar
+                </Button>
+                {selectedDomainDetails.questions.length > 0 && (
+                  <Button 
+                    onClick={() => {
+                      setSelectedDomain(null);
+                      navigate(`/assessment?questionId=${selectedDomainDetails.questions[0].questionId}`);
                     }}
                   >
                     Iniciar Avaliação

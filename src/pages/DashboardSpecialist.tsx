@@ -91,6 +91,7 @@ export default function DashboardSpecialist() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedHeatmapDomain, setSelectedHeatmapDomain] = useState<string>('all');
   const [expandedFrameworks, setExpandedFrameworks] = useState<Set<string>>(new Set());
+  const [selectedResponseType, setSelectedResponseType] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   // Load active questions and frameworks
@@ -280,13 +281,71 @@ export default function DashboardSpecialist() {
     dist['Não respondido'] = allQuestions - answers.size;
 
     return [
-      { name: 'Sim', value: dist.Sim, color: 'hsl(142, 71%, 45%)' },
-      { name: 'Parcial', value: dist.Parcial, color: 'hsl(45, 93%, 47%)' },
-      { name: 'Não', value: dist.Não, color: 'hsl(0, 72%, 51%)' },
-      { name: 'N/A', value: dist.NA, color: 'hsl(220, 9%, 46%)' },
-      { name: 'Pendente', value: dist['Não respondido'], color: 'hsl(220, 15%, 80%)' },
+      { name: 'Sim', value: dist.Sim, color: 'hsl(142, 71%, 45%)', responseKey: 'Sim' },
+      { name: 'Parcial', value: dist.Parcial, color: 'hsl(45, 93%, 47%)', responseKey: 'Parcial' },
+      { name: 'Não', value: dist.Não, color: 'hsl(0, 72%, 51%)', responseKey: 'Não' },
+      { name: 'N/A', value: dist.NA, color: 'hsl(220, 9%, 46%)', responseKey: 'NA' },
+      { name: 'Pendente', value: dist['Não respondido'], color: 'hsl(220, 15%, 80%)', responseKey: 'Não respondido' },
     ].filter(d => d.value > 0);
   }, [answers, metrics.totalQuestions]);
+
+  // Selected response type details for modal
+  const selectedResponseDetails = useMemo(() => {
+    if (!selectedResponseType) return null;
+
+    const responseInfo = responseDistribution.find(r => r.responseKey === selectedResponseType);
+    if (!responseInfo) return null;
+
+    // Get questions matching this response type
+    const matchingQuestions = questionsForDashboard.map(q => {
+      const answer = answers.get(q.questionId);
+      const response = answer?.response || 'Não respondido';
+      return {
+        questionId: q.questionId,
+        questionText: q.questionText,
+        subcatId: q.subcatId,
+        domainId: q.domainId,
+        ownershipType: q.ownershipType,
+        response,
+        evidenceOk: answer?.evidenceOk || null,
+        notes: answer?.notes || null,
+      };
+    }).filter(q => q.response === selectedResponseType);
+
+    // Group by domain
+    const byDomain: Record<string, typeof matchingQuestions> = {};
+    matchingQuestions.forEach(q => {
+      const domainData = domains.find(d => d.domainId === q.domainId);
+      const domainName = domainData?.domainName || q.domainId;
+      if (!byDomain[domainName]) byDomain[domainName] = [];
+      byDomain[domainName].push(q);
+    });
+
+    // Group by criticality (from gaps if available)
+    const criticalityBreakdown = {
+      Critical: 0,
+      High: 0,
+      Medium: 0,
+      Low: 0,
+    };
+    matchingQuestions.forEach(q => {
+      const gap = allCriticalGaps.find(g => g.questionId === q.questionId);
+      if (gap) {
+        criticalityBreakdown[gap.criticality as keyof typeof criticalityBreakdown]++;
+      }
+    });
+
+    return {
+      name: responseInfo.name,
+      responseKey: responseInfo.responseKey,
+      color: responseInfo.color,
+      count: responseInfo.value,
+      percent: metrics.totalQuestions > 0 ? (responseInfo.value / metrics.totalQuestions) * 100 : 0,
+      questions: matchingQuestions,
+      byDomain,
+      criticalityBreakdown,
+    };
+  }, [selectedResponseType, responseDistribution, questionsForDashboard, answers, domains, allCriticalGaps, metrics.totalQuestions]);
 
   // Unique domains for filter - only from filtered questions
   const domainOptions = useMemo(() => {
@@ -961,6 +1020,7 @@ export default function DashboardSpecialist() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <h3 className="font-semibold mb-4">Distribuição de Respostas</h3>
+              <p className="text-xs text-muted-foreground mb-2">Clique em uma fatia para ver detalhes</p>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -972,12 +1032,24 @@ export default function DashboardSpecialist() {
                       cy="50%"
                       outerRadius={80}
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      onClick={(data) => setSelectedResponseType(data.responseKey)}
+                      className="cursor-pointer"
                     >
                       {responseDistribution.map((entry, index) => (
-                        <Cell key={index} fill={entry.color} />
+                        <Cell 
+                          key={index} 
+                          fill={entry.color} 
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                        />
                       ))}
                     </Pie>
-                    <Legend />
+                    <Legend 
+                      onClick={(e) => {
+                        const item = responseDistribution.find(r => r.name === e.value);
+                        if (item) setSelectedResponseType(item.responseKey);
+                      }}
+                      className="cursor-pointer"
+                    />
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
@@ -1383,6 +1455,146 @@ export default function DashboardSpecialist() {
                 >
                   Avaliar Subcategoria
                 </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Response Type Details Modal */}
+      <Dialog open={!!selectedResponseType} onOpenChange={(open) => !open && setSelectedResponseType(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedResponseDetails && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedResponseDetails.color }}
+                  >
+                    {selectedResponseDetails.count}
+                  </div>
+                  <div>
+                    <DialogTitle className="text-left">Respostas: {selectedResponseDetails.name}</DialogTitle>
+                    <DialogDescription className="text-left">
+                      {selectedResponseDetails.count} perguntas ({selectedResponseDetails.percent.toFixed(1)}% do total)
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{selectedResponseDetails.count}</div>
+                  <div className="text-xs text-muted-foreground">Total</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{Object.keys(selectedResponseDetails.byDomain).length}</div>
+                  <div className="text-xs text-muted-foreground">Domínios</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold" style={{ color: selectedResponseDetails.color }}>
+                    {selectedResponseDetails.percent.toFixed(0)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">do Total</div>
+                </div>
+              </div>
+
+              {/* Criticality breakdown for non-compliant responses */}
+              {(selectedResponseDetails.responseKey === 'Não' || 
+                selectedResponseDetails.responseKey === 'Parcial' || 
+                selectedResponseDetails.responseKey === 'Não respondido') && (
+                <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
+                  <h4 className="font-medium text-sm mb-2">Por Criticidade</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {Object.entries(selectedResponseDetails.criticalityBreakdown).map(([key, value]) => (
+                      value > 0 && (
+                        <div 
+                          key={key} 
+                          className={cn("criticality-badge", `criticality-${key.toLowerCase()}`)}
+                        >
+                          {key}: {value}
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Questions by Domain */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
+                <h4 className="font-medium text-sm mb-2">
+                  Perguntas por Domínio ({selectedResponseDetails.questions.length})
+                </h4>
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {Object.entries(selectedResponseDetails.byDomain).map(([domainName, questions], domainIdx) => (
+                    <Collapsible 
+                      key={domainName}
+                      defaultOpen={domainIdx === 0}
+                      className="animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                      style={{ animationDelay: `${350 + domainIdx * 50}ms`, animationFillMode: 'backwards' }}
+                    >
+                      <CollapsibleTrigger className="w-full p-3 bg-muted/30 rounded-lg flex items-center justify-between hover:bg-muted/50 transition-colors">
+                        <span className="font-medium text-sm">{domainName}</span>
+                        <span className="text-xs text-muted-foreground">{questions.length} perguntas</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="space-y-2 mt-2 pl-2">
+                          {questions.map((q, qIdx) => (
+                            <div 
+                              key={q.questionId} 
+                              className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-mono text-xs text-muted-foreground">{q.questionId}</span>
+                                  {q.ownershipType && (
+                                    <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                      {q.ownershipType}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm line-clamp-2">{q.questionText}</p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="shrink-0"
+                                onClick={() => {
+                                  setSelectedResponseType(null);
+                                  navigate(`/assessment?questionId=${q.questionId}`);
+                                }}
+                              >
+                                {selectedResponseDetails.responseKey === 'Não respondido' ? 'Responder' : 'Revisar'}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-6 flex justify-end gap-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedResponseType(null)}
+                >
+                  Fechar
+                </Button>
+                {selectedResponseDetails.questions.length > 0 && (
+                  <Button 
+                    onClick={() => {
+                      setSelectedResponseType(null);
+                      navigate(`/assessment?questionId=${selectedResponseDetails.questions[0].questionId}`);
+                    }}
+                  >
+                    {selectedResponseDetails.responseKey === 'Não respondido' ? 'Iniciar Avaliação' : 'Revisar Primeira'}
+                  </Button>
+                )}
               </div>
             </>
           )}

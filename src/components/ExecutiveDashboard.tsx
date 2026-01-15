@@ -393,10 +393,10 @@ export function ExecutiveDashboard({
                     key={fw.frameworkId}
                     variant={isSelected ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer transition-all",
+                      "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md",
                       isSelected 
                         ? "bg-primary hover:bg-primary/90" 
-                        : "opacity-50 hover:opacity-100"
+                        : "opacity-50 hover:opacity-100 hover:border-primary/50"
                     )}
                     onClick={() => toggleFramework(fw.frameworkId)}
                   >

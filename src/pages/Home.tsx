@@ -48,19 +48,24 @@ const benefits = [
 const steps = [
   {
     number: '1',
-    title: 'Acesse a Avaliação',
-    description: 'Clique em "Iniciar Avaliação" para acessar o questionário completo.',
+    title: 'Selecione os Frameworks',
+    description: 'Na tela de avaliação, escolha quais frameworks regulatórios deseja utilizar na avaliação (NIST, ISO, LGPD, etc.).',
     action: 'Ir para Avaliação',
     route: '/assessment',
   },
   {
     number: '2',
-    title: 'Gere Dados de Demonstração',
-    description: 'Na tela de avaliação, clique no botão "Gerar Demo" para preencher automaticamente respostas de exemplo e visualizar a ferramenta em ação.',
-    highlight: true,
+    title: 'Inicie a Avaliação',
+    description: 'Após selecionar os frameworks, clique em "Iniciar Avaliação" para começar a responder as questões filtradas.',
   },
   {
     number: '3',
+    title: 'Gere Dados Demo',
+    description: 'Clique no botão "Dados Demo" para preencher automaticamente respostas de exemplo e visualizar a ferramenta em ação.',
+    highlight: true,
+  },
+  {
+    number: '4',
     title: 'Explore os Dashboards',
     description: 'Consulte os dashboards Executivo, GRC e Especialista para ver métricas, gaps críticos e roadmap de melhorias.',
     action: 'Ver Dashboards',
@@ -113,11 +118,11 @@ export default function Home() {
             Como Usar a Ferramenta
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Siga estes 3 passos simples para explorar todas as funcionalidades
+            Siga estes 4 passos simples para explorar todas as funcionalidades
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step) => (
             <Card 
               key={step.number} 

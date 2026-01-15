@@ -406,11 +406,10 @@ export function ExecutiveDashboard({
               })}
             </div>
 
-            {selectedFrameworkIds.length > 0 && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Exibindo dados apenas para os frameworks selecionados. Clique em um framework para alternar.
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground mt-2">
+              Clique nos frameworks acima para filtrar os dados exibidos.
+              {selectedFrameworkIds.length > 0 && ` (${selectedFrameworkIds.length} selecionados)`}
+            </p>
           </div>
         </div>
       </div>

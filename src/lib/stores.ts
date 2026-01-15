@@ -12,10 +12,13 @@ import {
   getEnabledFrameworks,
   setEnabledFrameworks as dbSetEnabledFrameworks,
   getAllCustomQuestions,
-  getDisabledQuestions
+  getDisabledQuestions,
+  getSelectedSecurityDomain,
+  setSelectedSecurityDomain as dbSetSelectedSecurityDomain
 } from './database';
 import { questions as defaultQuestions, getQuestionById } from './dataset';
-import { getDefaultEnabledFrameworks, getPrimaryFrameworkId } from './frameworks';
+import { getDefaultEnabledFrameworks, getPrimaryFrameworkId, getFrameworksBySecurityDomain } from './frameworks';
+import { getDefaultSecurityDomainId } from './securityDomains';
 
 interface AnswersState {
   answers: Map<string, Answer>;
@@ -23,6 +26,7 @@ interface AnswersState {
   lastUpdated: string | null;
   enabledFrameworks: string[];
   selectedFrameworks: string[];
+  selectedSecurityDomain: string; // NEW: Current security domain context
   
   loadAnswers: () => Promise<void>;
   setAnswer: (questionId: string, updates: Partial<Omit<Answer, 'questionId' | 'frameworkId'>>) => Promise<void>;
@@ -32,10 +36,12 @@ interface AnswersState {
   getAnswer: (questionId: string) => Answer | undefined;
   setEnabledFrameworks: (frameworkIds: string[]) => Promise<void>;
   setSelectedFrameworks: (frameworkIds: string[]) => Promise<void>;
+  setSelectedSecurityDomain: (domainId: string) => Promise<void>;
   getAnswersByFramework: (frameworkId: string) => Answer[];
 }
 
 const defaultEnabledFrameworks = getDefaultEnabledFrameworks().map(f => f.frameworkId);
+const defaultSecurityDomain = getDefaultSecurityDomainId();
 
 export const useAnswersStore = create<AnswersState>()((set, get) => ({
   answers: new Map(),
@@ -43,6 +49,7 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
   lastUpdated: null,
   enabledFrameworks: defaultEnabledFrameworks,
   selectedFrameworks: [],
+  selectedSecurityDomain: defaultSecurityDomain,
 
   loadAnswers: async () => {
     set({ isLoading: true });
@@ -54,13 +61,15 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       
       const enabledFw = await getEnabledFrameworks();
       const selectedFw = await getSelectedFrameworks();
+      const selectedDomain = await getSelectedSecurityDomain();
       
       set({ 
         answers: answersMap, 
         isLoading: false,
         lastUpdated: new Date().toISOString(),
         enabledFrameworks: enabledFw.length > 0 ? enabledFw : defaultEnabledFrameworks,
-        selectedFrameworks: selectedFw
+        selectedFrameworks: selectedFw,
+        selectedSecurityDomain: selectedDomain || defaultSecurityDomain
       });
     } catch (error) {
       console.error('Error loading answers:', error);
@@ -191,6 +200,17 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
       await dbSetSelectedFrameworks(frameworkIds);
     } catch (error) {
       console.error('Error saving selected frameworks:', error);
+    }
+  },
+
+  setSelectedSecurityDomain: async (domainId: string) => {
+    // When changing domain, clear the selected frameworks for a fresh start
+    set({ selectedSecurityDomain: domainId, selectedFrameworks: [] });
+    try {
+      await dbSetSelectedSecurityDomain(domainId);
+      await dbSetSelectedFrameworks([]);
+    } catch (error) {
+      console.error('Error saving selected security domain:', error);
     }
   },
 

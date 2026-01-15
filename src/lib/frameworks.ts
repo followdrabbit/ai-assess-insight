@@ -11,6 +11,7 @@ export interface Framework {
   version: string;
   category: 'core' | 'high-value' | 'tech-focused';
   references: string[];
+  securityDomainId?: string; // NEW: Associates framework with a security domain
 }
 
 export interface FrameworksConfig {
@@ -22,6 +23,39 @@ export interface FrameworksConfig {
 // Type assertion for imported data
 export const frameworksConfig: FrameworksConfig = frameworksData as FrameworksConfig;
 export const frameworks: Framework[] = frameworksConfig.frameworks;
+
+// Security Domain to Framework mapping
+// This maps each framework to its primary security domain
+export const FRAMEWORK_DOMAIN_MAP: Record<string, string> = {
+  // AI Security Frameworks
+  'NIST_AI_RMF': 'AI_SECURITY',
+  'ISO_27001_27002': 'AI_SECURITY', // General security, but primarily used in AI context here
+  'ISO_23894': 'AI_SECURITY',
+  'LGPD': 'AI_SECURITY', // Privacy applies to AI data handling
+  'CSA_AI': 'AI_SECURITY',
+  'OWASP_LLM': 'AI_SECURITY',
+  
+  // Cloud Security Frameworks
+  'CSA_CCM': 'CLOUD_SECURITY',
+  
+  // DevSecOps Frameworks
+  'NIST_SSDF': 'DEVSECOPS',
+  'OWASP_API': 'DEVSECOPS',
+};
+
+/**
+ * Get the security domain ID for a framework
+ */
+export function getFrameworkSecurityDomain(frameworkId: string): string {
+  return FRAMEWORK_DOMAIN_MAP[frameworkId] || 'AI_SECURITY';
+}
+
+/**
+ * Get all frameworks for a specific security domain
+ */
+export function getFrameworksBySecurityDomain(securityDomainId: string): Framework[] {
+  return frameworks.filter(f => getFrameworkSecurityDomain(f.frameworkId) === securityDomainId);
+}
 
 // Helper functions
 export function getFrameworkById(frameworkId: string): Framework | undefined {

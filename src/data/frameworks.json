@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2024-01-01",
+  "version": "2.0.0",
+  "lastUpdated": "2025-01-15",
   "frameworks": [
     {
       "frameworkId": "NIST_AI_RMF",
@@ -12,6 +12,7 @@
       "defaultEnabled": true,
       "version": "1.0",
       "category": "core",
+      "securityDomainId": "AI_SECURITY",
       "references": [
         "https://www.nist.gov/itl/ai-risk-management-framework"
       ]
@@ -26,6 +27,7 @@
       "defaultEnabled": true,
       "version": "2022",
       "category": "core",
+      "securityDomainId": "AI_SECURITY",
       "references": [
         "https://www.iso.org/standard/27001"
       ]
@@ -40,6 +42,7 @@
       "defaultEnabled": false,
       "version": "2023",
       "category": "high-value",
+      "securityDomainId": "AI_SECURITY",
       "references": [
         "https://www.iso.org/standard/77304.html"
       ]
@@ -54,22 +57,9 @@
       "defaultEnabled": true,
       "version": "Lei 13.709/2018",
       "category": "core",
+      "securityDomainId": "AI_SECURITY",
       "references": [
         "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm"
-      ]
-    },
-    {
-      "frameworkId": "NIST_SSDF",
-      "frameworkName": "NIST Secure Software Development Framework",
-      "shortName": "NIST SSDF",
-      "description": "Práticas de desenvolvimento seguro para ciclo de vida de software, aplicável a pipelines de ML/AI.",
-      "targetAudience": ["Engineering"],
-      "assessmentScope": "Segurança do ciclo de desenvolvimento, código, dependências e deploy",
-      "defaultEnabled": false,
-      "version": "1.1",
-      "category": "high-value",
-      "references": [
-        "https://csrc.nist.gov/Projects/ssdf"
       ]
     },
     {
@@ -82,6 +72,7 @@
       "defaultEnabled": false,
       "version": "2024",
       "category": "high-value",
+      "securityDomainId": "AI_SECURITY",
       "references": [
         "https://cloudsecurityalliance.org/research/ai/"
       ]
@@ -96,8 +87,54 @@
       "defaultEnabled": false,
       "version": "1.1",
       "category": "tech-focused",
+      "securityDomainId": "AI_SECURITY",
       "references": [
         "https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+      ]
+    },
+    {
+      "frameworkId": "CSA_CCM",
+      "frameworkName": "CSA Cloud Controls Matrix",
+      "shortName": "CSA CCM",
+      "description": "Framework de controles de segurança para cloud computing, com 17 domínios cobrindo governança, IAM, proteção de dados e infraestrutura.",
+      "targetAudience": ["GRC", "Engineering"],
+      "assessmentScope": "Controles de segurança cloud: identidade, criptografia, logging, BCM, compliance e infraestrutura",
+      "defaultEnabled": true,
+      "version": "4.0",
+      "category": "core",
+      "securityDomainId": "CLOUD_SECURITY",
+      "references": [
+        "https://cloudsecurityalliance.org/research/cloud-controls-matrix/"
+      ]
+    },
+    {
+      "frameworkId": "CIS_BENCHMARKS",
+      "frameworkName": "CIS Benchmarks",
+      "shortName": "CIS Benchmarks",
+      "description": "Benchmarks de configuração segura para sistemas operacionais, containers, cloud providers e aplicações.",
+      "targetAudience": ["Engineering"],
+      "assessmentScope": "Hardening de infraestrutura, configuração segura de sistemas e serviços cloud",
+      "defaultEnabled": false,
+      "version": "2024",
+      "category": "tech-focused",
+      "securityDomainId": "CLOUD_SECURITY",
+      "references": [
+        "https://www.cisecurity.org/cis-benchmarks"
+      ]
+    },
+    {
+      "frameworkId": "NIST_SSDF",
+      "frameworkName": "NIST Secure Software Development Framework",
+      "shortName": "NIST SSDF",
+      "description": "Práticas de desenvolvimento seguro para ciclo de vida de software, aplicável a pipelines de ML/AI.",
+      "targetAudience": ["Engineering"],
+      "assessmentScope": "Segurança do ciclo de desenvolvimento, código, dependências e deploy",
+      "defaultEnabled": true,
+      "version": "1.1",
+      "category": "core",
+      "securityDomainId": "DEVSECOPS",
+      "references": [
+        "https://csrc.nist.gov/Projects/ssdf"
       ]
     },
     {
@@ -110,22 +147,39 @@
       "defaultEnabled": false,
       "version": "2023",
       "category": "tech-focused",
+      "securityDomainId": "DEVSECOPS",
       "references": [
         "https://owasp.org/API-Security/"
       ]
     },
     {
-      "frameworkId": "CSA_CCM",
-      "frameworkName": "CSA Cloud Controls Matrix",
-      "shortName": "CSA CCM",
-      "description": "Framework de controles de segurança para cloud computing, com 17 domínios cobrindo governança, IAM, proteção de dados e infraestrutura.",
-      "targetAudience": ["GRC", "Engineering"],
-      "assessmentScope": "Controles de segurança cloud: identidade, criptografia, logging, BCM, compliance e infraestrutura",
+      "frameworkId": "OWASP_ASVS",
+      "frameworkName": "OWASP Application Security Verification Standard",
+      "shortName": "OWASP ASVS",
+      "description": "Padrão de verificação de segurança de aplicações com requisitos detalhados por nível de maturidade.",
+      "targetAudience": ["Engineering", "GRC"],
+      "assessmentScope": "Autenticação, sessões, validação de entrada, criptografia, tratamento de erros e logging",
       "defaultEnabled": false,
-      "version": "4.0",
+      "version": "4.0.3",
       "category": "high-value",
+      "securityDomainId": "DEVSECOPS",
       "references": [
-        "https://cloudsecurityalliance.org/research/cloud-controls-matrix/"
+        "https://owasp.org/www-project-application-security-verification-standard/"
+      ]
+    },
+    {
+      "frameworkId": "SLSA",
+      "frameworkName": "Supply-chain Levels for Software Artifacts",
+      "shortName": "SLSA",
+      "description": "Framework para integridade da cadeia de suprimentos de software, com níveis progressivos de segurança.",
+      "targetAudience": ["Engineering"],
+      "assessmentScope": "Build integrity, provenance, dependency management e artifact signing",
+      "defaultEnabled": false,
+      "version": "1.0",
+      "category": "tech-focused",
+      "securityDomainId": "DEVSECOPS",
+      "references": [
+        "https://slsa.dev/"
       ]
     }
   ]

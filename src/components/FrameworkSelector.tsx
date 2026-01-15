@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { frameworks, Framework } from '@/lib/frameworks';
+import { useState, useMemo, useEffect } from 'react';
+import { frameworks, Framework, getFrameworksBySecurityDomain } from '@/lib/frameworks';
 import { useAnswersStore } from '@/lib/stores';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,9 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
+import { 
+  SecurityDomain, 
+  getSecurityDomainById, 
+  getDomainDisplayInfo,
+  DEFAULT_SECURITY_DOMAINS
+} from '@/lib/securityDomains';
 
 interface FrameworkSelectorProps {
   onStartAssessment: () => void;
+  onBackToDomainSelector?: () => void;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -24,8 +32,20 @@ const categoryColors: Record<string, string> = {
   'tech-focused': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
 };
 
-export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps) {
-  const { enabledFrameworks, selectedFrameworks, setSelectedFrameworks } = useAnswersStore();
+export function FrameworkSelector({ onStartAssessment, onBackToDomainSelector }: FrameworkSelectorProps) {
+  const { enabledFrameworks, selectedFrameworks, setSelectedFrameworks, selectedSecurityDomain } = useAnswersStore();
+  const [currentDomain, setCurrentDomain] = useState<SecurityDomain | null>(null);
+  
+  // Load domain info
+  useEffect(() => {
+    const loadDomain = async () => {
+      if (selectedSecurityDomain) {
+        const domain = await getSecurityDomainById(selectedSecurityDomain);
+        setCurrentDomain(domain || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) || null);
+      }
+    };
+    loadDomain();
+  }, [selectedSecurityDomain]);
   
   // Local state for user selection
   const [localSelected, setLocalSelected] = useState<string[]>(
@@ -33,10 +53,17 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
     selectedFrameworks.filter(id => enabledFrameworks.includes(id))
   );
 
-  // Only show frameworks that are ENABLED by admin in Settings
+  // Only show frameworks that are ENABLED by admin AND belong to the selected security domain
   const availableFrameworks = useMemo(() => {
-    return frameworks.filter(f => enabledFrameworks.includes(f.frameworkId));
-  }, [enabledFrameworks]);
+    const domainFrameworks = getFrameworksBySecurityDomain(selectedSecurityDomain);
+    const domainFrameworkIds = domainFrameworks.map(f => f.frameworkId);
+    
+    // Filter to frameworks that are both enabled AND in the current domain
+    return frameworks.filter(f => 
+      enabledFrameworks.includes(f.frameworkId) && 
+      domainFrameworkIds.includes(f.frameworkId)
+    );
+  }, [enabledFrameworks, selectedSecurityDomain]);
 
   // Group available frameworks by category
   const coreFrameworks = availableFrameworks.filter(f => f.category === 'core');
@@ -68,27 +95,60 @@ export function FrameworkSelector({ onStartAssessment }: FrameworkSelectorProps)
     setLocalSelected([]);
   };
 
-  // If no frameworks are enabled by admin, show message to go to Settings
+  // Get domain display info for header styling
+  const domainDisplayInfo = currentDomain ? getDomainDisplayInfo(currentDomain) : null;
+
+  // If no frameworks are enabled by admin for this domain, show message
   if (availableFrameworks.length === 0) {
     return (
       <div className="space-y-6 text-center py-12">
         <h2 className="text-2xl font-bold">Nenhum Framework Disponível</h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Não há frameworks habilitados para avaliação. O administrador precisa habilitar frameworks nas configurações.
+          Não há frameworks habilitados para o domínio {currentDomain?.domainName || selectedSecurityDomain}. 
+          O administrador precisa habilitar frameworks nas configurações.
         </p>
-        <Button asChild>
-          <Link to="/settings">Ir para Configurações</Link>
-        </Button>
+        <div className="flex gap-2 justify-center">
+          {onBackToDomainSelector && (
+            <Button variant="outline" onClick={onBackToDomainSelector}>
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Voltar
+            </Button>
+          )}
+          <Button asChild>
+            <Link to="/settings">Ir para Configurações</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Domain context header */}
+      {currentDomain && (
+        <div className={cn(
+          "flex items-center gap-3 p-3 rounded-lg border",
+          domainDisplayInfo?.bgClass,
+          domainDisplayInfo?.borderClass
+        )}>
+          {onBackToDomainSelector && (
+            <Button variant="ghost" size="sm" onClick={onBackToDomainSelector} className="mr-2">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <div>
+            <p className="text-xs text-muted-foreground">Domínio selecionado:</p>
+            <p className={cn("font-semibold", domainDisplayInfo?.textClass)}>
+              {currentDomain.domainName}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold">Selecione os Frameworks</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Escolha quais frameworks você deseja avaliar nesta sessão. 
+          Escolha quais frameworks você deseja avaliar para {currentDomain?.shortName || 'este domínio'}. 
           Apenas os frameworks habilitados pelo administrador estão disponíveis.
         </p>
       </div>

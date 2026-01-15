@@ -242,6 +242,27 @@ export async function setSelectedFrameworks(frameworkIds: string[]): Promise<voi
   if (error) throw error;
 }
 
+// ============ SECURITY DOMAIN (selected) ============
+export async function getSelectedSecurityDomain(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('assessment_meta')
+    .select('security_domain_id')
+    .eq('id', 'current')
+    .single();
+  
+  if (error || !data) return 'AI_SECURITY';
+  return (data as any).security_domain_id || 'AI_SECURITY';
+}
+
+export async function setSelectedSecurityDomain(domainId: string): Promise<void> {
+  const { error } = await supabase
+    .from('assessment_meta')
+    .update({ security_domain_id: domainId })
+    .eq('id', 'current');
+  
+  if (error) throw error;
+}
+
 // ============ CUSTOM FRAMEWORKS CRUD ============
 export async function getAllCustomFrameworks(): Promise<CustomFramework[]> {
   const { data, error } = await supabase

@@ -25,7 +25,8 @@ const customFrameworkSchema = z.object({
   defaultEnabled: z.boolean().default(false),
   version: z.string().max(20).default('1.0.0'),
   category: z.enum(['core', 'high-value', 'tech-focused', 'custom']).default('custom'),
-  references: z.array(z.string().max(2000)).max(20).default([])
+  references: z.array(z.string().max(2000)).max(20).default([]),
+  securityDomainId: z.string().max(100).optional()
 });
 
 const customQuestionSchema = z.object({
@@ -64,6 +65,7 @@ export interface CustomFramework {
   version: string;
   category: 'core' | 'high-value' | 'tech-focused' | 'custom';
   references: string[];
+  securityDomainId?: string;
   isCustom: true;
   createdAt: string;
   updatedAt: string;
@@ -283,6 +285,7 @@ export async function getAllCustomFrameworks(): Promise<CustomFramework[]> {
     version: row.version || '1.0.0',
     category: row.category as CustomFramework['category'],
     references: row.reference_links || [],
+    securityDomainId: row.security_domain_id || undefined,
     isCustom: true as const,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -309,6 +312,7 @@ export async function getCustomFramework(frameworkId: string): Promise<CustomFra
     version: data.version || '1.0.0',
     category: data.category as CustomFramework['category'],
     references: data.reference_links || [],
+    securityDomainId: data.security_domain_id || undefined,
     isCustom: true as const,
     createdAt: data.created_at,
     updatedAt: data.updated_at
@@ -333,7 +337,8 @@ export async function createCustomFramework(
       default_enabled: validated.defaultEnabled,
       version: validated.version,
       category: validated.category,
-      reference_links: validated.references
+      reference_links: validated.references,
+      security_domain_id: validated.securityDomainId || null
     })
     .select()
     .single();
@@ -365,6 +370,7 @@ export async function updateCustomFramework(
   if (updates.version !== undefined) updateData.version = updates.version;
   if (updates.category !== undefined) updateData.category = updates.category;
   if (updates.references !== undefined) updateData.reference_links = updates.references;
+  if (updates.securityDomainId !== undefined) updateData.security_domain_id = updates.securityDomainId;
   
   const { error } = await supabase
     .from('custom_frameworks')

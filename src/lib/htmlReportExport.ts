@@ -1,4 +1,4 @@
-import { OverallMetrics, CriticalGap, FrameworkCoverage, RoadmapItem } from './scoring';
+import { OverallMetrics, CriticalGap, FrameworkCoverage, RoadmapItem, FrameworkCategoryMetrics } from './scoring';
 import { Framework } from './frameworks';
 
 interface ReportData {
@@ -8,6 +8,18 @@ interface ReportData {
   frameworkCoverage: FrameworkCoverage[];
   selectedFrameworks: Framework[];
   roadmap?: RoadmapItem[];
+  frameworkCategoryData?: {
+    categoryId: string;
+    name: string;
+    score: number;
+    coverage: number;
+    totalQuestions: number;
+    answeredQuestions: number;
+    maturityLevel: { level: number; name: string; color: string };
+  }[];
+  nistFunctionData?: { function: string; functionId: string; score: number }[];
+  riskDistribution?: { name: string; value: number; color: string }[];
+  coverageStats?: { total: number; answered: number; pending: number; coverage: number };
   generatedAt: Date;
 }
 
@@ -41,21 +53,26 @@ const getDashboardTitle = (type: string): string => {
 };
 
 // Generate SVG donut chart
-function generateDonutChart(value: number, color: string, label: string, size: number = 120): string {
-  const radius = (size - 20) / 2;
+function generateDonutChart(value: number, color: string, label: string, sublabel?: string, size: number = 100): string {
+  const radius = (size - 16) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
   const center = size / 2;
   
   return `
-    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#e5e7eb" stroke-width="12"/>
-      <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${color}" stroke-width="12"
-        stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" 
-        transform="rotate(-90 ${center} ${center})" stroke-linecap="round"/>
-      <text x="${center}" y="${center - 5}" text-anchor="middle" font-size="24" font-weight="bold" fill="${color}">${value}%</text>
-      <text x="${center}" y="${center + 15}" text-anchor="middle" font-size="10" fill="#6b7280">${label}</text>
-    </svg>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+        <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${color}" stroke-width="10"
+          stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" 
+          transform="rotate(-90 ${center} ${center})" stroke-linecap="round"/>
+        <text x="${center}" y="${center + 6}" text-anchor="middle" font-size="20" font-weight="bold" fill="${color}">${value}%</text>
+      </svg>
+      <div style="text-align: center; margin-top: 0.5rem;">
+        <div style="font-size: 0.75rem; font-weight: 600; color: #374151;">${label}</div>
+        ${sublabel ? `<div style="font-size: 0.625rem; color: #6b7280;">${sublabel}</div>` : ''}
+      </div>
+    </div>
   `;
 }
 
@@ -83,74 +100,45 @@ function generateHorizontalBarChart(data: { name: string; value: number; color: 
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${bars}</svg>`;
 }
 
-// Generate SVG pie chart for gap distribution
-function generatePieChart(data: { label: string; value: number; color: string }[], size: number = 200): string {
-  const center = size / 2;
-  const radius = (size - 40) / 2;
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-  
-  if (total === 0) {
-    return `<svg width="${size}" height="${size}"><text x="${center}" y="${center}" text-anchor="middle" fill="#6b7280">Sem dados</text></svg>`;
-  }
-  
-  let currentAngle = -90;
-  const paths = data.filter(d => d.value > 0).map(item => {
-    const percentage = item.value / total;
-    const angle = percentage * 360;
-    const startAngle = currentAngle;
-    const endAngle = currentAngle + angle;
-    currentAngle = endAngle;
-    
-    const startRad = (startAngle * Math.PI) / 180;
-    const endRad = (endAngle * Math.PI) / 180;
-    
-    const x1 = center + radius * Math.cos(startRad);
-    const y1 = center + radius * Math.sin(startRad);
-    const x2 = center + radius * Math.cos(endRad);
-    const y2 = center + radius * Math.sin(endRad);
-    
-    const largeArc = angle > 180 ? 1 : 0;
-    
-    return `<path d="M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${item.color}"/>`;
-  }).join('');
-  
-  const legend = data.filter(d => d.value > 0).map((item, i) => `
-    <g transform="translate(${size + 10}, ${i * 20})">
-      <rect width="12" height="12" fill="${item.color}" rx="2"/>
-      <text x="18" y="10" font-size="11" fill="#374151">${item.label}: ${item.value}</text>
-    </g>
-  `).join('');
-  
-  return `<svg width="${size + 120}" height="${Math.max(size, data.length * 20)}" viewBox="0 0 ${size + 120} ${Math.max(size, data.length * 20)}">${paths}${legend}</svg>`;
-}
-
-// Generate NIST function radar-like visualization
-function generateNistFunctionChart(metrics: OverallMetrics): string {
-  const nistData = [
-    { func: 'GOVERN', label: 'Governar', color: '#3b82f6' },
-    { func: 'MAP', label: 'Mapear', color: '#8b5cf6' },
-    { func: 'MEASURE', label: 'Medir', color: '#06b6d4' },
-    { func: 'MANAGE', label: 'Gerenciar', color: '#10b981' }
-  ];
-  
-  const functionScores = nistData.map(n => {
-    const domains = metrics.domainMetrics.filter(dm => dm.nistFunction === n.func);
-    if (domains.length === 0) return { ...n, score: 0 };
-    const avgScore = domains.reduce((sum, d) => sum + d.score, 0) / domains.length;
-    return { ...n, score: Math.round(avgScore * 100) };
-  });
-  
-  const barData = functionScores.map(f => ({
-    name: f.label,
-    value: f.score,
-    color: f.color
+// Generate NIST function chart
+function generateNistFunctionChart(nistData: { function: string; score: number }[]): string {
+  const barData = nistData.map((n, i) => ({
+    name: n.function,
+    value: n.score,
+    color: ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981'][i % 4]
   }));
   
   return generateHorizontalBarChart(barData, 350);
 }
 
+// Generate risk distribution as colored boxes
+function generateRiskDistributionBoxes(distribution: { name: string; value: number; color: string }[]): string {
+  return `
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      ${distribution.map(d => `
+        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: ${d.color}15; border: 1px solid ${d.color}40; border-radius: 6px;">
+          <div style="width: 10px; height: 10px; border-radius: 2px; background: ${d.color};"></div>
+          <span style="font-size: 0.75rem; font-weight: 500;">${d.name}: ${d.value}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 export function generateHtmlReport(data: ReportData): string {
-  const { dashboardType, metrics, criticalGaps, frameworkCoverage, selectedFrameworks, generatedAt } = data;
+  const { 
+    dashboardType, 
+    metrics, 
+    criticalGaps, 
+    frameworkCoverage, 
+    selectedFrameworks, 
+    roadmap,
+    frameworkCategoryData,
+    nistFunctionData,
+    riskDistribution,
+    coverageStats,
+    generatedAt 
+  } = data;
   
   const formattedDate = generatedAt.toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -164,19 +152,37 @@ export function generateHtmlReport(data: ReportData): string {
     ? selectedFrameworks.map(f => f.shortName).join(', ')
     : 'Todos os frameworks habilitados';
 
-  // Prepare chart data
-  const domainChartData = metrics.domainMetrics.map(dm => ({
-    name: dm.domainName,
+  // Use provided coverage stats or fall back to metrics
+  const effectiveCoverageStats = coverageStats || {
+    total: metrics.totalQuestions,
+    answered: metrics.answeredQuestions,
+    pending: metrics.totalQuestions - metrics.answeredQuestions,
+    coverage: metrics.coverage
+  };
+
+  // Use provided NIST data or derive from metrics
+  const effectiveNistData = nistFunctionData || metrics.nistFunctionMetrics?.map(nf => ({
+    function: nf.function === 'GOVERN' ? 'Governar' : 
+              nf.function === 'MAP' ? 'Mapear' : 
+              nf.function === 'MEASURE' ? 'Medir' : 'Gerenciar',
+    functionId: nf.function,
+    score: Math.round(nf.score * 100)
+  })) || [];
+
+  // Use provided risk distribution or derive from gaps
+  const effectiveRiskDistribution = riskDistribution || [
+    { name: 'Crítico', value: criticalGaps.filter(g => g.criticality === 'Critical').length, color: '#dc2626' },
+    { name: 'Alto', value: criticalGaps.filter(g => g.criticality === 'High').length, color: '#ea580c' },
+    { name: 'Médio', value: criticalGaps.filter(g => g.criticality === 'Medium').length, color: '#ca8a04' },
+    { name: 'Baixo', value: criticalGaps.filter(g => g.criticality === 'Low').length, color: '#16a34a' }
+  ].filter(d => d.value > 0);
+
+  // Domain chart data - first 6 like in dashboard
+  const domainChartData = metrics.domainMetrics.slice(0, 6).map(dm => ({
+    name: dm.domainName.length > 18 ? dm.domainName.slice(0, 16) + '...' : dm.domainName,
     value: Math.round(dm.score * 100),
     color: getMaturityColor(dm.maturityLevel.level)
   }));
-
-  const gapDistribution = [
-    { label: 'Crítico', value: criticalGaps.filter(g => g.criticality === 'Critical').length, color: '#dc2626' },
-    { label: 'Alto', value: criticalGaps.filter(g => g.criticality === 'High').length, color: '#ea580c' },
-    { label: 'Médio', value: criticalGaps.filter(g => g.criticality === 'Medium').length, color: '#ca8a04' },
-    { label: 'Baixo', value: criticalGaps.filter(g => g.criticality === 'Low').length, color: '#16a34a' }
-  ];
 
   const html = `
 <!DOCTYPE html>
@@ -208,60 +214,98 @@ export function generateHtmlReport(data: ReportData): string {
     .header {
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       color: white;
-      padding: 2rem;
+      padding: 1.5rem 2rem;
     }
     
-    .header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .header .meta { font-size: 0.875rem; opacity: 0.9; }
+    .header h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .header p { font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem; }
+    .header .meta { font-size: 0.75rem; opacity: 0.8; }
     
-    .content { padding: 2rem; }
+    .content { padding: 1.5rem 2rem; }
     
-    .section { margin-bottom: 2.5rem; page-break-inside: avoid; }
+    .section { margin-bottom: 2rem; page-break-inside: avoid; }
     
     .section-title {
-      font-size: 1.125rem;
+      font-size: 1rem;
       font-weight: 600;
-      color: #1e40af;
+      color: #374151;
       margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid #e5e7eb;
     }
     
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
     
     .kpi-card {
       background: #f9fafb;
       border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 1.25rem;
-      text-align: center;
+      padding: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .kpi-card .corner {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      border-bottom-left-radius: 100%;
     }
     
     .kpi-label {
-      font-size: 0.75rem;
+      font-size: 0.625rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #6b7280;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    
+    .kpi-sublabel {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.5rem;
+    }
+    
+    .kpi-footer {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e5e7eb;
+      font-size: 0.625rem;
+      color: #9ca3af;
+    }
+    
+    .maturity-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.625rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
     }
     
     .charts-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-bottom: 2rem;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
     }
     
     .chart-container {
       background: #f9fafb;
       border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 1.5rem;
+      padding: 1rem;
     }
     
     .chart-title {
@@ -271,86 +315,126 @@ export function generateHtmlReport(data: ReportData): string {
       margin-bottom: 1rem;
     }
     
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 500;
+    .framework-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
     }
     
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-    
-    .table th, .table td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    
-    .table th {
+    .framework-card {
       background: #f9fafb;
-      font-weight: 600;
-      color: #374151;
-    }
-    
-    .progress-bar {
-      width: 100%;
-      height: 8px;
-      background: #e5e7eb;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    
-    .progress-fill { height: 100%; border-radius: 4px; }
-    
-    .gap-item {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
+      border: 1px solid #e5e7eb;
       border-radius: 8px;
       padding: 1rem;
-      margin-bottom: 0.75rem;
-      page-break-inside: avoid;
     }
     
-    .gap-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.5rem;
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.75rem;
     }
     
-    .gap-question { font-weight: 500; color: #1f2937; flex: 1; }
-    .gap-meta { font-size: 0.75rem; color: #6b7280; }
-    
-    .summary-box {
-      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-      border: 1px solid #bfdbfe;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
+    .category-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 0.75rem;
     }
     
-    .summary-grid {
+    .roadmap-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-      text-align: center;
+      gap: 1rem;
     }
     
-    .summary-item h3 {
-      font-size: 2.5rem;
+    .roadmap-column {
+      border-radius: 8px;
+      padding: 1rem;
+      border-left: 4px solid;
+    }
+    
+    .roadmap-immediate { background: #fef2f2; border-color: #dc2626; }
+    .roadmap-short { background: #fffbeb; border-color: #d97706; }
+    .roadmap-medium { background: #eff6ff; border-color: #2563eb; }
+    
+    .roadmap-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .roadmap-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .gap-item {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    
+    .gap-number {
+      font-size: 1rem;
       font-weight: 700;
+      color: #9ca3af;
+      min-width: 1.5rem;
+    }
+    
+    .gap-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .gap-question {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #1f2937;
       margin-bottom: 0.25rem;
     }
     
-    .summary-item p {
-      font-size: 0.875rem;
-      color: #4b5563;
+    .gap-meta {
+      font-size: 0.75rem;
+      color: #6b7280;
     }
+    
+    .gap-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.625rem;
+      font-weight: 600;
+    }
+    
+    .badge-critical { background: #dc2626; color: white; }
+    .badge-high { background: #ea580c; color: white; }
+    .badge-medium { background: #ca8a04; color: white; }
+    .badge-low { background: #16a34a; color: white; }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-fill { height: 100%; border-radius: 3px; }
     
     .footer {
       background: #f9fafb;
@@ -362,7 +446,7 @@ export function generateHtmlReport(data: ReportData): string {
     }
     
     @media print {
-      body { background: white; padding: 0; }
+      body { background: white; padding: 0.5rem; }
       .container { box-shadow: none; }
       .section { page-break-inside: avoid; }
       .gap-item { break-inside: avoid; }
@@ -371,179 +455,195 @@ export function generateHtmlReport(data: ReportData): string {
 </head>
 <body>
   <div class="container">
+    <!-- Header -->
     <div class="header">
       <h1>${getDashboardTitle(dashboardType)}</h1>
+      <p>Visão consolidada para tomada de decisão estratégica</p>
       <div class="meta">
-        <div>Gerado em: ${formattedDate}</div>
-        <div>Frameworks: ${selectedFrameworkNames}</div>
+        Gerado em: ${formattedDate} | Frameworks: ${selectedFrameworkNames}
       </div>
     </div>
     
     <div class="content">
-      <!-- Executive Summary -->
-      <div class="summary-box">
-        <div class="summary-grid">
-          <div class="summary-item">
-            <h3 style="color: ${getMaturityColor(metrics.maturityLevel.level)}">${Math.round(metrics.overallScore * 100)}%</h3>
-            <p>Score Geral - Nível ${metrics.maturityLevel.level}: ${metrics.maturityLevel.name}</p>
+      <!-- KPI Cards - Matching Dashboard Layout -->
+      <div class="kpi-grid">
+        <!-- Score Geral -->
+        <div class="kpi-card">
+          <div class="corner" style="background: ${getMaturityColor(metrics.maturityLevel.level)}20;"></div>
+          <div class="kpi-label">Score Geral</div>
+          <div class="kpi-value" style="color: ${getMaturityColor(metrics.maturityLevel.level)};">
+            ${Math.round(metrics.overallScore * 100)}%
           </div>
-          <div class="summary-item">
-            <h3 style="color: #1e40af">${Math.round(metrics.coverage * 100)}%</h3>
-            <p>Cobertura (${metrics.answeredQuestions}/${metrics.totalQuestions} questões)</p>
+          <div class="maturity-badge" style="background: ${getMaturityColor(metrics.maturityLevel.level)}20; color: ${getMaturityColor(metrics.maturityLevel.level)};">
+            Nível ${metrics.maturityLevel.level}: ${metrics.maturityLevel.name}
           </div>
-          <div class="summary-item">
-            <h3 style="color: #dc2626">${criticalGaps.length}</h3>
-            <p>Gaps Identificados</p>
+          <div class="kpi-footer">Meta recomendada: 70%+</div>
+        </div>
+        
+        <!-- Gaps Críticos -->
+        <div class="kpi-card">
+          <div class="corner" style="background: #dc262620;"></div>
+          <div class="kpi-label">Gaps Críticos</div>
+          <div class="kpi-value" style="color: #dc2626;">${criticalGaps.length}</div>
+          <div class="kpi-sublabel">Requerem ação prioritária</div>
+          <div class="kpi-footer">
+            <span style="color: ${criticalGaps.length === 0 ? '#16a34a' : criticalGaps.length <= 5 ? '#d97706' : '#dc2626'};">
+              ${criticalGaps.length === 0 ? 'Excelente' : criticalGaps.length <= 5 ? 'Atenção necessária' : 'Ação imediata'}
+            </span>
           </div>
+        </div>
+        
+        <!-- Cobertura -->
+        <div class="kpi-card">
+          <div class="corner" style="background: #3b82f620;"></div>
+          <div class="kpi-label">Cobertura</div>
+          <div class="kpi-value" style="color: #1e40af;">
+            ${Math.round(effectiveCoverageStats.coverage * 100)}%
+          </div>
+          <div class="kpi-sublabel">${effectiveCoverageStats.answered} de ${effectiveCoverageStats.total} perguntas</div>
+          <div class="kpi-footer">${effectiveCoverageStats.pending} perguntas pendentes</div>
+        </div>
+        
+        <!-- Prontidão de Evidências -->
+        <div class="kpi-card">
+          <div class="corner" style="background: #16a34a20;"></div>
+          <div class="kpi-label">Prontidão de Evidências</div>
+          <div class="kpi-value" style="color: #059669;">
+            ${Math.round(metrics.evidenceReadiness * 100)}%
+          </div>
+          <div class="kpi-sublabel">Documentação disponível</div>
+          <div class="kpi-footer">Preparação para auditoria</div>
         </div>
       </div>
       
-      <!-- Visual KPIs with Donut Charts -->
-      <div class="section">
-        <h2 class="section-title">Indicadores de Maturidade</h2>
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            ${generateDonutChart(Math.round(metrics.overallScore * 100), getMaturityColor(metrics.maturityLevel.level), 'Score')}
+      <!-- Charts Row - 3 columns like dashboard -->
+      <div class="charts-row">
+        <!-- Funções NIST AI RMF -->
+        <div class="chart-container">
+          <div class="chart-title">Funções NIST AI RMF</div>
+          ${generateNistFunctionChart(effectiveNistData)}
+          <div style="margin-top: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            ${effectiveNistData.map((nf, i) => `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: #f3f4f6; border-radius: 4px;">
+                <span style="font-size: 0.75rem;">${nf.function}</span>
+                <span style="font-size: 0.75rem; font-weight: 600; font-family: monospace;">${nf.score}%</span>
+              </div>
+            `).join('')}
           </div>
-          <div class="kpi-card">
-            ${generateDonutChart(Math.round(metrics.coverage * 100), '#1e40af', 'Cobertura')}
-          </div>
-          <div class="kpi-card">
-            ${generateDonutChart(Math.round(metrics.evidenceReadiness * 100), '#059669', 'Evidências')}
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Distribuição de Gaps</div>
-            <div style="margin-top: 0.5rem;">
-              ${gapDistribution.map(g => `
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                  <div style="width: 12px; height: 12px; border-radius: 2px; background: ${g.color}"></div>
-                  <span style="font-size: 0.75rem;">${g.label}: ${g.value}</span>
+        </div>
+        
+        <!-- Maturidade por Domínio -->
+        <div class="chart-container">
+          <div class="chart-title">Maturidade por Domínio</div>
+          ${generateHorizontalBarChart(domainChartData, 300)}
+        </div>
+        
+        <!-- Distribuição de Riscos -->
+        <div class="chart-container">
+          <div class="chart-title">Distribuição de Riscos</div>
+          ${effectiveRiskDistribution.length > 0 ? `
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+              ${effectiveRiskDistribution.map(r => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: ${r.color}10; border: 1px solid ${r.color}30; border-radius: 4px;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 10px; height: 10px; border-radius: 2px; background: ${r.color};"></div>
+                    <span style="font-size: 0.75rem;">${r.name}</span>
+                  </div>
+                  <span style="font-size: 0.875rem; font-weight: 600; font-family: monospace;">${r.value}</span>
                 </div>
               `).join('')}
             </div>
-          </div>
+          ` : '<div style="padding: 2rem; text-align: center; color: #9ca3af;">Nenhum gap identificado</div>'}
         </div>
       </div>
       
-      <!-- Charts Row -->
-      <div class="charts-row">
-        <div class="chart-container">
-          <div class="chart-title">Score por Domínio</div>
-          ${generateHorizontalBarChart(domainChartData, 450)}
-        </div>
-        <div class="chart-container">
-          <div class="chart-title">Funções NIST AI RMF</div>
-          ${generateNistFunctionChart(metrics)}
-        </div>
-      </div>
-      
-      <!-- Gap Distribution Chart -->
-      ${criticalGaps.length > 0 ? `
-      <div class="section">
-        <h2 class="section-title">Distribuição de Riscos</h2>
-        <div style="display: flex; justify-content: center; padding: 1rem;">
-          ${generatePieChart(gapDistribution, 180)}
-        </div>
-      </div>
-      ` : ''}
-      
-      <!-- Domain Metrics Table -->
-      <div class="section">
-        <h2 class="section-title">Detalhamento por Domínio</h2>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Domínio</th>
-              <th>Score</th>
-              <th>Cobertura</th>
-              <th>Gaps</th>
-              <th>Nível</th>
-              <th>Progresso</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${metrics.domainMetrics.map(dm => `
-              <tr>
-                <td><strong>${dm.domainName}</strong></td>
-                <td style="color: ${getMaturityColor(dm.maturityLevel.level)}; font-weight: 600;">${Math.round(dm.score * 100)}%</td>
-                <td>${Math.round(dm.coverage * 100)}%</td>
-                <td>${dm.criticalGaps}</td>
-                <td>
-                  <span class="badge" style="background: ${getMaturityColor(dm.maturityLevel.level)}; color: white;">
-                    ${dm.maturityLevel.name}
-                  </span>
-                </td>
-                <td style="width: 150px;">
-                  <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.round(dm.score * 100)}%; background: ${getMaturityColor(dm.maturityLevel.level)}"></div>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-      
-      <!-- Framework Coverage -->
+      <!-- Cobertura por Framework -->
       ${frameworkCoverage.length > 0 ? `
       <div class="section">
-        <h2 class="section-title">Cobertura por Framework</h2>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Framework</th>
-              <th>Score Médio</th>
-              <th>Cobertura</th>
-              <th>Questões</th>
-              <th>Progresso</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${frameworkCoverage.map(fc => `
-              <tr>
-                <td><strong>${fc.framework}</strong></td>
-                <td style="font-weight: 600;">${Math.round(fc.averageScore * 100)}%</td>
-                <td>${Math.round(fc.coverage * 100)}%</td>
-                <td>${fc.answeredQuestions}/${fc.totalQuestions}</td>
-                <td style="width: 150px;">
-                  <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.round(fc.coverage * 100)}%; background: #3b82f6"></div>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <div class="section-title">Cobertura por Framework</div>
+        <div class="framework-grid">
+          ${frameworkCoverage.map(fc => `
+            <div class="framework-card">
+              <div style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${fc.framework}">
+                ${fc.framework}
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 0.25rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.5rem; font-weight: 700;">${Math.round(fc.averageScore * 100)}%</span>
+                <span style="font-size: 0.625rem; color: #6b7280;">score</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${Math.round(fc.coverage * 100)}%; background: #3b82f6;"></div>
+              </div>
+              <div style="font-size: 0.625rem; color: #6b7280; margin-top: 0.5rem;">
+                ${fc.answeredQuestions}/${fc.totalQuestions} perguntas respondidas
+              </div>
+            </div>
+          `).join('')}
+        </div>
       </div>
       ` : ''}
       
-      <!-- Strategic Roadmap -->
-      ${data.roadmap && data.roadmap.length > 0 ? `
+      <!-- Maturidade por Categoria de Framework -->
+      ${frameworkCategoryData && frameworkCategoryData.length > 0 ? `
       <div class="section">
-        <h2 class="section-title">Roadmap Estratégico</h2>
-        <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.5rem;">Ações prioritárias para os próximos 90 dias</p>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+        <div class="section-title">Maturidade por Categoria de Framework</div>
+        <div class="category-grid">
+          ${frameworkCategoryData.map(fc => `
+            <div class="category-card">
+              <div style="font-size: 0.75rem; font-weight: 500; margin-bottom: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${fc.name}">
+                ${fc.name}
+              </div>
+              <div style="font-size: 1.5rem; font-weight: 700; color: ${fc.maturityLevel.color}; margin-bottom: 0.5rem;">
+                ${fc.score}%
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${fc.score}%; background: ${fc.maturityLevel.color};"></div>
+              </div>
+              <div style="font-size: 0.625rem; color: #6b7280; margin-top: 0.5rem;">
+                ${fc.answeredQuestions}/${fc.totalQuestions} perguntas
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+      
+      <!-- Roadmap Estratégico -->
+      ${roadmap && roadmap.length > 0 ? `
+      <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div>
+            <div class="section-title" style="margin-bottom: 0.25rem;">Roadmap Estratégico</div>
+            <div style="font-size: 0.75rem; color: #6b7280;">Ações prioritárias para os próximos 90 dias</div>
+          </div>
+          <div style="display: flex; gap: 1rem; font-size: 0.75rem;">
+            <span style="display: flex; align-items: center; gap: 0.25rem;"><div style="width: 8px; height: 8px; border-radius: 50%; background: #dc2626;"></div> 0-30 dias</span>
+            <span style="display: flex; align-items: center; gap: 0.25rem;"><div style="width: 8px; height: 8px; border-radius: 50%; background: #d97706;"></div> 30-60 dias</span>
+            <span style="display: flex; align-items: center; gap: 0.25rem;"><div style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></div> 60-90 dias</span>
+          </div>
+        </div>
+        <div class="roadmap-grid">
           ${['immediate', 'short', 'medium'].map(priority => {
-            const items = data.roadmap!.filter(r => r.priority === priority);
-            const config: Record<string, { label: string; color: string; bgColor: string }> = {
-              immediate: { label: '0-30 dias', color: '#dc2626', bgColor: '#fef2f2' },
-              short: { label: '30-60 dias', color: '#d97706', bgColor: '#fffbeb' },
-              medium: { label: '60-90 dias', color: '#2563eb', bgColor: '#eff6ff' }
+            const items = roadmap.filter(r => r.priority === priority);
+            const config: Record<string, { label: string; dotColor: string; className: string }> = {
+              immediate: { label: '0-30 dias', dotColor: '#dc2626', className: 'roadmap-immediate' },
+              short: { label: '30-60 dias', dotColor: '#d97706', className: 'roadmap-short' },
+              medium: { label: '60-90 dias', dotColor: '#2563eb', className: 'roadmap-medium' }
             };
             const cfg = config[priority];
             return `
-              <div style="background: ${cfg.bgColor}; border-left: 4px solid ${cfg.color}; border-radius: 8px; padding: 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: ${cfg.color};"></div>
-                  <h4 style="font-weight: 600; font-size: 0.875rem; color: #374151;">${cfg.label}</h4>
+              <div class="roadmap-column ${cfg.className}">
+                <div class="roadmap-title">
+                  <div class="roadmap-dot" style="background: ${cfg.dotColor};"></div>
+                  <span style="font-weight: 600; font-size: 0.875rem;">${cfg.label}</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                   ${items.length > 0 ? items.map(item => `
                     <div style="font-size: 0.75rem;">
-                      <p style="font-weight: 500; color: #1f2937; margin-bottom: 0.25rem;">${item.action}</p>
-                      <p style="color: #6b7280;">${item.domain} · ${item.ownershipType}</p>
+                      <div style="font-weight: 500; color: #1f2937;">${item.action}</div>
+                      <div style="color: #6b7280; margin-top: 0.25rem;">${item.domain} · ${item.ownershipType}</div>
                     </div>
-                  `).join('') : '<p style="font-size: 0.75rem; color: #9ca3af;">Nenhuma ação pendente</p>'}
+                  `).join('') : '<div style="font-size: 0.75rem; color: #9ca3af;">Nenhuma ação pendente</div>'}
                 </div>
               </div>
             `;
@@ -551,34 +651,37 @@ export function generateHtmlReport(data: ReportData): string {
         </div>
       </div>
       ` : ''}
-
-      <!-- Critical Gaps -->
+      
+      <!-- Gaps Críticos -->
       ${criticalGaps.length > 0 ? `
       <div class="section">
-        <h2 class="section-title">Gaps Críticos (${criticalGaps.length})</h2>
-        ${criticalGaps.map((gap, index) => `
-          <div class="gap-item">
-            <div class="gap-header">
-              <div style="display: flex; align-items: flex-start; gap: 0.75rem; flex: 1;">
-                <span style="font-size: 0.875rem; font-weight: 700; color: #9ca3af; min-width: 1.5rem;">${index + 1}</span>
+        <div class="section-title">Gaps Críticos (${criticalGaps.length})</div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          ${criticalGaps.map((gap, index) => `
+            <div class="gap-item">
+              <div class="gap-number">${index + 1}</div>
+              <div class="gap-content">
                 <div class="gap-question">${gap.questionText}</div>
+                <div class="gap-meta">${gap.subcatName} · ${gap.domainName}</div>
               </div>
-              <span class="badge" style="background: ${getCriticalityColor(gap.criticality)}; color: white; margin-left: 1rem; white-space: nowrap;">
-                ${gap.criticality}
-              </span>
+              <div class="gap-badges">
+                ${gap.nistFunction ? `<span style="font-size: 0.625rem; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">${
+                  gap.nistFunction === 'GOVERN' ? 'Governar' : 
+                  gap.nistFunction === 'MAP' ? 'Mapear' : 
+                  gap.nistFunction === 'MEASURE' ? 'Medir' : 'Gerenciar'
+                }</span>` : ''}
+                <span class="badge badge-${gap.criticality.toLowerCase()}">${gap.criticality}</span>
+                <span style="font-family: monospace; font-size: 0.875rem; min-width: 3rem; text-align: right;">${Math.round(gap.effectiveScore * 100)}%</span>
+              </div>
             </div>
-            <div class="gap-meta" style="margin-left: 2.25rem;">
-              <strong>${gap.domainName}</strong> → ${gap.subcatName} | Resposta: ${gap.response || 'Não respondido'} | Score: ${Math.round(gap.effectiveScore * 100)}%
-            </div>
-          </div>
-        `).join('')}
+          `).join('')}
+        </div>
       </div>
       ` : ''}
     </div>
     
     <div class="footer">
-      <p>Relatório gerado automaticamente pelo Sistema de Avaliação de Maturidade em Segurança de IA</p>
-      <p style="margin-top: 0.5rem;">${formattedDate}</p>
+      Relatório gerado automaticamente pelo Sistema de Avaliação de Maturidade em Segurança de IA · ${formattedDate}
     </div>
   </div>
 </body>

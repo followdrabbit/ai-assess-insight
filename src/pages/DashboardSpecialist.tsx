@@ -28,6 +28,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
@@ -83,6 +91,7 @@ export default function DashboardSpecialist() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedHeatmapDomain, setSelectedHeatmapDomain] = useState<string>('all');
   const [expandedFrameworks, setExpandedFrameworks] = useState<Set<string>>(new Set());
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   // Load active questions and frameworks
   const loadData = useCallback(async () => {
@@ -347,6 +356,63 @@ export default function DashboardSpecialist() {
     const domain = metrics.domainMetrics.find(dm => dm.domainId === selectedHeatmapDomain);
     return domain ? domain.subcategoryMetrics : [];
   }, [metrics.domainMetrics, selectedHeatmapDomain]);
+
+  // Selected subcategory details for modal
+  const selectedSubcategoryDetails = useMemo(() => {
+    if (!selectedSubcategory) return null;
+
+    // Find subcategory metrics
+    const subcatMetrics = metrics.domainMetrics
+      .flatMap(dm => dm.subcategoryMetrics)
+      .find(sm => sm.subcatId === selectedSubcategory);
+
+    if (!subcatMetrics) return null;
+
+    // Find domain for this subcategory
+    const domainData = metrics.domainMetrics.find(dm => 
+      dm.subcategoryMetrics.some(sm => sm.subcatId === selectedSubcategory)
+    );
+
+    // Get all questions for this subcategory
+    const subcatQuestions = questionsForDashboard.filter(q => q.subcatId === selectedSubcategory);
+
+    // Calculate question-level details
+    const questionDetails = subcatQuestions.map(q => {
+      const answer = answers.get(q.questionId);
+      return {
+        questionId: q.questionId,
+        questionText: q.questionText,
+        response: answer?.response || 'Não respondido',
+        evidenceOk: answer?.evidenceOk || null,
+        notes: answer?.notes || null,
+      };
+    });
+
+    // Calculate response breakdown
+    const responseBreakdown = {
+      Sim: questionDetails.filter(q => q.response === 'Sim').length,
+      Parcial: questionDetails.filter(q => q.response === 'Parcial').length,
+      Não: questionDetails.filter(q => q.response === 'Não').length,
+      NA: questionDetails.filter(q => q.response === 'NA').length,
+      'Não respondido': questionDetails.filter(q => q.response === 'Não respondido').length,
+    };
+
+    // Get gaps (questions with score < 0.5)
+    const gaps = allCriticalGaps.filter(g => g.subcatId === selectedSubcategory);
+
+    return {
+      ...subcatMetrics,
+      domainId: domainData?.domainId || '',
+      domainName: domainData?.domainName || '',
+      nistFunction: domainData?.nistFunction || '',
+      questions: questionDetails,
+      responseBreakdown,
+      gaps,
+      coverage: subcatMetrics.totalQuestions > 0 
+        ? subcatMetrics.answeredQuestions / subcatMetrics.totalQuestions 
+        : 0,
+    };
+  }, [selectedSubcategory, metrics.domainMetrics, questionsForDashboard, answers, allCriticalGaps]);
 
   // Quick stats
   const quickStats = useMemo(() => ({
@@ -869,13 +935,13 @@ export default function DashboardSpecialist() {
               {heatmapData.map((sm, idx) => (
                 <div
                   key={sm.subcatId}
-                  className="heatmap-cell aspect-square flex items-center justify-center text-xs font-medium text-white cursor-pointer hover:opacity-80 transition-opacity relative group animate-in fade-in-0 zoom-in-90 duration-300"
+                  className="heatmap-cell aspect-square flex items-center justify-center text-xs font-medium text-white cursor-pointer hover:opacity-80 hover:scale-105 transition-all relative group animate-in fade-in-0 zoom-in-90 duration-300"
                   style={{ 
                     backgroundColor: sm.maturityLevel.color,
                     animationDelay: `${idx * 15}ms`,
                     animationFillMode: 'backwards'
                   }}
-                  onClick={() => navigate('/assessment')}
+                  onClick={() => setSelectedSubcategory(sm.subcatId)}
                 >
                   {Math.round(sm.score * 100)}
                   {/* Tooltip on hover */}
@@ -884,6 +950,7 @@ export default function DashboardSpecialist() {
                     <div className="text-muted-foreground">
                       {sm.criticality} · {sm.answeredQuestions}/{sm.totalQuestions} resp.
                     </div>
+                    <div className="text-xs text-primary mt-1">Clique para detalhes</div>
                   </div>
                 </div>
               ))}
@@ -1128,6 +1195,199 @@ export default function DashboardSpecialist() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Subcategory Details Modal */}
+      <Dialog open={!!selectedSubcategory} onOpenChange={(open) => !open && setSelectedSubcategory(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedSubcategoryDetails && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedSubcategoryDetails.maturityLevel.color }}
+                  >
+                    {Math.round(selectedSubcategoryDetails.score * 100)}
+                  </div>
+                  <div>
+                    <DialogTitle className="text-left">{selectedSubcategoryDetails.subcatName}</DialogTitle>
+                    <DialogDescription className="text-left">
+                      {selectedSubcategoryDetails.domainName} · {selectedSubcategoryDetails.nistFunction}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-4 gap-3 mt-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold" style={{ color: selectedSubcategoryDetails.maturityLevel.color }}>
+                    {selectedSubcategoryDetails.maturityLevel.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{Math.round(selectedSubcategoryDetails.coverage * 100)}%</div>
+                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{selectedSubcategoryDetails.answeredQuestions}</div>
+                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold text-amber-600">{selectedSubcategoryDetails.totalQuestions - selectedSubcategoryDetails.answeredQuestions}</div>
+                  <div className="text-xs text-muted-foreground">Pendentes</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">Progresso da Avaliação</span>
+                  <span className="font-medium">{selectedSubcategoryDetails.answeredQuestions} de {selectedSubcategoryDetails.totalQuestions}</span>
+                </div>
+                <Progress value={selectedSubcategoryDetails.coverage * 100} className="h-2" />
+              </div>
+
+              {/* Response Breakdown */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
+                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(selectedSubcategoryDetails.responseBreakdown).map(([key, value]) => (
+                    value > 0 && (
+                      <div 
+                        key={key} 
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium",
+                          key === 'Sim' && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+                          key === 'Parcial' && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+                          key === 'Não' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                          key === 'NA' && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+                          key === 'Não respondido' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}
+                      >
+                        {key}: {value}
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Gaps */}
+              {selectedSubcategoryDetails.gaps.length > 0 && (
+                <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
+                  <h4 className="font-medium text-sm mb-2">
+                    Gaps Identificados ({selectedSubcategoryDetails.gaps.length})
+                  </h4>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {selectedSubcategoryDetails.gaps.map((gap, idx) => (
+                      <div 
+                        key={gap.questionId} 
+                        className="p-3 bg-muted/30 rounded-lg flex items-start justify-between gap-3 animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                        style={{ animationDelay: `${450 + idx * 50}ms`, animationFillMode: 'backwards' }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs text-muted-foreground">{gap.questionId}</span>
+                            <span className={cn("criticality-badge text-xs", `criticality-${gap.criticality.toLowerCase()}`)}>
+                              {gap.criticality}
+                            </span>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded",
+                              gap.response === 'Não' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                              gap.response === 'Parcial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                              'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                            )}>
+                              {gap.response}
+                            </span>
+                          </div>
+                          <p className="text-sm line-clamp-2">{gap.questionText}</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => {
+                            setSelectedSubcategory(null);
+                            navigate(`/assessment?questionId=${gap.questionId}`);
+                          }}
+                        >
+                          Revisar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* All Questions List */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
+                <h4 className="font-medium text-sm mb-2">
+                  Todas as Perguntas ({selectedSubcategoryDetails.questions.length})
+                </h4>
+                <div className="space-y-2 max-h-56 overflow-y-auto">
+                  {selectedSubcategoryDetails.questions.map((q, idx) => (
+                    <div 
+                      key={q.questionId} 
+                      className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                      style={{ animationDelay: `${550 + idx * 30}ms`, animationFillMode: 'backwards' }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs text-muted-foreground">{q.questionId}</span>
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded",
+                            q.response === 'Sim' && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+                            q.response === 'Parcial' && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+                            q.response === 'Não' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                            q.response === 'NA' && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+                            q.response === 'Não respondido' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                          )}>
+                            {q.response}
+                          </span>
+                        </div>
+                        <p className="text-sm line-clamp-2">{q.questionText}</p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => {
+                          setSelectedSubcategory(null);
+                          navigate(`/assessment?questionId=${q.questionId}`);
+                        }}
+                      >
+                        Ir →
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-6 flex justify-end gap-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '600ms', animationFillMode: 'backwards' }}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedSubcategory(null)}
+                >
+                  Fechar
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setSelectedSubcategory(null);
+                    // Navigate to assessment filtered by this subcategory's first question
+                    if (selectedSubcategoryDetails.questions.length > 0) {
+                      navigate(`/assessment?questionId=${selectedSubcategoryDetails.questions[0].questionId}`);
+                    }
+                  }}
+                >
+                  Avaliar Subcategoria
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

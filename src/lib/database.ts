@@ -1,5 +1,46 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
+import { z } from 'zod';
+
+// ============ VALIDATION SCHEMAS ============
+const responseEnum = z.enum(['Sim', 'Parcial', 'Não', 'NA']).nullable();
+
+const answerSchema = z.object({
+  questionId: z.string().min(1).max(100),
+  frameworkId: z.string().max(100),
+  response: responseEnum,
+  evidenceOk: responseEnum,
+  notes: z.string().max(5000).default(''),
+  evidenceLinks: z.array(z.string().max(2000)).max(50).default([]),
+  updatedAt: z.string().optional()
+});
+
+const customFrameworkSchema = z.object({
+  frameworkId: z.string().min(1).max(100),
+  frameworkName: z.string().min(1).max(200),
+  shortName: z.string().min(1).max(50),
+  description: z.string().max(2000).default(''),
+  targetAudience: z.array(z.enum(['Executive', 'GRC', 'Engineering'])).default([]),
+  assessmentScope: z.string().max(500).default(''),
+  defaultEnabled: z.boolean().default(false),
+  version: z.string().max(20).default('1.0.0'),
+  category: z.enum(['core', 'high-value', 'tech-focused', 'custom']).default('custom'),
+  references: z.array(z.string().max(2000)).max(20).default([])
+});
+
+const customQuestionSchema = z.object({
+  questionId: z.string().min(1).max(100),
+  subcatId: z.string().max(100).default(''),
+  domainId: z.string().min(1).max(100),
+  questionText: z.string().min(1).max(2000),
+  expectedEvidence: z.string().max(2000).default(''),
+  imperativeChecks: z.string().max(2000).default(''),
+  riskSummary: z.string().max(2000).default(''),
+  frameworks: z.array(z.string().max(100)).max(20).default([]),
+  ownershipType: z.enum(['Executive', 'GRC', 'Engineering']).optional(),
+  criticality: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
+  isDisabled: z.boolean().optional()
+});
 
 // ============ TYPES ============
 export interface Answer {
@@ -76,15 +117,18 @@ export async function initializeDatabase(): Promise<void> {
 
 // ============ ANSWERS ============
 export async function saveAnswer(answer: Answer): Promise<void> {
+  // Validate input
+  const validated = answerSchema.parse(answer);
+  
   const { error } = await supabase
     .from('answers')
     .upsert({
-      question_id: answer.questionId,
-      framework_id: answer.frameworkId,
-      response: answer.response,
-      evidence_ok: answer.evidenceOk,
-      notes: answer.notes,
-      evidence_links: answer.evidenceLinks
+      question_id: validated.questionId,
+      framework_id: validated.frameworkId,
+      response: validated.response,
+      evidence_ok: validated.evidenceOk,
+      notes: validated.notes,
+      evidence_links: validated.evidenceLinks
     }, { onConflict: 'question_id' });
   
   if (error) throw error;
@@ -138,7 +182,10 @@ export async function clearAllAnswers(): Promise<void> {
 }
 
 export async function bulkSaveAnswers(answers: Answer[]): Promise<void> {
-  const rows = answers.map(a => ({
+  // Validate all answers
+  const validatedAnswers = answers.map(a => answerSchema.parse(a));
+  
+  const rows = validatedAnswers.map(a => ({
     question_id: a.questionId,
     framework_id: a.frameworkId,
     response: a.response,
@@ -250,26 +297,29 @@ export async function getCustomFramework(frameworkId: string): Promise<CustomFra
 export async function createCustomFramework(
   framework: Omit<CustomFramework, 'isCustom' | 'createdAt' | 'updatedAt'>
 ): Promise<CustomFramework> {
+  // Validate input
+  const validated = customFrameworkSchema.parse(framework);
+  
   const { data, error } = await supabase
     .from('custom_frameworks')
     .insert({
-      framework_id: framework.frameworkId,
-      framework_name: framework.frameworkName,
-      short_name: framework.shortName,
-      description: framework.description,
-      target_audience: framework.targetAudience,
-      assessment_scope: framework.assessmentScope,
-      default_enabled: framework.defaultEnabled,
-      version: framework.version,
-      category: framework.category,
-      reference_links: framework.references
+      framework_id: validated.frameworkId,
+      framework_name: validated.frameworkName,
+      short_name: validated.shortName,
+      description: validated.description,
+      target_audience: validated.targetAudience,
+      assessment_scope: validated.assessmentScope,
+      default_enabled: validated.defaultEnabled,
+      version: validated.version,
+      category: validated.category,
+      reference_links: validated.references
     })
     .select()
     .single();
   
   if (error) throw error;
   
-  await logChange('framework', framework.frameworkId, 'create', framework);
+  await logChange('framework', validated.frameworkId, 'create', validated);
   
   return {
     ...framework,
@@ -352,27 +402,30 @@ export async function getAllCustomQuestions(): Promise<CustomQuestion[]> {
 export async function createCustomQuestion(
   question: Omit<CustomQuestion, 'isCustom' | 'createdAt' | 'updatedAt'>
 ): Promise<CustomQuestion> {
+  // Validate input
+  const validated = customQuestionSchema.parse(question);
+  
   const { data, error } = await supabase
     .from('custom_questions')
     .insert({
-      question_id: question.questionId,
-      subcat_id: question.subcatId,
-      domain_id: question.domainId,
-      question_text: question.questionText,
-      expected_evidence: question.expectedEvidence,
-      imperative_checks: question.imperativeChecks,
-      risk_summary: question.riskSummary,
-      frameworks: question.frameworks,
-      ownership_type: question.ownershipType,
-      criticality: question.criticality,
-      is_disabled: question.isDisabled
+      question_id: validated.questionId,
+      subcat_id: validated.subcatId,
+      domain_id: validated.domainId,
+      question_text: validated.questionText,
+      expected_evidence: validated.expectedEvidence,
+      imperative_checks: validated.imperativeChecks,
+      risk_summary: validated.riskSummary,
+      frameworks: validated.frameworks,
+      ownership_type: validated.ownershipType,
+      criticality: validated.criticality,
+      is_disabled: validated.isDisabled
     })
     .select()
     .single();
   
   if (error) throw error;
   
-  await logChange('question', question.questionId, 'create', question);
+  await logChange('question', validated.questionId, 'create', validated);
   
   return {
     ...question,

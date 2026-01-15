@@ -24,6 +24,7 @@ export type Database = {
           notes: string | null
           question_id: string
           response: string | null
+          security_domain_id: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           notes?: string | null
           question_id: string
           response?: string | null
+          security_domain_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -48,6 +50,7 @@ export type Database = {
           notes?: string | null
           question_id?: string
           response?: string | null
+          security_domain_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -59,6 +62,7 @@ export type Database = {
           enabled_frameworks: string[] | null
           id: string
           name: string | null
+          security_domain_id: string | null
           selected_frameworks: string[] | null
           updated_at: string | null
           user_id: string | null
@@ -69,6 +73,7 @@ export type Database = {
           enabled_frameworks?: string[] | null
           id?: string
           name?: string | null
+          security_domain_id?: string | null
           selected_frameworks?: string[] | null
           updated_at?: string | null
           user_id?: string | null
@@ -79,6 +84,7 @@ export type Database = {
           enabled_frameworks?: string[] | null
           id?: string
           name?: string | null
+          security_domain_id?: string | null
           selected_frameworks?: string[] | null
           updated_at?: string | null
           user_id?: string | null
@@ -126,6 +132,7 @@ export type Database = {
           framework_id: string
           framework_name: string
           reference_links: string[] | null
+          security_domain_id: string | null
           short_name: string
           target_audience: string[] | null
           updated_at: string | null
@@ -141,6 +148,7 @@ export type Database = {
           framework_id: string
           framework_name: string
           reference_links?: string[] | null
+          security_domain_id?: string | null
           short_name: string
           target_audience?: string[] | null
           updated_at?: string | null
@@ -156,6 +164,7 @@ export type Database = {
           framework_id?: string
           framework_name?: string
           reference_links?: string[] | null
+          security_domain_id?: string | null
           short_name?: string
           target_audience?: string[] | null
           updated_at?: string | null
@@ -177,6 +186,7 @@ export type Database = {
           question_id: string
           question_text: string
           risk_summary: string | null
+          security_domain_id: string | null
           subcat_id: string | null
           updated_at: string | null
           user_id: string | null
@@ -193,6 +203,7 @@ export type Database = {
           question_id: string
           question_text: string
           risk_summary?: string | null
+          security_domain_id?: string | null
           subcat_id?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -209,6 +220,7 @@ export type Database = {
           question_id?: string
           question_text?: string
           risk_summary?: string | null
+          security_domain_id?: string | null
           subcat_id?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -225,6 +237,7 @@ export type Database = {
           framework_id: string
           framework_name: string
           reference_links: string[] | null
+          security_domain_id: string | null
           short_name: string
           target_audience: string[] | null
           updated_at: string | null
@@ -239,6 +252,7 @@ export type Database = {
           framework_id: string
           framework_name: string
           reference_links?: string[] | null
+          security_domain_id?: string | null
           short_name: string
           target_audience?: string[] | null
           updated_at?: string | null
@@ -253,6 +267,7 @@ export type Database = {
           framework_id?: string
           framework_name?: string
           reference_links?: string[] | null
+          security_domain_id?: string | null
           short_name?: string
           target_audience?: string[] | null
           updated_at?: string | null
@@ -271,6 +286,7 @@ export type Database = {
           question_id: string
           question_text: string
           risk_summary: string | null
+          security_domain_id: string | null
           subcat_id: string
           updated_at: string | null
         }
@@ -284,6 +300,7 @@ export type Database = {
           question_id: string
           question_text: string
           risk_summary?: string | null
+          security_domain_id?: string | null
           subcat_id: string
           updated_at?: string | null
         }
@@ -297,6 +314,7 @@ export type Database = {
           question_id?: string
           question_text?: string
           risk_summary?: string | null
+          security_domain_id?: string | null
           subcat_id?: string
           updated_at?: string | null
         }
@@ -362,6 +380,7 @@ export type Database = {
           domain_id: string
           domain_name: string
           nist_ai_rmf_function: string | null
+          security_domain_id: string | null
           strategic_question: string | null
           updated_at: string | null
         }
@@ -373,6 +392,7 @@ export type Database = {
           domain_id: string
           domain_name: string
           nist_ai_rmf_function?: string | null
+          security_domain_id?: string | null
           strategic_question?: string | null
           updated_at?: string | null
         }
@@ -384,6 +404,7 @@ export type Database = {
           domain_id?: string
           domain_name?: string
           nist_ai_rmf_function?: string | null
+          security_domain_id?: string | null
           strategic_question?: string | null
           updated_at?: string | null
         }
@@ -402,6 +423,7 @@ export type Database = {
           maturity_level: number
           overall_coverage: number
           overall_score: number
+          security_domain_id: string | null
           snapshot_date: string
           snapshot_type: string
           total_questions: number
@@ -419,6 +441,7 @@ export type Database = {
           maturity_level: number
           overall_coverage: number
           overall_score: number
+          security_domain_id?: string | null
           snapshot_date?: string
           snapshot_type?: string
           total_questions: number
@@ -436,6 +459,7 @@ export type Database = {
           maturity_level?: number
           overall_coverage?: number
           overall_score?: number
+          security_domain_id?: string | null
           snapshot_date?: string
           snapshot_type?: string
           total_questions?: number
@@ -476,6 +500,45 @@ export type Database = {
         }
         Relationships: []
       }
+      security_domains: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          domain_id: string
+          domain_name: string
+          icon: string | null
+          is_enabled: boolean | null
+          short_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          domain_id: string
+          domain_name: string
+          icon?: string | null
+          is_enabled?: boolean | null
+          short_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          domain_id?: string
+          domain_name?: string
+          icon?: string | null
+          is_enabled?: boolean | null
+          short_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subcategories: {
         Row: {
           created_at: string | null
@@ -486,6 +549,7 @@ export type Database = {
           objective: string | null
           ownership_type: string | null
           risk_summary: string | null
+          security_domain_id: string | null
           security_outcome: string | null
           subcat_id: string
           subcat_name: string
@@ -501,6 +565,7 @@ export type Database = {
           objective?: string | null
           ownership_type?: string | null
           risk_summary?: string | null
+          security_domain_id?: string | null
           security_outcome?: string | null
           subcat_id: string
           subcat_name: string
@@ -516,6 +581,7 @@ export type Database = {
           objective?: string | null
           ownership_type?: string | null
           risk_summary?: string | null
+          security_domain_id?: string | null
           security_outcome?: string | null
           subcat_id?: string
           subcat_name?: string

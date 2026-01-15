@@ -10,16 +10,27 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { FrameworkSelector } from '@/components/FrameworkSelector';
+import { SecurityDomainSelector } from '@/components/SecurityDomainSelector';
 import { questionBelongsToFrameworks, getFrameworkById } from '@/lib/frameworks';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
+type AssessmentStep = 'domain' | 'framework' | 'questions';
+
 export default function Assessment() {
-  const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading, selectedFrameworks } = useAnswersStore();
+  const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading, selectedFrameworks, selectedSecurityDomain } = useAnswersStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
-  const [showFrameworkSelector, setShowFrameworkSelector] = useState(selectedFrameworks.length === 0);
+  
+  // Determine initial step based on current state
+  const getInitialStep = (): AssessmentStep => {
+    if (selectedFrameworks.length > 0) return 'questions';
+    if (selectedSecurityDomain) return 'framework';
+    return 'domain';
+  };
+  
+  const [currentStep, setCurrentStep] = useState<AssessmentStep>(getInitialStep);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
 
@@ -188,11 +199,23 @@ export default function Assessment() {
     );
   }
 
-  // Show framework selector if no frameworks selected or user wants to change
-  if (showFrameworkSelector) {
+  // Show domain selector first
+  if (currentStep === 'domain') {
     return (
       <div className="max-w-4xl mx-auto py-8 animate-fade-in">
-        <FrameworkSelector onStartAssessment={() => setShowFrameworkSelector(false)} />
+        <SecurityDomainSelector onDomainSelected={() => setCurrentStep('framework')} />
+      </div>
+    );
+  }
+
+  // Show framework selector after domain is selected
+  if (currentStep === 'framework') {
+    return (
+      <div className="max-w-4xl mx-auto py-8 animate-fade-in">
+        <FrameworkSelector 
+          onStartAssessment={() => setCurrentStep('questions')} 
+          onBackToDomainSelector={() => setCurrentStep('domain')}
+        />
       </div>
     );
   }
@@ -215,8 +238,11 @@ export default function Assessment() {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Button onClick={() => setShowFrameworkSelector(true)} variant="outline" size="sm">
-                Alterar
+              <Button onClick={() => setCurrentStep('framework')} variant="outline" size="sm">
+                Alterar Frameworks
+              </Button>
+              <Button onClick={() => setCurrentStep('domain')} variant="ghost" size="sm">
+                Trocar Domínio
               </Button>
               <Button onClick={handleExport} variant="outline" size="sm" className="hidden sm:inline-flex">
                 Exportar
@@ -542,7 +568,7 @@ export default function Assessment() {
           <p className="text-muted-foreground mb-6">
             Selecione frameworks para carregar as perguntas da avaliação.
           </p>
-          <Button onClick={() => setShowFrameworkSelector(true)}>
+          <Button onClick={() => setCurrentStep('framework')}>
             Selecionar Frameworks
           </Button>
         </div>

@@ -468,3 +468,255 @@ export function downloadImportTemplate(securityDomainId: string): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// ============ EXPORT FUNCTIONALITY ============
+
+export interface ExportableQuestion {
+  questionId: string;
+  questionText: string;
+  domainId: string;
+  domainName?: string;
+  subcatId: string;
+  subcatName?: string;
+  criticality?: string;
+  ownershipType?: string;
+  riskSummary?: string;
+  expectedEvidence?: string;
+  imperativeChecks?: string;
+  frameworks?: string[];
+  securityDomainId?: string;
+  isCustom: boolean;
+  isDisabled: boolean;
+}
+
+/**
+ * Export questions to Excel file
+ */
+export async function exportQuestionsToExcel(
+  questions: ExportableQuestion[],
+  securityDomainId: string,
+  securityDomainName: string
+): Promise<Blob> {
+  const wb = XLSX.utils.book_new();
+
+  // Fetch taxonomy data for enrichment
+  const { data: taxonomyDomains } = await supabase
+    .from('domains')
+    .select('domain_id, domain_name')
+    .eq('security_domain_id', securityDomainId);
+
+  const { data: subcategories } = await supabase
+    .from('subcategories')
+    .select('subcat_id, subcat_name');
+
+  const domainMap = new Map<string, string>();
+  (taxonomyDomains || []).forEach(d => domainMap.set(d.domain_id, d.domain_name));
+
+  const subcatMap = new Map<string, string>();
+  (subcategories || []).forEach(s => subcatMap.set(s.subcat_id, s.subcat_name));
+
+  // Prepare data rows
+  const exportData = questions.map(q => ({
+    questionId: q.questionId,
+    questionText: q.questionText,
+    domainId: q.domainId,
+    domainName: q.domainName || domainMap.get(q.domainId) || '',
+    subcatId: q.subcatId,
+    subcatName: q.subcatName || subcatMap.get(q.subcatId) || '',
+    criticality: q.criticality || 'Medium',
+    ownershipType: q.ownershipType || '',
+    riskSummary: q.riskSummary || '',
+    expectedEvidence: q.expectedEvidence || '',
+    imperativeChecks: q.imperativeChecks || '',
+    frameworks: (q.frameworks || []).join(', '),
+    isCustom: q.isCustom ? 'Sim' : 'Não',
+    isDisabled: q.isDisabled ? 'Sim' : 'Não'
+  }));
+
+  // Questions sheet
+  const questionsSheet = XLSX.utils.json_to_sheet(exportData);
+  questionsSheet['!cols'] = [
+    { wch: 25 }, // questionId
+    { wch: 60 }, // questionText
+    { wch: 15 }, // domainId
+    { wch: 25 }, // domainName
+    { wch: 15 }, // subcatId
+    { wch: 25 }, // subcatName
+    { wch: 12 }, // criticality
+    { wch: 15 }, // ownershipType
+    { wch: 40 }, // riskSummary
+    { wch: 40 }, // expectedEvidence
+    { wch: 40 }, // imperativeChecks
+    { wch: 30 }, // frameworks
+    { wch: 10 }, // isCustom
+    { wch: 12 }  // isDisabled
+  ];
+  XLSX.utils.book_append_sheet(wb, questionsSheet, 'Perguntas');
+
+  // Summary sheet
+  const summaryData = [
+    { Campo: 'Domínio de Segurança', Valor: securityDomainName },
+    { Campo: 'ID do Domínio', Valor: securityDomainId },
+    { Campo: 'Total de Perguntas', Valor: questions.length },
+    { Campo: 'Perguntas Padrão', Valor: questions.filter(q => !q.isCustom).length },
+    { Campo: 'Perguntas Personalizadas', Valor: questions.filter(q => q.isCustom).length },
+    { Campo: 'Perguntas Ativas', Valor: questions.filter(q => !q.isDisabled).length },
+    { Campo: 'Perguntas Desabilitadas', Valor: questions.filter(q => q.isDisabled).length },
+    { Campo: 'Data de Exportação', Valor: new Date().toLocaleString('pt-BR') }
+  ];
+  const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+  summarySheet['!cols'] = [{ wch: 25 }, { wch: 40 }];
+  XLSX.utils.book_append_sheet(wb, summarySheet, 'Resumo');
+
+  // Stats by domain
+  const domainStats = new Map<string, { total: number; custom: number; disabled: number }>();
+  questions.forEach(q => {
+    const domainName = domainMap.get(q.domainId) || q.domainId;
+    const current = domainStats.get(domainName) || { total: 0, custom: 0, disabled: 0 };
+    current.total++;
+    if (q.isCustom) current.custom++;
+    if (q.isDisabled) current.disabled++;
+    domainStats.set(domainName, current);
+  });
+
+  const domainStatsData = Array.from(domainStats.entries()).map(([domain, stats]) => ({
+    'Área': domain,
+    'Total': stats.total,
+    'Personalizadas': stats.custom,
+    'Desabilitadas': stats.disabled,
+    'Ativas': stats.total - stats.disabled
+  }));
+  const domainStatsSheet = XLSX.utils.json_to_sheet(domainStatsData);
+  domainStatsSheet['!cols'] = [{ wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, domainStatsSheet, 'Por Área');
+
+  // Stats by criticality
+  const critStats = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+  questions.forEach(q => {
+    const crit = (q.criticality || 'Medium') as keyof typeof critStats;
+    if (crit in critStats) critStats[crit]++;
+  });
+
+  const critStatsData = [
+    { Criticidade: 'Baixa (Low)', Quantidade: critStats.Low },
+    { Criticidade: 'Média (Medium)', Quantidade: critStats.Medium },
+    { Criticidade: 'Alta (High)', Quantidade: critStats.High },
+    { Criticidade: 'Crítica (Critical)', Quantidade: critStats.Critical }
+  ];
+  const critStatsSheet = XLSX.utils.json_to_sheet(critStatsData);
+  critStatsSheet['!cols'] = [{ wch: 20 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, critStatsSheet, 'Por Criticidade');
+
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+/**
+ * Download questions as Excel file
+ */
+export async function downloadQuestionsExcel(
+  questions: ExportableQuestion[],
+  securityDomainId: string,
+  securityDomainName: string
+): Promise<void> {
+  const blob = await exportQuestionsToExcel(questions, securityDomainId, securityDomainName);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.href = url;
+  link.download = `perguntas-${securityDomainId.toLowerCase()}-${dateStr}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Export questions to CSV
+ */
+export async function exportQuestionsToCSV(
+  questions: ExportableQuestion[],
+  securityDomainId: string
+): Promise<Blob> {
+  // Fetch taxonomy data
+  const { data: taxonomyDomains } = await supabase
+    .from('domains')
+    .select('domain_id, domain_name')
+    .eq('security_domain_id', securityDomainId);
+
+  const { data: subcategories } = await supabase
+    .from('subcategories')
+    .select('subcat_id, subcat_name');
+
+  const domainMap = new Map<string, string>();
+  (taxonomyDomains || []).forEach(d => domainMap.set(d.domain_id, d.domain_name));
+
+  const subcatMap = new Map<string, string>();
+  (subcategories || []).forEach(s => subcatMap.set(s.subcat_id, s.subcat_name));
+
+  // CSV headers
+  const headers = [
+    'questionId',
+    'questionText',
+    'domainId',
+    'domainName',
+    'subcatId',
+    'subcatName',
+    'criticality',
+    'ownershipType',
+    'riskSummary',
+    'expectedEvidence',
+    'imperativeChecks',
+    'frameworks',
+    'isCustom',
+    'isDisabled'
+  ];
+
+  // Escape CSV field
+  const escapeCSV = (value: string): string => {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  // Build CSV content
+  const rows = questions.map(q => [
+    q.questionId,
+    q.questionText,
+    q.domainId,
+    domainMap.get(q.domainId) || '',
+    q.subcatId,
+    subcatMap.get(q.subcatId) || '',
+    q.criticality || 'Medium',
+    q.ownershipType || '',
+    q.riskSummary || '',
+    q.expectedEvidence || '',
+    q.imperativeChecks || '',
+    (q.frameworks || []).join('; '),
+    q.isCustom ? 'Sim' : 'Não',
+    q.isDisabled ? 'Sim' : 'Não'
+  ].map(escapeCSV).join(','));
+
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  return new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8' });
+}
+
+/**
+ * Download questions as CSV file
+ */
+export async function downloadQuestionsCSV(
+  questions: ExportableQuestion[],
+  securityDomainId: string
+): Promise<void> {
+  const blob = await exportQuestionsToCSV(questions, securityDomainId);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.href = url;
+  link.download = `perguntas-${securityDomainId.toLowerCase()}-${dateStr}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

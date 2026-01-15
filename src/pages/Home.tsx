@@ -10,6 +10,8 @@ import {
   TrendingUp,
   CheckCircle2,
   ArrowRight,
+  PlayCircle,
+  Sparkles,
 } from 'lucide-react';
 
 const features = [
@@ -43,6 +45,29 @@ const benefits = [
   'Suporte a múltiplos perfis de stakeholders',
 ];
 
+const steps = [
+  {
+    number: '1',
+    title: 'Acesse a Avaliação',
+    description: 'Clique em "Iniciar Avaliação" para acessar o questionário completo.',
+    action: 'Ir para Avaliação',
+    route: '/assessment',
+  },
+  {
+    number: '2',
+    title: 'Gere Dados de Demonstração',
+    description: 'Na tela de avaliação, clique no botão "Gerar Demo" para preencher automaticamente respostas de exemplo e visualizar a ferramenta em ação.',
+    highlight: true,
+  },
+  {
+    number: '3',
+    title: 'Explore os Dashboards',
+    description: 'Consulte os dashboards Executivo, GRC e Especialista para ver métricas, gaps críticos e roadmap de melhorias.',
+    action: 'Ver Dashboards',
+    route: '/dashboard',
+  },
+];
+
 export default function Home() {
   const navigate = useNavigate();
 
@@ -74,6 +99,72 @@ export default function Home() {
           <Button size="lg" variant="outline" onClick={() => navigate('/dashboard')}>
             Ver Dashboard
           </Button>
+        </div>
+      </section>
+
+      {/* Quick Start Guide */}
+      <section className="space-y-8">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-2">
+            <PlayCircle className="h-4 w-4" />
+            Começando Agora
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground">
+            Como Usar a Ferramenta
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Siga estes 3 passos simples para explorar todas as funcionalidades
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {steps.map((step) => (
+            <Card 
+              key={step.number} 
+              className={`relative border-border ${step.highlight ? 'ring-2 ring-primary/50 bg-primary/5' : 'hover:border-primary/50'} transition-all`}
+            >
+              {step.highlight && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                    <Sparkles className="h-3 w-3" />
+                    Dica Rápida
+                  </span>
+                </div>
+              )}
+              <CardHeader className="pb-3">
+                <div className="flex items-start gap-4">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg ${step.highlight ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    {step.number}
+                  </div>
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">{step.title}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {step.description}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              {step.action && (
+                <CardContent className="pt-0">
+                  <Button 
+                    variant={step.highlight ? 'default' : 'outline'} 
+                    size="sm" 
+                    className="w-full gap-2"
+                    onClick={() => step.route && navigate(step.route)}
+                  >
+                    {step.action}
+                    <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">
+            💡 <strong>Dica:</strong> Use os dados de demonstração para entender o funcionamento antes de iniciar sua avaliação real.
+          </p>
         </div>
       </section>
 
@@ -160,10 +251,16 @@ export default function Home() {
           Inicie sua avaliação agora e obtenha insights valiosos sobre a 
           maturidade de segurança em IA da sua organização.
         </p>
-        <Button size="lg" onClick={() => navigate('/assessment')} className="gap-2">
-          Começar Avaliação Gratuita
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button size="lg" onClick={() => navigate('/assessment')} className="gap-2">
+            Começar Avaliação
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          <Button size="lg" variant="outline" onClick={() => navigate('/assessment')} className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Experimentar com Demo
+          </Button>
+        </div>
       </section>
     </div>
   );

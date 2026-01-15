@@ -912,11 +912,6 @@ export default function DashboardSpecialist() {
         </div>
       </div>
 
-      {answers.size === 0 && (
-        <div className="card-elevated p-6 text-center">
-          <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
-        </div>
-      )}
 
       {/* Quick Filter Pills */}
       <div className="flex flex-wrap gap-2">

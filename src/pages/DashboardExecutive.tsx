@@ -192,11 +192,6 @@ export default function DashboardExecutive() {
         </p>
       </div>
 
-      {answers.size === 0 && (
-        <div className="card-elevated p-6 text-center">
-          <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
-        </div>
-      )}
 
       <ExecutiveDashboard 
         metrics={metrics}

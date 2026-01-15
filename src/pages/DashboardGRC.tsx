@@ -36,8 +36,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { domains } from '@/lib/dataset';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
@@ -84,6 +86,9 @@ export default function DashboardGRC() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
   const [selectedOwnership, setSelectedOwnership] = useState<string | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [selectedFrameworkCategory, setSelectedFrameworkCategory] = useState<string | null>(null);
+  const [selectedFramework, setSelectedFramework] = useState<string | null>(null);
 
   // Load active questions and frameworks
   const loadData = useCallback(async () => {
@@ -487,10 +492,176 @@ export default function DashboardGRC() {
       maturityLevel: fc.maturityLevel,
     }));
 
+  // Selected domain details for modal
+  const selectedDomainDetails = useMemo(() => {
+    if (!selectedDomain) return null;
+
+    const domainMetrics = metrics.domainMetrics.find(dm => dm.domainId === selectedDomain);
+    if (!domainMetrics) return null;
+
+    const domainData = domains.find(d => d.domainId === selectedDomain);
+
+    // Get all questions for this domain
+    const domainQuestions = questionsForDashboard.filter(q => q.domainId === selectedDomain);
+
+    // Calculate question-level details
+    const questionDetails = domainQuestions.map(q => {
+      const answer = answers.get(q.questionId);
+      return {
+        questionId: q.questionId,
+        questionText: q.questionText,
+        subcatId: q.subcatId,
+        ownershipType: q.ownershipType,
+        response: answer?.response || 'Não respondido',
+      };
+    });
+
+    // Calculate response breakdown
+    const responseBreakdown = {
+      Sim: questionDetails.filter(q => q.response === 'Sim').length,
+      Parcial: questionDetails.filter(q => q.response === 'Parcial').length,
+      Não: questionDetails.filter(q => q.response === 'Não').length,
+      NA: questionDetails.filter(q => q.response === 'NA').length,
+      'Não respondido': questionDetails.filter(q => q.response === 'Não respondido').length,
+    };
+
+    // Get gaps for this domain
+    const domainGaps = criticalGaps.filter(g => g.domainId === selectedDomain);
+
+    // Group gaps by criticality
+    const gapsByCriticality = {
+      Critical: domainGaps.filter(g => g.criticality === 'Critical').length,
+      High: domainGaps.filter(g => g.criticality === 'High').length,
+      Medium: domainGaps.filter(g => g.criticality === 'Medium').length,
+      Low: domainGaps.filter(g => g.criticality === 'Low').length,
+    };
+
+    return {
+      ...domainMetrics,
+      description: domainData?.description || '',
+      questions: questionDetails,
+      responseBreakdown,
+      gaps: domainGaps,
+      gapsByCriticality,
+    };
+  }, [selectedDomain, metrics.domainMetrics, domains, questionsForDashboard, answers, criticalGaps]);
+
+  // Selected framework category details for modal
+  const selectedFrameworkCategoryDetails = useMemo(() => {
+    if (!selectedFrameworkCategory) return null;
+
+    const categoryData = frameworkCategoryData.find(fc => fc.categoryId === selectedFrameworkCategory);
+    if (!categoryData) return null;
+
+    // Get questions for this category
+    const categoryQuestions = questionsForDashboard.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      return questionFrameworkIds.some(fwId => {
+        const catId = frameworkIdToCategoryId[fwId];
+        return catId === selectedFrameworkCategory;
+      });
+    });
+
+    // Calculate question details
+    const questionDetails = categoryQuestions.map(q => {
+      const answer = answers.get(q.questionId);
+      return {
+        questionId: q.questionId,
+        questionText: q.questionText,
+        response: answer?.response || 'Não respondido',
+      };
+    });
+
+    // Response breakdown
+    const responseBreakdown = {
+      Sim: questionDetails.filter(q => q.response === 'Sim').length,
+      Parcial: questionDetails.filter(q => q.response === 'Parcial').length,
+      Não: questionDetails.filter(q => q.response === 'Não').length,
+      NA: questionDetails.filter(q => q.response === 'NA').length,
+      'Não respondido': questionDetails.filter(q => q.response === 'Não respondido').length,
+    };
+
+    // Get gaps for this category
+    const categoryGaps = criticalGaps.filter(g => {
+      const question = questionsForDashboard.find(q => q.questionId === g.questionId);
+      if (!question) return false;
+      const questionFrameworkIds = getQuestionFrameworkIds(question.frameworks);
+      return questionFrameworkIds.some(fwId => {
+        const catId = frameworkIdToCategoryId[fwId];
+        return catId === selectedFrameworkCategory;
+      });
+    });
+
+    return {
+      ...categoryData,
+      questions: questionDetails,
+      responseBreakdown,
+      gaps: categoryGaps,
+    };
+  }, [selectedFrameworkCategory, frameworkCategoryData, questionsForDashboard, answers, criticalGaps, frameworkIdToCategoryId]);
+
+  // Selected individual framework details for modal
+  const selectedFrameworkDetails = useMemo(() => {
+    if (!selectedFramework) return null;
+
+    const fwCoverage = filteredFrameworkCoverage.find(fw => fw.framework === selectedFramework);
+    if (!fwCoverage) return null;
+
+    // Get questions for this framework
+    const frameworkQuestions = questionsForDashboard.filter(q => {
+      return q.frameworks?.some(f => 
+        f === selectedFramework || 
+        selectedFramework.includes(f) || 
+        f.includes(selectedFramework.split(' ')[0])
+      );
+    });
+
+    // Calculate question details
+    const questionDetails = frameworkQuestions.map(q => {
+      const answer = answers.get(q.questionId);
+      return {
+        questionId: q.questionId,
+        questionText: q.questionText,
+        domainId: q.domainId,
+        response: answer?.response || 'Não respondido',
+      };
+    });
+
+    // Response breakdown
+    const responseBreakdown = {
+      Sim: questionDetails.filter(q => q.response === 'Sim').length,
+      Parcial: questionDetails.filter(q => q.response === 'Parcial').length,
+      Não: questionDetails.filter(q => q.response === 'Não').length,
+      NA: questionDetails.filter(q => q.response === 'NA').length,
+      'Não respondido': questionDetails.filter(q => q.response === 'Não respondido').length,
+    };
+
+    // Get gaps
+    const frameworkGaps = criticalGaps.filter(g => {
+      const question = questionsForDashboard.find(q => q.questionId === g.questionId);
+      if (!question) return false;
+      return question.frameworks?.some(f => 
+        f === selectedFramework || 
+        selectedFramework.includes(f) || 
+        f.includes(selectedFramework.split(' ')[0])
+      );
+    });
+
+    return {
+      name: selectedFramework,
+      score: fwCoverage.averageScore,
+      coverage: fwCoverage.coverage,
+      totalQuestions: fwCoverage.totalQuestions,
+      answeredQuestions: fwCoverage.answeredQuestions,
+      questions: questionDetails,
+      responseBreakdown,
+      gaps: frameworkGaps,
+    };
+  }, [selectedFramework, filteredFrameworkCoverage, questionsForDashboard, answers, criticalGaps]);
+
   if (isLoading || questionsLoading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
   }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -920,6 +1091,7 @@ export default function DashboardGRC() {
             {/* Framework Categories */}
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Maturidade por Categoria</h3>
+              <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
               <div className="space-y-4">
                 {frameworkCategoryData.map((fc, idx) => {
                   const status = fc.coverage < 50 ? 'incomplete' : 
@@ -927,8 +1099,9 @@ export default function DashboardGRC() {
                   return (
                     <div 
                       key={fc.categoryId} 
-                      className="p-3 border border-border rounded-lg animate-in fade-in-0 slide-in-from-right-4 duration-400"
+                      className="p-3 border border-border rounded-lg animate-in fade-in-0 slide-in-from-right-4 duration-400 cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-all"
                       style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'backwards' }}
+                      onClick={() => setSelectedFrameworkCategory(fc.categoryId)}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-sm">{fc.name}</span>
@@ -983,12 +1156,14 @@ export default function DashboardGRC() {
             {/* Individual Frameworks */}
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Cobertura por Framework ({filteredFrameworkCoverage.length})</h3>
+              <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {filteredFrameworkCoverage.map((fw, idx) => (
                   <div 
                     key={fw.framework} 
-                    className="flex items-center justify-between p-2 hover:bg-muted/50 rounded transition-colors animate-in fade-in-0 duration-300"
+                    className="flex items-center justify-between p-2 hover:bg-muted/50 rounded transition-colors animate-in fade-in-0 duration-300 cursor-pointer"
                     style={{ animationDelay: `${idx * 30}ms`, animationFillMode: 'backwards' }}
+                    onClick={() => setSelectedFramework(fw.framework)}
                   >
                     <span className="text-sm truncate flex-1 mr-2" title={fw.framework}>
                       {fw.framework}
@@ -1276,6 +1451,256 @@ export default function DashboardGRC() {
                 </Button>
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Framework Category Details Modal */}
+      <Dialog open={!!selectedFrameworkCategory} onOpenChange={(open) => !open && setSelectedFrameworkCategory(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedFrameworkCategoryDetails && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedFrameworkCategoryDetails.color }}
+                  >
+                    {selectedFrameworkCategoryDetails.score}%
+                  </div>
+                  <div>
+                    <DialogTitle className="text-left">{selectedFrameworkCategoryDetails.name}</DialogTitle>
+                    <DialogDescription className="text-left">
+                      Categoria de Framework · {selectedFrameworkCategoryDetails.maturityLevel.name}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-4 gap-3 mt-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold" style={{ color: selectedFrameworkCategoryDetails.color }}>
+                    {selectedFrameworkCategoryDetails.score}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold">{selectedFrameworkCategoryDetails.coverage}%</div>
+                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold">{selectedFrameworkCategoryDetails.answeredQuestions}/{selectedFrameworkCategoryDetails.totalQuestions}</div>
+                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold text-destructive">{selectedFrameworkCategoryDetails.gaps.length}</div>
+                  <div className="text-xs text-muted-foreground">Gaps</div>
+                </div>
+              </div>
+
+              {/* Response Breakdown */}
+              <div className="mt-4">
+                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(selectedFrameworkCategoryDetails.responseBreakdown).map(([key, value]) => (
+                    value > 0 && (
+                      <div 
+                        key={key} 
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium",
+                          key === 'Sim' && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+                          key === 'Parcial' && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+                          key === 'Não' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                          key === 'NA' && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+                          key === 'Não respondido' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}
+                      >
+                        {key}: {value}
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Gaps List */}
+              {selectedFrameworkCategoryDetails.gaps.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium text-sm mb-2">
+                    Gaps Identificados ({selectedFrameworkCategoryDetails.gaps.length})
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {selectedFrameworkCategoryDetails.gaps.slice(0, 15).map((gap) => (
+                      <div 
+                        key={gap.questionId} 
+                        className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs text-muted-foreground">{gap.questionId}</span>
+                            <span className={cn("criticality-badge text-xs", `criticality-${gap.criticality.toLowerCase()}`)}>
+                              {gap.criticality}
+                            </span>
+                          </div>
+                          <p className="text-sm line-clamp-2">{gap.questionText}</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => {
+                            setSelectedFrameworkCategory(null);
+                            navigate(`/assessment?questionId=${gap.questionId}`);
+                          }}
+                        >
+                          Revisar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="mt-6 flex justify-end">
+                <Button variant="outline" onClick={() => setSelectedFrameworkCategory(null)}>
+                  Fechar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Individual Framework Details Modal */}
+      <Dialog open={!!selectedFramework} onOpenChange={(open) => !open && setSelectedFramework(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedFrameworkDetails && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold bg-primary">
+                    {Math.round(selectedFrameworkDetails.score * 100)}%
+                  </div>
+                  <div>
+                    <DialogTitle className="text-left">{selectedFrameworkDetails.name}</DialogTitle>
+                    <DialogDescription className="text-left">
+                      {selectedFrameworkDetails.answeredQuestions} de {selectedFrameworkDetails.totalQuestions} perguntas
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-4 gap-3 mt-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold text-primary">
+                    {Math.round(selectedFrameworkDetails.score * 100)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold">{Math.round(selectedFrameworkDetails.coverage * 100)}%</div>
+                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold">{selectedFrameworkDetails.answeredQuestions}/{selectedFrameworkDetails.totalQuestions}</div>
+                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-2xl font-bold text-destructive">{selectedFrameworkDetails.gaps.length}</div>
+                  <div className="text-xs text-muted-foreground">Gaps</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">Progresso da Avaliação</span>
+                  <span className="font-medium">{selectedFrameworkDetails.answeredQuestions} de {selectedFrameworkDetails.totalQuestions}</span>
+                </div>
+                <Progress value={selectedFrameworkDetails.coverage * 100} className="h-2" />
+              </div>
+
+              {/* Response Breakdown */}
+              <div className="mt-4">
+                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(selectedFrameworkDetails.responseBreakdown).map(([key, value]) => (
+                    value > 0 && (
+                      <div 
+                        key={key} 
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium",
+                          key === 'Sim' && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+                          key === 'Parcial' && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+                          key === 'Não' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                          key === 'NA' && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+                          key === 'Não respondido' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}
+                      >
+                        {key}: {value}
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Gaps List */}
+              {selectedFrameworkDetails.gaps.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium text-sm mb-2">
+                    Gaps Identificados ({selectedFrameworkDetails.gaps.length})
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {selectedFrameworkDetails.gaps.slice(0, 15).map((gap) => (
+                      <div 
+                        key={gap.questionId} 
+                        className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs text-muted-foreground">{gap.questionId}</span>
+                            <span className={cn("criticality-badge text-xs", `criticality-${gap.criticality.toLowerCase()}`)}>
+                              {gap.criticality}
+                            </span>
+                          </div>
+                          <p className="text-sm line-clamp-2">{gap.questionText}</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => {
+                            setSelectedFramework(null);
+                            navigate(`/assessment?questionId=${gap.questionId}`);
+                          }}
+                        >
+                          Revisar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSelectedFramework(null)}>
+                  Fechar
+                </Button>
+                {selectedFrameworkDetails.questions.length > 0 && (
+                  <Button 
+                    onClick={() => {
+                      setSelectedFramework(null);
+                      navigate(`/assessment?questionId=${selectedFrameworkDetails.questions[0].questionId}`);
+                    }}
+                  >
+                    Iniciar Avaliação
+                  </Button>
+                )}
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

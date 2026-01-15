@@ -1056,7 +1056,7 @@ export default function DashboardGRC() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => navigate(`/assessment?q=${gap.questionId}`)}
+                        onClick={() => navigate(`/assessment?questionId=${gap.questionId}`)}
                       >
                         Revisar
                       </Button>
@@ -1221,7 +1221,7 @@ export default function DashboardGRC() {
                           className="shrink-0"
                           onClick={() => {
                             setSelectedOwnership(null);
-                            navigate(`/assessment?q=${gap.questionId}`);
+                            navigate(`/assessment?questionId=${gap.questionId}`);
                           }}
                         >
                           Revisar

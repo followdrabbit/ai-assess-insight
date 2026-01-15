@@ -45,6 +45,7 @@ import { domains } from '@/lib/dataset';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
+import { downloadHtmlReport } from '@/lib/htmlReportExport';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -268,6 +269,21 @@ export default function DashboardGRC() {
   const metrics = useMemo(() => calculateOverallMetrics(answers, questionsForDashboard), [answers, questionsForDashboard]);
   const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsForDashboard), [answers, questionsForDashboard]);
   const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsForDashboard), [answers, questionsForDashboard]);
+
+  const handleExportReport = useCallback(() => {
+    const selectedFws = selectedFrameworkIds.length > 0 
+      ? enabledFrameworks.filter(f => selectedFrameworkIds.includes(f.frameworkId))
+      : enabledFrameworks;
+    
+    downloadHtmlReport({
+      dashboardType: 'grc',
+      metrics,
+      criticalGaps,
+      frameworkCoverage,
+      selectedFrameworks: selectedFws,
+      generatedAt: new Date()
+    });
+  }, [metrics, criticalGaps, frameworkCoverage, enabledFrameworks, selectedFrameworkIds]);
 
   // Unique ownership types for filter
   const ownershipTypes = useMemo(() => {
@@ -683,7 +699,7 @@ export default function DashboardGRC() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/reports')}
+                onClick={handleExportReport}
               >
                 Exportar Relatório
               </Button>

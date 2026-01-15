@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Framework, getFrameworkById } from '@/lib/frameworks';
 import { getQuestionFrameworkIds } from '@/lib/frameworks';
+import { downloadHtmlReport } from '@/lib/htmlReportExport';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {
@@ -352,6 +353,21 @@ export function ExecutiveDashboard({
     'tech-focused': 'Técnicos'
   };
 
+  const handleExportReport = useCallback(() => {
+    const selectedFws = selectedFrameworkIds.length > 0 
+      ? enabledFrameworks.filter(f => selectedFrameworkIds.includes(f.frameworkId))
+      : enabledFrameworks;
+    
+    downloadHtmlReport({
+      dashboardType: 'executive',
+      metrics,
+      criticalGaps: filteredByFramework.gaps,
+      frameworkCoverage: filteredByFramework.coverage,
+      selectedFrameworks: selectedFws,
+      generatedAt: new Date()
+    });
+  }, [metrics, filteredByFramework, enabledFrameworks, selectedFrameworkIds]);
+
   return (
     <div className="space-y-6">
       {/* Executive Summary Header with Framework Selector */}
@@ -368,7 +384,7 @@ export function ExecutiveDashboard({
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/reports')}
+                onClick={handleExportReport}
               >
                 Exportar Relatório
               </Button>

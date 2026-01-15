@@ -270,21 +270,6 @@ export default function DashboardGRC() {
   const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsForDashboard), [answers, questionsForDashboard]);
   const criticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsForDashboard), [answers, questionsForDashboard]);
 
-  const handleExportReport = useCallback(() => {
-    const selectedFws = selectedFrameworkIds.length > 0 
-      ? enabledFrameworks.filter(f => selectedFrameworkIds.includes(f.frameworkId))
-      : enabledFrameworks;
-    
-    downloadHtmlReport({
-      dashboardType: 'grc',
-      metrics,
-      criticalGaps,
-      frameworkCoverage,
-      selectedFrameworks: selectedFws,
-      generatedAt: new Date()
-    });
-  }, [metrics, criticalGaps, frameworkCoverage, enabledFrameworks, selectedFrameworkIds]);
-
   // Unique ownership types for filter
   const ownershipTypes = useMemo(() => {
     const types = new Set<string>();

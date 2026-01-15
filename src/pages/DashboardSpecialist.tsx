@@ -191,18 +191,29 @@ export default function DashboardSpecialist() {
     loadData();
   }, [loadData]);
 
-  // Refresh on focus/visibility
+  // Refresh on visibility (with rate limiting)
   useEffect(() => {
-    const onFocus = () => loadData();
-    const onVisibility = () => {
-      if (!document.hidden) loadData();
+    let lastLoadTime = Date.now();
+    const MIN_RELOAD_INTERVAL = 30000; // 30 seconds minimum between reloads
+
+    const shouldReload = () => {
+      const now = Date.now();
+      if (now - lastLoadTime >= MIN_RELOAD_INTERVAL) {
+        lastLoadTime = now;
+        return true;
+      }
+      return false;
     };
 
-    window.addEventListener('focus', onFocus);
+    const onVisibility = () => {
+      if (!document.hidden && shouldReload()) {
+        loadData();
+      }
+    };
+
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
-      window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [loadData]);
@@ -844,6 +855,26 @@ export default function DashboardSpecialist() {
         next.add(category);
       }
       return next;
+    });
+  };
+
+  // Export report handler
+  const handleExportReport = () => {
+    // Filter enabled frameworks by selected IDs (or use all enabled if none selected)
+    const effectiveIds = selectedFrameworkIds.length > 0 ? selectedFrameworkIds : enabledFrameworks.map(f => f.frameworkId);
+    const selectedFrameworks = enabledFrameworks.filter(f => effectiveIds.includes(f.frameworkId));
+    
+    downloadHtmlReport({
+      dashboardType: 'specialist',
+      metrics,
+      criticalGaps: filteredGaps,
+      selectedFrameworks,
+      frameworkCoverage,
+      frameworkCategoryData,
+      generatedAt: new Date(),
+      responseDistribution,
+      heatmapData,
+      quickStats,
     });
   };
 

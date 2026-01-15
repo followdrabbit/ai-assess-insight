@@ -889,64 +889,53 @@ export default function DashboardSpecialist() {
               }
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 text-xs"
-              onClick={clearFrameworkSelection}
-              disabled={selectedFrameworkIds.length === 0}
-            >
-              Limpar Seleção
-            </Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs">
-                  Selecionar Frameworks
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 bg-popover" align="end">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">Frameworks Habilitados</h4>
-                    <span className="text-xs text-muted-foreground">
-                      {enabledFrameworks.length} disponíveis
-                    </span>
-                  </div>
-                  
-                  {Object.entries(frameworksByCategory).map(([category, frameworks]) => (
-                    frameworks.length > 0 && (
-                      <div key={category}>
-                        <h5 className="text-xs font-medium text-muted-foreground mb-2">
-                          {categoryLabels[category]}
-                        </h5>
-                        <div className="space-y-2">
-                          {frameworks.map(fw => (
-                            <div 
-                              key={fw.frameworkId}
-                              className="flex items-center gap-2"
-                            >
-                              <Checkbox
-                                id={`spec-${fw.frameworkId}`}
-                                checked={selectedFrameworkIds.includes(fw.frameworkId)}
-                                onCheckedChange={() => toggleFramework(fw.frameworkId)}
-                              />
-                              <label 
-                                htmlFor={`spec-${fw.frameworkId}`}
-                                className="text-sm cursor-pointer flex-1"
-                              >
-                                {fw.shortName}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  ))}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                Selecionar Frameworks
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 bg-popover" align="end">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Frameworks Habilitados</h4>
+                  <span className="text-xs text-muted-foreground">
+                    {enabledFrameworks.length} disponíveis
+                  </span>
                 </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+                
+                {Object.entries(frameworksByCategory).map(([category, frameworks]) => (
+                  frameworks.length > 0 && (
+                    <div key={category}>
+                      <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                        {categoryLabels[category]}
+                      </h5>
+                      <div className="space-y-2">
+                        {frameworks.map(fw => (
+                          <div 
+                            key={fw.frameworkId}
+                            className="flex items-center gap-2"
+                          >
+                            <Checkbox
+                              id={`spec-${fw.frameworkId}`}
+                              checked={selectedFrameworkIds.includes(fw.frameworkId)}
+                              onCheckedChange={() => toggleFramework(fw.frameworkId)}
+                            />
+                            <label 
+                              htmlFor={`spec-${fw.frameworkId}`}
+                              className="text-sm cursor-pointer flex-1"
+                            >
+                              {fw.shortName}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Framework Pills */}

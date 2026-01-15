@@ -5,11 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAnswersStore } from "@/lib/stores";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
-import Auth from "./pages/Auth";
 import Assessment from "./pages/Assessment";
 import DashboardExecutive from "./pages/DashboardExecutive";
 import DashboardGRC from "./pages/DashboardGRC";
@@ -22,27 +19,15 @@ const queryClient = new QueryClient();
 
 function AppContent() {
   const loadAnswers = useAnswersStore(state => state.loadAnswers);
-  const { user } = useAuth();
 
   useEffect(() => {
-    // Only load answers when user is authenticated
-    if (user) {
-      loadAnswers();
-    }
-  }, [loadAnswers, user]);
+    loadAnswers();
+  }, [loadAnswers]);
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public route */}
-        <Route path="/auth" element={<Auth />} />
-        
-        {/* Protected routes */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }>
+        <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="assessment" element={<Assessment />} />
@@ -61,13 +46,11 @@ function AppContent() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </TooltipProvider>
-    </AuthProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <AppContent />
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

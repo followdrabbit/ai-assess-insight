@@ -25,7 +25,6 @@ export type Database = {
           question_id: string
           response: string | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -37,7 +36,6 @@ export type Database = {
           question_id: string
           response?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -49,7 +47,6 @@ export type Database = {
           question_id?: string
           response?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -61,7 +58,6 @@ export type Database = {
           name: string | null
           selected_frameworks: string[] | null
           updated_at: string | null
-          user_id: string | null
           version: string | null
         }
         Insert: {
@@ -71,7 +67,6 @@ export type Database = {
           name?: string | null
           selected_frameworks?: string[] | null
           updated_at?: string | null
-          user_id?: string | null
           version?: string | null
         }
         Update: {
@@ -81,7 +76,6 @@ export type Database = {
           name?: string | null
           selected_frameworks?: string[] | null
           updated_at?: string | null
-          user_id?: string | null
           version?: string | null
         }
         Relationships: []
@@ -94,7 +88,6 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: number
-          user_id: string | null
         }
         Insert: {
           action: string
@@ -103,7 +96,6 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: number
-          user_id?: string | null
         }
         Update: {
           action?: string
@@ -112,7 +104,6 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: number
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -129,7 +120,6 @@ export type Database = {
           short_name: string
           target_audience: string[] | null
           updated_at: string | null
-          user_id: string | null
           version: string | null
         }
         Insert: {
@@ -144,7 +134,6 @@ export type Database = {
           short_name: string
           target_audience?: string[] | null
           updated_at?: string | null
-          user_id?: string | null
           version?: string | null
         }
         Update: {
@@ -159,7 +148,6 @@ export type Database = {
           short_name?: string
           target_audience?: string[] | null
           updated_at?: string | null
-          user_id?: string | null
           version?: string | null
         }
         Relationships: []
@@ -179,7 +167,6 @@ export type Database = {
           risk_summary: string | null
           subcat_id: string | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -195,7 +182,6 @@ export type Database = {
           risk_summary?: string | null
           subcat_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -211,7 +197,6 @@ export type Database = {
           risk_summary?: string | null
           subcat_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -321,17 +306,14 @@ export type Database = {
         Row: {
           disabled_at: string | null
           framework_id: string
-          user_id: string | null
         }
         Insert: {
           disabled_at?: string | null
           framework_id: string
-          user_id?: string | null
         }
         Update: {
           disabled_at?: string | null
           framework_id?: string
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -339,17 +321,14 @@ export type Database = {
         Row: {
           disabled_at: string | null
           question_id: string
-          user_id: string | null
         }
         Insert: {
           disabled_at?: string | null
           question_id: string
-          user_id?: string | null
         }
         Update: {
           disabled_at?: string | null
           question_id?: string
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -405,7 +384,6 @@ export type Database = {
           snapshot_date: string
           snapshot_type: string
           total_questions: number
-          user_id: string | null
         }
         Insert: {
           answered_questions: number
@@ -422,7 +400,6 @@ export type Database = {
           snapshot_date?: string
           snapshot_type?: string
           total_questions: number
-          user_id?: string | null
         }
         Update: {
           answered_questions?: number
@@ -439,40 +416,6 @@ export type Database = {
           snapshot_date?: string
           snapshot_type?: string
           total_questions?: number
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          display_name: string | null
-          email: string | null
-          id: string
-          organization: string | null
-          role: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id?: string
-          organization?: string | null
-          role?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id?: string
-          organization?: string | null
-          role?: string | null
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }

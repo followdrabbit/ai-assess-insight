@@ -2,13 +2,6 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { z } from 'zod';
 
-// ============ HELPER: Get current user ID ============
-async function getCurrentUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-  return user.id;
-}
-
 // ============ VALIDATION SCHEMAS ============
 const responseEnum = z.enum(['Sim', 'Parcial', 'Não', 'NA']).nullable();
 
@@ -104,20 +97,16 @@ export interface ChangeLog {
 
 // ============ INITIALIZATION ============
 export async function initializeDatabase(): Promise<void> {
-  const userId = await getCurrentUserId();
-  
-  // Check if user has their own assessment meta
+  // Check if meta exists, if not it was created by migration
   const { data } = await supabase
     .from('assessment_meta')
     .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
+    .eq('id', 'current')
+    .single();
   
   if (!data) {
-    // Create user's own assessment meta
     await supabase.from('assessment_meta').insert({
-      id: `assessment_${userId}`,
-      user_id: userId,
+      id: 'current',
       name: 'Avaliação de Maturidade em Segurança de IA',
       enabled_frameworks: ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'],
       selected_frameworks: [],
@@ -128,47 +117,21 @@ export async function initializeDatabase(): Promise<void> {
 
 // ============ ANSWERS ============
 export async function saveAnswer(answer: Answer): Promise<void> {
-  const userId = await getCurrentUserId();
+  // Validate input
   const validated = answerSchema.parse(answer);
   
-  // First check if answer exists for this user and question
-  const { data: existing } = await supabase
+  const { error } = await supabase
     .from('answers')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('question_id', validated.questionId)
-    .maybeSingle();
+    .upsert({
+      question_id: validated.questionId,
+      framework_id: validated.frameworkId,
+      response: validated.response,
+      evidence_ok: validated.evidenceOk,
+      notes: validated.notes,
+      evidence_links: validated.evidenceLinks
+    }, { onConflict: 'question_id' });
   
-  if (existing) {
-    // Update existing
-    const { error } = await supabase
-      .from('answers')
-      .update({
-        framework_id: validated.frameworkId,
-        response: validated.response,
-        evidence_ok: validated.evidenceOk,
-        notes: validated.notes,
-        evidence_links: validated.evidenceLinks
-      })
-      .eq('id', existing.id);
-    
-    if (error) throw error;
-  } else {
-    // Insert new
-    const { error } = await supabase
-      .from('answers')
-      .insert({
-        user_id: userId,
-        question_id: validated.questionId,
-        framework_id: validated.frameworkId,
-        response: validated.response,
-        evidence_ok: validated.evidenceOk,
-        notes: validated.notes,
-        evidence_links: validated.evidenceLinks
-      });
-    
-    if (error) throw error;
-  }
+  if (error) throw error;
 }
 
 export async function getAllAnswers(): Promise<Answer[]> {
@@ -194,7 +157,7 @@ export async function getAnswer(questionId: string): Promise<Answer | undefined>
     .from('answers')
     .select('*')
     .eq('question_id', questionId)
-    .maybeSingle();
+    .single();
   
   if (error || !data) return undefined;
   
@@ -219,19 +182,10 @@ export async function clearAllAnswers(): Promise<void> {
 }
 
 export async function bulkSaveAnswers(answers: Answer[]): Promise<void> {
-  const userId = await getCurrentUserId();
+  // Validate all answers
   const validatedAnswers = answers.map(a => answerSchema.parse(a));
   
-  // Delete existing answers for this user first
-  await supabase
-    .from('answers')
-    .delete()
-    .eq('user_id', userId)
-    .neq('question_id', '');
-  
-  // Insert all new answers
   const rows = validatedAnswers.map(a => ({
-    user_id: userId,
     question_id: a.questionId,
     framework_id: a.frameworkId,
     response: a.response,
@@ -240,13 +194,11 @@ export async function bulkSaveAnswers(answers: Answer[]): Promise<void> {
     evidence_links: a.evidenceLinks
   }));
   
-  if (rows.length > 0) {
-    const { error } = await supabase
-      .from('answers')
-      .insert(rows);
-    
-    if (error) throw error;
-  }
+  const { error } = await supabase
+    .from('answers')
+    .upsert(rows, { onConflict: 'question_id' });
+  
+  if (error) throw error;
 }
 
 // ============ FRAMEWORKS (enabled/selected) ============
@@ -254,66 +206,40 @@ export async function getEnabledFrameworks(): Promise<string[]> {
   const { data, error } = await supabase
     .from('assessment_meta')
     .select('enabled_frameworks')
-    .maybeSingle();
+    .eq('id', 'current')
+    .single();
   
   if (error || !data) return ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
   return data.enabled_frameworks || [];
 }
 
 export async function setEnabledFrameworks(frameworkIds: string[]): Promise<void> {
-  const userId = await getCurrentUserId();
-  
-  // Get user's assessment meta
-  const { data: existing } = await supabase
+  const { error } = await supabase
     .from('assessment_meta')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
+    .update({ enabled_frameworks: frameworkIds })
+    .eq('id', 'current');
   
-  if (existing) {
-    const { error } = await supabase
-      .from('assessment_meta')
-      .update({ enabled_frameworks: frameworkIds })
-      .eq('id', existing.id);
-    
-    if (error) throw error;
-  } else {
-    // Create if doesn't exist
-    await initializeDatabase();
-    await setEnabledFrameworks(frameworkIds);
-  }
+  if (error) throw error;
 }
 
 export async function getSelectedFrameworks(): Promise<string[]> {
   const { data, error } = await supabase
     .from('assessment_meta')
     .select('selected_frameworks')
-    .maybeSingle();
+    .eq('id', 'current')
+    .single();
   
   if (error || !data) return [];
   return data.selected_frameworks || [];
 }
 
 export async function setSelectedFrameworks(frameworkIds: string[]): Promise<void> {
-  const userId = await getCurrentUserId();
-  
-  const { data: existing } = await supabase
+  const { error } = await supabase
     .from('assessment_meta')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
+    .update({ selected_frameworks: frameworkIds })
+    .eq('id', 'current');
   
-  if (existing) {
-    const { error } = await supabase
-      .from('assessment_meta')
-      .update({ selected_frameworks: frameworkIds })
-      .eq('id', existing.id);
-    
-    if (error) throw error;
-  } else {
-    await initializeDatabase();
-    await setSelectedFrameworks(frameworkIds);
-  }
+  if (error) throw error;
 }
 
 // ============ CUSTOM FRAMEWORKS CRUD ============
@@ -347,7 +273,7 @@ export async function getCustomFramework(frameworkId: string): Promise<CustomFra
     .from('custom_frameworks')
     .select('*')
     .eq('framework_id', frameworkId)
-    .maybeSingle();
+    .single();
   
   if (error || !data) return undefined;
   
@@ -371,13 +297,12 @@ export async function getCustomFramework(frameworkId: string): Promise<CustomFra
 export async function createCustomFramework(
   framework: Omit<CustomFramework, 'isCustom' | 'createdAt' | 'updatedAt'>
 ): Promise<CustomFramework> {
-  const userId = await getCurrentUserId();
+  // Validate input
   const validated = customFrameworkSchema.parse(framework);
   
   const { data, error } = await supabase
     .from('custom_frameworks')
     .insert({
-      user_id: userId,
       framework_id: validated.frameworkId,
       framework_name: validated.frameworkName,
       short_name: validated.shortName,
@@ -440,6 +365,7 @@ export async function deleteCustomFramework(frameworkId: string): Promise<void> 
   
   await logChange('framework', frameworkId, 'delete', { frameworkId });
   
+  // Also remove from enabled frameworks if present
   const enabledFrameworks = await getEnabledFrameworks();
   if (enabledFrameworks.includes(frameworkId)) {
     await setEnabledFrameworks(enabledFrameworks.filter(id => id !== frameworkId));
@@ -476,13 +402,12 @@ export async function getAllCustomQuestions(): Promise<CustomQuestion[]> {
 export async function createCustomQuestion(
   question: Omit<CustomQuestion, 'isCustom' | 'createdAt' | 'updatedAt'>
 ): Promise<CustomQuestion> {
-  const userId = await getCurrentUserId();
+  // Validate input
   const validated = customQuestionSchema.parse(question);
   
   const { data, error } = await supabase
     .from('custom_questions')
     .insert({
-      user_id: userId,
       question_id: validated.questionId,
       subcat_id: validated.subcatId,
       domain_id: validated.domainId,
@@ -562,14 +487,9 @@ export async function getDisabledQuestions(): Promise<string[]> {
 }
 
 export async function disableDefaultQuestion(questionId: string): Promise<void> {
-  const userId = await getCurrentUserId();
-  
   const { error } = await supabase
     .from('disabled_questions')
-    .upsert({ 
-      question_id: questionId,
-      user_id: userId 
-    }, { onConflict: 'question_id,user_id' });
+    .upsert({ question_id: questionId });
   
   if (error) throw error;
   await logChange('question', questionId, 'disable', { questionId });
@@ -596,18 +516,14 @@ export async function getDisabledFrameworks(): Promise<string[]> {
 }
 
 export async function disableDefaultFramework(frameworkId: string): Promise<void> {
-  const userId = await getCurrentUserId();
-  
   const { error } = await supabase
     .from('disabled_frameworks')
-    .upsert({ 
-      framework_id: frameworkId,
-      user_id: userId 
-    }, { onConflict: 'framework_id,user_id' });
+    .upsert({ framework_id: frameworkId });
   
   if (error) throw error;
   await logChange('framework', frameworkId, 'disable', { frameworkId });
   
+  // Also remove from enabled frameworks if present
   const enabledFrameworks = await getEnabledFrameworks();
   if (enabledFrameworks.includes(frameworkId)) {
     await setEnabledFrameworks(enabledFrameworks.filter(id => id !== frameworkId));
@@ -631,10 +547,7 @@ export async function logChange(
   action: ChangeLog['action'],
   changes: Record<string, any>
 ): Promise<void> {
-  const userId = await getCurrentUserId();
-  
   await supabase.from('change_logs').insert({
-    user_id: userId,
     entity_type: entityType,
     entity_id: entityId,
     action,
@@ -715,6 +628,7 @@ export async function getMaturitySnapshots(daysBack: number = 90): Promise<Matur
   if (error) throw error;
   
   return (data || []).map(row => {
+    // Parse JSON fields safely - they may be strings or already parsed objects
     const parseJsonField = <T>(field: unknown): T[] => {
       if (!field) return [];
       if (Array.isArray(field)) return field as T[];
@@ -752,9 +666,9 @@ export async function saveMaturitySnapshot(
   snapshot: Omit<MaturitySnapshot, 'id' | 'createdAt'>,
   forceInsert: boolean = false
 ): Promise<void> {
-  const userId = await getCurrentUserId();
   const today = new Date().toISOString().split('T')[0];
   
+  // Check if we already have a snapshot for today with same type
   if (!forceInsert && snapshot.snapshotType === 'automatic') {
     const { data: existing } = await supabase
       .from('maturity_snapshots')
@@ -764,6 +678,7 @@ export async function saveMaturitySnapshot(
       .maybeSingle();
     
     if (existing) {
+      // Update existing snapshot
       const { error } = await supabase
         .from('maturity_snapshots')
         .update({
@@ -785,10 +700,10 @@ export async function saveMaturitySnapshot(
     }
   }
   
+  // Insert new snapshot
   const { error } = await supabase
     .from('maturity_snapshots')
     .insert([{
-      user_id: userId,
       snapshot_date: snapshot.snapshotDate || today,
       snapshot_type: snapshot.snapshotType,
       overall_score: snapshot.overallScore,
@@ -812,7 +727,7 @@ export async function getLastSnapshotDate(): Promise<string | null> {
     .select('snapshot_date')
     .order('snapshot_date', { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .single();
   
   if (error || !data) return null;
   return data.snapshot_date;

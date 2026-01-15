@@ -908,6 +908,10 @@ export default function DashboardSpecialist() {
             );
           })}
         </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Clique nos frameworks acima para filtrar os dados exibidos.
+          {selectedFrameworkIds.length > 0 && ` (${selectedFrameworkIds.length} selecionados)`}
+        </p>
       </div>
 
       {/* Quick Filter Pills */}

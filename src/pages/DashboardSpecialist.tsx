@@ -40,6 +40,7 @@ import { Progress } from '@/components/ui/progress';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
+import { downloadHtmlReport } from '@/lib/htmlReportExport';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -275,6 +276,21 @@ export default function DashboardSpecialist() {
   const metrics = useMemo(() => calculateOverallMetrics(answers, questionsForDashboard), [answers, questionsForDashboard]);
   const allCriticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsForDashboard), [answers, questionsForDashboard]);
   const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsForDashboard), [answers, questionsForDashboard]);
+
+  const handleExportReport = useCallback(() => {
+    const selectedFws = selectedFrameworkIds.length > 0 
+      ? enabledFrameworks.filter(f => selectedFrameworkIds.includes(f.frameworkId))
+      : enabledFrameworks;
+    
+    downloadHtmlReport({
+      dashboardType: 'specialist',
+      metrics,
+      criticalGaps: allCriticalGaps,
+      frameworkCoverage,
+      selectedFrameworks: selectedFws,
+      generatedAt: new Date()
+    });
+  }, [metrics, allCriticalGaps, frameworkCoverage, enabledFrameworks, selectedFrameworkIds]);
 
   // Response distribution for pie chart
   const responseDistribution = useMemo(() => {
@@ -866,7 +882,7 @@ export default function DashboardSpecialist() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/reports')}
+                onClick={handleExportReport}
               >
                 Exportar Relatório
               </Button>

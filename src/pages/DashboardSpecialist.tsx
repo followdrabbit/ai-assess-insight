@@ -277,21 +277,6 @@ export default function DashboardSpecialist() {
   const allCriticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsForDashboard), [answers, questionsForDashboard]);
   const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsForDashboard), [answers, questionsForDashboard]);
 
-  const handleExportReport = useCallback(() => {
-    const selectedFws = selectedFrameworkIds.length > 0 
-      ? enabledFrameworks.filter(f => selectedFrameworkIds.includes(f.frameworkId))
-      : enabledFrameworks;
-    
-    downloadHtmlReport({
-      dashboardType: 'specialist',
-      metrics,
-      criticalGaps: allCriticalGaps,
-      frameworkCoverage,
-      selectedFrameworks: selectedFws,
-      generatedAt: new Date()
-    });
-  }, [metrics, allCriticalGaps, frameworkCoverage, enabledFrameworks, selectedFrameworkIds]);
-
   // Response distribution for pie chart
   const responseDistribution = useMemo(() => {
     const dist = { Sim: 0, Parcial: 0, Não: 0, NA: 0, 'Não respondido': 0 };

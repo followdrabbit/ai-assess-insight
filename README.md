@@ -1,73 +1,169 @@
-# Welcome to your Lovable project
+# 🛡️ AI Security Maturity Assessment Tool
 
-## Project info
+Uma ferramenta completa para avaliação de maturidade em segurança de Inteligência Artificial, baseada em frameworks reconhecidos internacionalmente como NIST AI RMF, ISO 27001/27002, LGPD e outros.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-18.3-61dafb.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6.svg)
+![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)
 
-## How can I edit this code?
+## 📋 Sobre o Projeto
 
-There are several ways of editing your application.
+Esta ferramenta permite que organizações avaliem sua postura de segurança em relação a sistemas de IA, identificando gaps críticos, gerando roadmaps de remediação e acompanhando a evolução da maturidade ao longo do tempo.
 
-**Use Lovable**
+### ✨ Principais Funcionalidades
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Avaliação Estruturada**: Questionário baseado em taxonomia L1/L2 com mais de 70 questões
+- **Multi-Framework**: Suporte a NIST AI RMF, ISO 27001/27002, ISO 23894, LGPD, NIST SSDF, CSA, OWASP
+- **Dashboards Especializados**:
+  - **Executivo**: Visão estratégica para CISO e liderança
+  - **GRC**: Governança, Riscos e Compliance com foco em cobertura
+  - **Especialista**: Detalhes técnicos para arquitetos e engenheiros
+- **Roadmap Estratégico**: Priorização de gaps em horizontes de 30/60/90 dias
+- **Exportação de Relatórios**: Relatórios HTML fidedignos ao estado atual do dashboard
+- **Histórico de Maturidade**: Snapshots automáticos para acompanhamento temporal
+- **Gestão de Frameworks**: Habilitar/desabilitar frameworks conforme necessidade
+- **Questões Customizáveis**: Adicionar, editar ou desabilitar questões
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Stack Tecnológica
 
-**Use your preferred IDE**
+| Tecnologia | Uso |
+|------------|-----|
+| [React 18](https://react.dev/) | Framework UI |
+| [TypeScript](https://www.typescriptlang.org/) | Tipagem estática |
+| [Vite](https://vitejs.dev/) | Build tool e dev server |
+| [Tailwind CSS](https://tailwindcss.com/) | Estilização |
+| [shadcn/ui](https://ui.shadcn.com/) | Componentes UI |
+| [Zustand](https://zustand-demo.pmnd.rs/) | Gerenciamento de estado |
+| [Recharts](https://recharts.org/) | Visualização de dados |
+| [Supabase](https://supabase.com/) | Backend (banco de dados e autenticação) |
+| [TanStack Query](https://tanstack.com/query) | Gerenciamento de dados assíncronos |
+| [React Router](https://reactrouter.com/) | Roteamento |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 📦 Pré-requisitos
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Node.js** 18.x ou superior
+- **npm** 9.x ou superior (ou yarn/pnpm)
+- **Supabase** (projeto configurado - opcional para desenvolvimento local)
 
-Follow these steps:
+## 🚀 Instalação e Execução Local
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 1. Clone o repositório
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+git clone https://github.com/seu-usuario/ai-security-assessment.git
+cd ai-security-assessment
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 2. Instale as dependências
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
+```
+
+### 3. Configure as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_PUBLISHABLE_KEY=sua_chave_anonima
+```
+
+> **Nota**: Para desenvolvimento sem Supabase, a aplicação funcionará com dados locais padrão.
+
+### 4. Execute o servidor de desenvolvimento
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+A aplicação estará disponível em `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📜 Scripts Disponíveis
 
-**Use GitHub Codespaces**
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Inicia o servidor de desenvolvimento |
+| `npm run build` | Gera build de produção |
+| `npm run preview` | Visualiza o build de produção localmente |
+| `npm run lint` | Executa o linter (ESLint) |
+| `npm run test` | Executa os testes |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📁 Estrutura do Projeto
 
-## What technologies are used for this project?
+```
+src/
+├── components/          # Componentes React reutilizáveis
+│   ├── ui/             # Componentes shadcn/ui
+│   └── settings/       # Componentes de configuração
+├── data/               # Dados estáticos (frameworks, questões, taxonomia)
+├── hooks/              # Custom React hooks
+├── integrations/       # Integrações externas (Supabase)
+├── lib/                # Utilitários e lógica de negócio
+│   ├── database.ts     # Operações de banco de dados
+│   ├── scoring.ts      # Cálculos de maturidade e métricas
+│   ├── frameworks.ts   # Gerenciamento de frameworks
+│   └── stores.ts       # Stores Zustand
+├── pages/              # Páginas da aplicação
+│   ├── Home.tsx        # Página inicial com onboarding
+│   ├── Assessment.tsx  # Questionário de avaliação
+│   ├── Dashboard*.tsx  # Dashboards (Executive, GRC, Specialist)
+│   └── Settings.tsx    # Configurações
+└── test/               # Testes
+```
 
-This project is built with:
+## 🗄️ Banco de Dados (Supabase)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+O projeto utiliza Supabase como backend. As principais tabelas são:
 
-## How can I deploy this project?
+- `answers` - Respostas do questionário
+- `custom_questions` - Questões personalizadas
+- `custom_frameworks` - Frameworks personalizados
+- `disabled_questions` - Questões desabilitadas
+- `maturity_snapshots` - Histórico de maturidade
+- `assessment_meta` - Metadados da avaliação (frameworks habilitados/selecionados)
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### Migrações
 
-## Can I connect a custom domain to my Lovable project?
+As migrações SQL estão em `supabase/migrations/`. Para aplicar:
 
-Yes, you can!
+```bash
+npx supabase db push
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🎯 Fluxo de Uso
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1. **Home**: Selecione os frameworks relevantes para sua organização
+2. **Avaliação**: Responda às questões (Sim/Parcial/Não/NA)
+3. **Dashboards**: Analise métricas, gaps e roadmap
+4. **Exportar**: Gere relatórios HTML para compartilhamento
+
+## 🔒 Segurança
+
+- Row Level Security (RLS) habilitado em todas as tabelas
+- Validação de entrada no cliente e servidor
+- Sem armazenamento de credenciais sensíveis no código
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Por favor:
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 📞 Suporte
+
+- Abra uma [issue](https://github.com/seu-usuario/ai-security-assessment/issues) para reportar bugs
+- Discussões e sugestões são bem-vindas nas [discussions](https://github.com/seu-usuario/ai-security-assessment/discussions)
+
+---
+
+Desenvolvido com ❤️ para a comunidade de segurança de IA

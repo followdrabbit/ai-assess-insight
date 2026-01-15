@@ -879,63 +879,14 @@ export default function DashboardSpecialist() {
 
       {/* Framework Selection Section */}
       <div className="card-elevated p-4 space-y-4 animate-in fade-in-0 slide-in-from-top-4 duration-500">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h3 className="font-medium text-sm">Escopo da Análise Técnica</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {selectedFrameworkIds.length === 0 
-                ? `Todos os ${enabledFrameworks.length} frameworks habilitados`
-                : `${selectedFrameworkIds.length} de ${enabledFrameworks.length} frameworks selecionados`
-              }
-            </p>
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7 text-xs">
-                Selecionar Frameworks
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 bg-popover" align="end">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">Frameworks Habilitados</h4>
-                  <span className="text-xs text-muted-foreground">
-                    {enabledFrameworks.length} disponíveis
-                  </span>
-                </div>
-                
-                {Object.entries(frameworksByCategory).map(([category, frameworks]) => (
-                  frameworks.length > 0 && (
-                    <div key={category}>
-                      <h5 className="text-xs font-medium text-muted-foreground mb-2">
-                        {categoryLabels[category]}
-                      </h5>
-                      <div className="space-y-2">
-                        {frameworks.map(fw => (
-                          <div 
-                            key={fw.frameworkId}
-                            className="flex items-center gap-2"
-                          >
-                            <Checkbox
-                              id={`spec-${fw.frameworkId}`}
-                              checked={selectedFrameworkIds.includes(fw.frameworkId)}
-                              onCheckedChange={() => toggleFramework(fw.frameworkId)}
-                            />
-                            <label 
-                              htmlFor={`spec-${fw.frameworkId}`}
-                              className="text-sm cursor-pointer flex-1"
-                            >
-                              {fw.shortName}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+        <div>
+          <h3 className="font-medium text-sm">Escopo da Análise Técnica</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {selectedFrameworkIds.length === 0 
+              ? `Todos os ${enabledFrameworks.length} frameworks habilitados`
+              : `${selectedFrameworkIds.length} de ${enabledFrameworks.length} frameworks selecionados`
+            }
+          </p>
         </div>
 
         {/* Framework Pills */}

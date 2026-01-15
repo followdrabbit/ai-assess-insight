@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
 import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
+import { DomainManagement } from '@/components/settings/DomainManagement';
 
 const categoryLabels: Record<string, { label: string; description: string }> = {
   core: { 
@@ -272,8 +273,9 @@ export default function Settings() {
         )}
       </div>
 
-      <Tabs defaultValue="frameworks" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+      <Tabs defaultValue="domains" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+          <TabsTrigger value="domains">Domínios</TabsTrigger>
           <TabsTrigger value="frameworks">Habilitar</TabsTrigger>
           <TabsTrigger value="manage-frameworks">Frameworks</TabsTrigger>
           <TabsTrigger value="manage-questions">Perguntas</TabsTrigger>
@@ -281,6 +283,11 @@ export default function Settings() {
           <TabsTrigger value="general">Geral</TabsTrigger>
           <TabsTrigger value="about">Sobre</TabsTrigger>
         </TabsList>
+
+        {/* DOMAINS TAB */}
+        <TabsContent value="domains" className="space-y-6">
+          <DomainManagement />
+        </TabsContent>
 
         {/* FRAMEWORKS TAB */}
         <TabsContent value="frameworks" className="space-y-6">

@@ -11,9 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, GripVertical, Save } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, Save, Plus, Trash2, AlertTriangle, FolderTree, BookOpen, HelpCircle } from 'lucide-react';
 import { questions } from '@/lib/dataset';
 import { frameworks } from '@/lib/frameworks';
 
@@ -48,17 +51,72 @@ const ICON_OPTIONS = [
   { value: 'key', label: 'Chave' }
 ];
 
+// Interface for new domain creation with taxonomy
+interface NewDomainData {
+  domainName: string;
+  shortName: string;
+  description: string;
+  color: string;
+  icon: string;
+  taxonomyDomains: TaxonomyDomain[];
+}
+
+interface TaxonomyDomain {
+  id: string;
+  name: string;
+  description: string;
+  subcategories: TaxonomySubcategory[];
+}
+
+interface TaxonomySubcategory {
+  id: string;
+  name: string;
+  definition: string;
+  objective: string;
+  criticality: string;
+}
+
+const generateId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`.toUpperCase();
+
 export function DomainManagement() {
   const [domains, setDomains] = useState<SecurityDomain[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingDomain, setEditingDomain] = useState<SecurityDomain | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createStep, setCreateStep] = useState<'basics' | 'taxonomy' | 'review'>('basics');
+  const [deletingDomain, setDeletingDomain] = useState<SecurityDomain | null>(null);
+  
   const [editFormData, setEditFormData] = useState({
     domainName: '',
     shortName: '',
     description: '',
     color: 'blue',
     icon: 'shield'
+  });
+
+  const [newDomainData, setNewDomainData] = useState<NewDomainData>({
+    domainName: '',
+    shortName: '',
+    description: '',
+    color: 'blue',
+    icon: 'shield',
+    taxonomyDomains: []
+  });
+
+  const [currentTaxonomyDomain, setCurrentTaxonomyDomain] = useState<TaxonomyDomain>({
+    id: '',
+    name: '',
+    description: '',
+    subcategories: []
+  });
+
+  const [currentSubcategory, setCurrentSubcategory] = useState<TaxonomySubcategory>({
+    id: '',
+    name: '',
+    definition: '',
+    objective: '',
+    criticality: 'medium'
   });
 
   useEffect(() => {
@@ -129,6 +187,205 @@ export function DomainManagement() {
     });
   };
 
+  const resetCreateDialog = () => {
+    setNewDomainData({
+      domainName: '',
+      shortName: '',
+      description: '',
+      color: 'blue',
+      icon: 'shield',
+      taxonomyDomains: []
+    });
+    setCurrentTaxonomyDomain({ id: '', name: '', description: '', subcategories: [] });
+    setCurrentSubcategory({ id: '', name: '', definition: '', objective: '', criticality: 'medium' });
+    setCreateStep('basics');
+  };
+
+  const openCreateDialog = () => {
+    resetCreateDialog();
+    setShowCreateDialog(true);
+  };
+
+  const addTaxonomyDomain = () => {
+    if (!currentTaxonomyDomain.name.trim()) {
+      toast.error('Nome do domínio de taxonomia é obrigatório');
+      return;
+    }
+
+    const newDomain: TaxonomyDomain = {
+      ...currentTaxonomyDomain,
+      id: generateId('DOM')
+    };
+
+    setNewDomainData(prev => ({
+      ...prev,
+      taxonomyDomains: [...prev.taxonomyDomains, newDomain]
+    }));
+
+    setCurrentTaxonomyDomain({ id: '', name: '', description: '', subcategories: [] });
+    toast.success('Domínio de taxonomia adicionado');
+  };
+
+  const removeTaxonomyDomain = (domainId: string) => {
+    setNewDomainData(prev => ({
+      ...prev,
+      taxonomyDomains: prev.taxonomyDomains.filter(d => d.id !== domainId)
+    }));
+  };
+
+  const addSubcategoryToTaxonomyDomain = (taxonomyDomainId: string) => {
+    if (!currentSubcategory.name.trim()) {
+      toast.error('Nome da subcategoria é obrigatório');
+      return;
+    }
+
+    const newSubcat: TaxonomySubcategory = {
+      ...currentSubcategory,
+      id: generateId('SUB')
+    };
+
+    setNewDomainData(prev => ({
+      ...prev,
+      taxonomyDomains: prev.taxonomyDomains.map(d => 
+        d.id === taxonomyDomainId 
+          ? { ...d, subcategories: [...d.subcategories, newSubcat] }
+          : d
+      )
+    }));
+
+    setCurrentSubcategory({ id: '', name: '', definition: '', objective: '', criticality: 'medium' });
+    toast.success('Subcategoria adicionada');
+  };
+
+  const removeSubcategory = (taxonomyDomainId: string, subcatId: string) => {
+    setNewDomainData(prev => ({
+      ...prev,
+      taxonomyDomains: prev.taxonomyDomains.map(d => 
+        d.id === taxonomyDomainId 
+          ? { ...d, subcategories: d.subcategories.filter(s => s.id !== subcatId) }
+          : d
+      )
+    }));
+  };
+
+  const validateBasics = () => {
+    if (!newDomainData.domainName.trim()) {
+      toast.error('Nome do domínio é obrigatório');
+      return false;
+    }
+    if (!newDomainData.shortName.trim()) {
+      toast.error('Nome curto é obrigatório');
+      return false;
+    }
+    const proposedId = newDomainData.shortName.toUpperCase().replace(/\s+/g, '_');
+    if (domains.some(d => d.domainId === proposedId)) {
+      toast.error('Já existe um domínio com este nome curto');
+      return false;
+    }
+    return true;
+  };
+
+  const createNewDomain = async () => {
+    if (!validateBasics()) return;
+
+    setSaving(true);
+    try {
+      const domainId = newDomainData.shortName.toUpperCase().replace(/\s+/g, '_');
+      const maxOrder = Math.max(...domains.map(d => d.displayOrder), 0);
+
+      const { error: domainError } = await supabase
+        .from('security_domains')
+        .insert({
+          domain_id: domainId,
+          domain_name: newDomainData.domainName.trim(),
+          short_name: newDomainData.shortName.trim(),
+          description: newDomainData.description.trim(),
+          color: newDomainData.color,
+          icon: newDomainData.icon,
+          display_order: maxOrder + 1,
+          is_enabled: true
+        });
+
+      if (domainError) throw domainError;
+
+      for (const taxDomain of newDomainData.taxonomyDomains) {
+        const { error: taxDomainError } = await supabase
+          .from('domains')
+          .insert({
+            domain_id: taxDomain.id,
+            domain_name: taxDomain.name,
+            description: taxDomain.description,
+            security_domain_id: domainId,
+            display_order: newDomainData.taxonomyDomains.indexOf(taxDomain) + 1
+          });
+
+        if (taxDomainError) {
+          console.error('Error creating taxonomy domain:', taxDomainError);
+          continue;
+        }
+
+        for (const subcat of taxDomain.subcategories) {
+          const { error: subcatError } = await supabase
+            .from('subcategories')
+            .insert({
+              subcat_id: subcat.id,
+              subcat_name: subcat.name,
+              definition: subcat.definition,
+              objective: subcat.objective,
+              criticality: subcat.criticality,
+              domain_id: taxDomain.id,
+              security_domain_id: domainId
+            });
+
+          if (subcatError) {
+            console.error('Error creating subcategory:', subcatError);
+          }
+        }
+      }
+
+      toast.success('Domínio de segurança criado com sucesso!');
+      setShowCreateDialog(false);
+      resetCreateDialog();
+      await loadDomains();
+    } catch (error) {
+      console.error('Error creating domain:', error);
+      toast.error('Erro ao criar domínio de segurança');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteDomain = async (domain: SecurityDomain) => {
+    const coreDomains = ['AI_SECURITY', 'CLOUD_SECURITY', 'DEVSECOPS'];
+    if (coreDomains.includes(domain.domainId)) {
+      toast.error('Domínios principais não podem ser excluídos');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('security_domains')
+        .delete()
+        .eq('domain_id', domain.domainId);
+
+      if (error) throw error;
+
+      toast.success('Domínio excluído com sucesso');
+      setDeletingDomain(null);
+      await loadDomains();
+    } catch (error) {
+      console.error('Error deleting domain:', error);
+      toast.error('Erro ao excluir domínio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isCoreDomain = (domainId: string) => {
+    return ['AI_SECURITY', 'CLOUD_SECURITY', 'DEVSECOPS'].includes(domainId);
+  };
+
   const saveEditedDomain = async () => {
     if (!editingDomain) return;
 
@@ -181,6 +438,7 @@ export function DomainManagement() {
     const colorStyles = DOMAIN_COLORS[domain.color] || DOMAIN_COLORS.blue;
     const questionCount = getQuestionCount(domain.domainId);
     const frameworkCount = getFrameworkCount(domain.domainId);
+    const isCore = isCoreDomain(domain.domainId);
 
     return (
       <Card className={cn(
@@ -201,6 +459,11 @@ export function DomainManagement() {
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
                   {domain.domainName}
+                  {isCore && (
+                    <Badge variant="outline" className="text-xs">
+                      Principal
+                    </Badge>
+                  )}
                   {!domain.isEnabled && (
                     <Badge variant="secondary" className="text-xs">
                       Desabilitado
@@ -221,6 +484,16 @@ export function DomainManagement() {
               >
                 <Pencil className="h-4 w-4" />
               </Button>
+              {!isCore && (
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setDeletingDomain(domain)}
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
               <Switch
                 checked={domain.isEnabled}
                 onCheckedChange={() => toggleDomainEnabled(domain)}
@@ -276,10 +549,18 @@ export function DomainManagement() {
       {/* Summary Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Domínios de Segurança</CardTitle>
-          <CardDescription>
-            Gerencie os domínios de governança de segurança disponíveis na plataforma
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Domínios de Segurança</CardTitle>
+              <CardDescription>
+                Gerencie os domínios de governança de segurança disponíveis na plataforma
+              </CardDescription>
+            </div>
+            <Button onClick={openCreateDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Domínio
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6 mb-6">
@@ -314,10 +595,411 @@ export function DomainManagement() {
             <li>• Frameworks e perguntas são associados a domínios específicos</li>
             <li>• Desabilitar um domínio oculta seus dados dos dashboards</li>
             <li>• Pelo menos um domínio deve estar sempre habilitado</li>
-            <li>• Domínios personalizados podem ser adicionados futuramente</li>
+            <li>• Domínios personalizados podem ser criados com taxonomia própria</li>
           </ul>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingDomain} onOpenChange={(open) => !open && setDeletingDomain(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Excluir Domínio de Segurança
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o domínio "{deletingDomain?.domainName}"? 
+              Esta ação irá remover o domínio, mas os dados de avaliação associados serão mantidos para auditoria.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingDomain && deleteDomain(deletingDomain)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Create Domain Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={(open) => { if (!open) { setShowCreateDialog(false); resetCreateDialog(); } }}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Criar Novo Domínio de Segurança
+            </DialogTitle>
+            <DialogDescription>
+              Configure um novo domínio com sua própria taxonomia de áreas e subcategorias
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs value={createStep} onValueChange={(v) => setCreateStep(v as typeof createStep)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basics" className="flex items-center gap-1.5">
+                <Shield className="h-4 w-4" />
+                Básico
+              </TabsTrigger>
+              <TabsTrigger value="taxonomy" className="flex items-center gap-1.5" disabled={!newDomainData.domainName}>
+                <FolderTree className="h-4 w-4" />
+                Taxonomia
+              </TabsTrigger>
+              <TabsTrigger value="review" className="flex items-center gap-1.5" disabled={!newDomainData.domainName}>
+                <BookOpen className="h-4 w-4" />
+                Revisar
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Step 1: Basic Info */}
+            <TabsContent value="basics" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="newDomainName">Nome do Domínio *</Label>
+                <Input
+                  id="newDomainName"
+                  value={newDomainData.domainName}
+                  onChange={(e) => setNewDomainData(prev => ({ ...prev, domainName: e.target.value }))}
+                  placeholder="Ex: Data Privacy Security"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newShortName">Nome Curto *</Label>
+                <Input
+                  id="newShortName"
+                  value={newDomainData.shortName}
+                  onChange={(e) => setNewDomainData(prev => ({ ...prev, shortName: e.target.value }))}
+                  placeholder="Ex: Data Privacy"
+                  maxLength={15}
+                />
+                <p className="text-xs text-muted-foreground">
+                  ID gerado: {newDomainData.shortName ? newDomainData.shortName.toUpperCase().replace(/\s+/g, '_') : '...'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newDescription">Descrição</Label>
+                <Textarea
+                  id="newDescription"
+                  value={newDomainData.description}
+                  onChange={(e) => setNewDomainData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Descrição das áreas de governança cobertas por este domínio..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Cor</Label>
+                  <Select
+                    value={newDomainData.color}
+                    onValueChange={(value) => setNewDomainData(prev => ({ ...prev, color: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLOR_OPTIONS.map(option => {
+                        const colorStyle = DOMAIN_COLORS[option.value];
+                        return (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("w-3 h-3 rounded-full", colorStyle?.bg)} />
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Ícone</Label>
+                  <Select
+                    value={newDomainData.icon}
+                    onValueChange={(value) => setNewDomainData(prev => ({ ...prev, icon: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ICON_OPTIONS.map(option => {
+                        const IconComp = ICON_COMPONENTS[option.value];
+                        return (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              {IconComp && <IconComp className="h-4 w-4" />}
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="space-y-2 pt-2">
+                <Label>Visualização</Label>
+                <div className={cn(
+                  "p-3 rounded-lg border flex items-center gap-3",
+                  DOMAIN_COLORS[newDomainData.color]?.bg || 'bg-muted'
+                )}>
+                  {(() => {
+                    const IconComp = ICON_COMPONENTS[newDomainData.icon] || Shield;
+                    const textColor = DOMAIN_COLORS[newDomainData.color]?.text || 'text-foreground';
+                    return <IconComp className={cn("h-5 w-5", textColor)} />;
+                  })()}
+                  <div>
+                    <div className={cn("font-medium text-sm", DOMAIN_COLORS[newDomainData.color]?.text)}>
+                      {newDomainData.domainName || 'Nome do Domínio'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {newDomainData.shortName || 'Nome Curto'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => validateBasics() && setCreateStep('taxonomy')}>
+                  Próximo: Taxonomia
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Step 2: Taxonomy */}
+            <TabsContent value="taxonomy" className="space-y-4 pt-4">
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Defina a estrutura de áreas (domínios) e subcategorias para este domínio de segurança. 
+                  Você pode adicionar perguntas e frameworks depois na gestão de conteúdo.
+                </p>
+              </div>
+
+              {/* Add Taxonomy Domain */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FolderTree className="h-4 w-4" />
+                    Adicionar Área de Taxonomia
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-3">
+                    <div className="space-y-2">
+                      <Label>Nome da Área *</Label>
+                      <Input
+                        value={currentTaxonomyDomain.name}
+                        onChange={(e) => setCurrentTaxonomyDomain(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Ex: Data Classification"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Descrição</Label>
+                      <Input
+                        value={currentTaxonomyDomain.description}
+                        onChange={(e) => setCurrentTaxonomyDomain(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Descrição da área..."
+                      />
+                    </div>
+                  </div>
+                  <Button variant="outline" onClick={addTaxonomyDomain} className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Área
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* List of Taxonomy Domains */}
+              {newDomainData.taxonomyDomains.length > 0 && (
+                <div className="space-y-3">
+                  <Label>Áreas Adicionadas ({newDomainData.taxonomyDomains.length})</Label>
+                  {newDomainData.taxonomyDomains.map((taxDomain) => (
+                    <Card key={taxDomain.id} className="border-primary/30">
+                      <CardHeader className="py-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-sm">{taxDomain.name}</CardTitle>
+                            {taxDomain.description && (
+                              <CardDescription className="text-xs">{taxDomain.description}</CardDescription>
+                            )}
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-destructive"
+                            onClick={() => removeTaxonomyDomain(taxDomain.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-3">
+                        {/* Subcategories for this domain */}
+                        {taxDomain.subcategories.length > 0 && (
+                          <div className="space-y-2 pl-3 border-l-2 border-muted">
+                            {taxDomain.subcategories.map((subcat) => (
+                              <div key={subcat.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                                <div>
+                                  <span className="font-medium">{subcat.name}</span>
+                                  <Badge variant="outline" className="ml-2 text-xs">
+                                    {subcat.criticality}
+                                  </Badge>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 text-destructive"
+                                  onClick={() => removeSubcategory(taxDomain.id, subcat.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Add subcategory form */}
+                        <Separator />
+                        <div className="space-y-2">
+                          <Label className="text-xs">Adicionar Subcategoria</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              value={currentSubcategory.name}
+                              onChange={(e) => setCurrentSubcategory(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Nome da subcategoria"
+                              className="text-sm"
+                            />
+                            <Select
+                              value={currentSubcategory.criticality}
+                              onValueChange={(value) => setCurrentSubcategory(prev => ({ ...prev, criticality: value }))}
+                            >
+                              <SelectTrigger className="text-sm">
+                                <SelectValue placeholder="Criticidade" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="critical">Crítico</SelectItem>
+                                <SelectItem value="high">Alto</SelectItem>
+                                <SelectItem value="medium">Médio</SelectItem>
+                                <SelectItem value="low">Baixo</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Input
+                            value={currentSubcategory.definition}
+                            onChange={(e) => setCurrentSubcategory(prev => ({ ...prev, definition: e.target.value }))}
+                            placeholder="Definição (opcional)"
+                            className="text-sm"
+                          />
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            onClick={() => addSubcategoryToTaxonomyDomain(taxDomain.id)}
+                            className="w-full"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Adicionar Subcategoria
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-between pt-4">
+                <Button variant="outline" onClick={() => setCreateStep('basics')}>
+                  Voltar
+                </Button>
+                <Button onClick={() => setCreateStep('review')}>
+                  Próximo: Revisar
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Step 3: Review */}
+            <TabsContent value="review" className="space-y-4 pt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    {(() => {
+                      const IconComp = ICON_COMPONENTS[newDomainData.icon] || Shield;
+                      const colorStyles = DOMAIN_COLORS[newDomainData.color];
+                      return (
+                        <div className={cn("p-2 rounded-lg", colorStyles?.bg)}>
+                          <IconComp className={cn("h-4 w-4", colorStyles?.text)} />
+                        </div>
+                      );
+                    })()}
+                    {newDomainData.domainName}
+                  </CardTitle>
+                  <CardDescription>
+                    {newDomainData.shortName} • ID: {newDomainData.shortName.toUpperCase().replace(/\s+/g, '_')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {newDomainData.description && (
+                    <p className="text-sm text-muted-foreground mb-4">{newDomainData.description}</p>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label>Estrutura de Taxonomia</Label>
+                    {newDomainData.taxonomyDomains.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic">
+                        Nenhuma área de taxonomia definida. Você pode adicionar depois.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {newDomainData.taxonomyDomains.map((taxDomain) => (
+                          <div key={taxDomain.id} className="p-3 border rounded-lg">
+                            <div className="font-medium text-sm">{taxDomain.name}</div>
+                            {taxDomain.subcategories.length > 0 && (
+                              <div className="mt-2 pl-3 border-l-2 border-muted space-y-1">
+                                {taxDomain.subcategories.map((subcat) => (
+                                  <div key={subcat.id} className="text-xs text-muted-foreground flex items-center gap-2">
+                                    <span>{subcat.name}</span>
+                                    <Badge variant="outline" className="text-[10px]">{subcat.criticality}</Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <HelpCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        Após criar o domínio, você poderá adicionar frameworks e perguntas 
+                        nas seções de gerenciamento de frameworks e perguntas.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between pt-4">
+                <Button variant="outline" onClick={() => setCreateStep('taxonomy')}>
+                  Voltar
+                </Button>
+                <Button onClick={createNewDomain} disabled={saving}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? 'Criando...' : 'Criar Domínio'}
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingDomain} onOpenChange={(open) => !open && setEditingDomain(null)}>

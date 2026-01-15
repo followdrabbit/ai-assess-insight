@@ -40,6 +40,7 @@ const customQuestionSchema = z.object({
   frameworks: z.array(z.string().max(100)).max(20).default([]),
   ownershipType: z.enum(['Executive', 'GRC', 'Engineering']).optional(),
   criticality: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
+  securityDomainId: z.string().max(100).optional(),
   isDisabled: z.boolean().optional()
 });
 
@@ -82,6 +83,7 @@ export interface CustomQuestion {
   frameworks: string[];
   ownershipType?: 'Executive' | 'GRC' | 'Engineering';
   criticality?: 'Low' | 'Medium' | 'High' | 'Critical';
+  securityDomainId?: string;
   isCustom: true;
   isDisabled?: boolean;
   createdAt: string;
@@ -419,6 +421,7 @@ export async function getAllCustomQuestions(): Promise<CustomQuestion[]> {
     frameworks: row.frameworks || [],
     ownershipType: row.ownership_type as CustomQuestion['ownershipType'],
     criticality: row.criticality as CustomQuestion['criticality'],
+    securityDomainId: row.security_domain_id || undefined,
     isCustom: true as const,
     isDisabled: row.is_disabled || false,
     createdAt: row.created_at,
@@ -445,6 +448,7 @@ export async function createCustomQuestion(
       frameworks: validated.frameworks,
       ownership_type: validated.ownershipType,
       criticality: validated.criticality,
+      security_domain_id: validated.securityDomainId || null,
       is_disabled: validated.isDisabled
     })
     .select()
@@ -477,6 +481,7 @@ export async function updateCustomQuestion(
   if (updates.frameworks !== undefined) updateData.frameworks = updates.frameworks;
   if (updates.ownershipType !== undefined) updateData.ownership_type = updates.ownershipType;
   if (updates.criticality !== undefined) updateData.criticality = updates.criticality;
+  if (updates.securityDomainId !== undefined) updateData.security_domain_id = updates.securityDomainId;
   if (updates.isDisabled !== undefined) updateData.is_disabled = updates.isDisabled;
   
   const { error } = await supabase

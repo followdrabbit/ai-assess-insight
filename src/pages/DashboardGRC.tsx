@@ -31,6 +31,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
@@ -76,6 +83,7 @@ export default function DashboardGRC() {
   const [sortField, setSortField] = useState<SortField>('gaps');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
+  const [selectedOwnership, setSelectedOwnership] = useState<string | null>(null);
 
   // Load active questions and frameworks
   const loadData = useCallback(async () => {
@@ -397,6 +405,47 @@ export default function DashboardGRC() {
     total: om.totalQuestions,
     answered: om.answeredQuestions,
   }));
+
+  // Get detailed ownership info for selected owner
+  const selectedOwnershipDetails = useMemo(() => {
+    if (!selectedOwnership) return null;
+    
+    const ownerMetric = metrics.ownershipMetrics.find(om => om.ownershipType === selectedOwnership);
+    if (!ownerMetric) return null;
+
+    // Get all subcategories for this owner
+    const subcategories = metrics.domainMetrics
+      .flatMap(dm => dm.subcategoryMetrics.map(sm => ({ ...sm, domainName: dm.domainName })))
+      .filter(sm => sm.ownershipType === selectedOwnership);
+
+    // Get gaps for this owner
+    const gaps = criticalGaps.filter(g => g.ownershipType === selectedOwnership);
+
+    // Get domains with this ownership
+    const domains = metrics.domainMetrics.filter(dm => 
+      dm.subcategoryMetrics.some(sm => sm.ownershipType === selectedOwnership)
+    );
+
+    // Calculate additional metrics
+    const criticalCount = gaps.filter(g => g.criticality === 'Critical').length;
+    const highCount = gaps.filter(g => g.criticality === 'High').length;
+    const pendingQuestions = ownerMetric.totalQuestions - ownerMetric.answeredQuestions;
+
+    return {
+      name: selectedOwnership,
+      score: Math.round(ownerMetric.score * 100),
+      coverage: Math.round(ownerMetric.coverage * 100),
+      totalQuestions: ownerMetric.totalQuestions,
+      answeredQuestions: ownerMetric.answeredQuestions,
+      pendingQuestions,
+      totalGaps: gaps.length,
+      criticalCount,
+      highCount,
+      subcategories: subcategories.sort((a, b) => a.score - b.score),
+      gaps: gaps.slice(0, 10),
+      domains,
+    };
+  }, [selectedOwnership, metrics, criticalGaps]);
 
   // Map framework IDs to their category IDs
   const frameworkIdToCategoryId: Record<string, FrameworkCategoryId> = {
@@ -1024,13 +1073,14 @@ export default function DashboardGRC() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card-elevated p-6">
               <h3 className="font-semibold mb-4">Maturidade por Responsável</h3>
+              <p className="text-xs text-muted-foreground mb-4">Clique para ver detalhes</p>
               <div className="space-y-4">
                 {ownershipData.map((od, idx) => (
                   <div 
                     key={od.name}
-                    className="p-3 border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors animate-in fade-in-0 slide-in-from-left-4 duration-400"
+                    className="p-3 border border-border rounded-lg cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-colors animate-in fade-in-0 slide-in-from-left-4 duration-400"
                     style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'backwards' }}
-                    onClick={() => setOwnershipFilter(od.name)}
+                    onClick={() => setSelectedOwnership(od.name)}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium">{od.name}</span>
@@ -1090,6 +1140,145 @@ export default function DashboardGRC() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Ownership Details Dialog */}
+      <Dialog open={!!selectedOwnership} onOpenChange={(open) => !open && setSelectedOwnership(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              Detalhes: {selectedOwnershipDetails?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedOwnershipDetails && (
+            <div className="space-y-6 mt-4">
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <div className="text-2xl font-bold" style={{ color: selectedOwnershipDetails.score >= 70 ? 'hsl(var(--chart-2))' : selectedOwnershipDetails.score >= 50 ? 'hsl(var(--chart-3))' : 'hsl(var(--destructive))' }}>
+                    {selectedOwnershipDetails.score}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-primary">
+                    {selectedOwnershipDetails.coverage}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <div className="text-2xl font-bold">
+                    {selectedOwnershipDetails.answeredQuestions}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-amber-600">
+                    {selectedOwnershipDetails.pendingQuestions}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Pendentes</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div>
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span>Progresso do Assessment</span>
+                  <span className="font-mono">{selectedOwnershipDetails.answeredQuestions}/{selectedOwnershipDetails.totalQuestions}</span>
+                </div>
+                <Progress value={selectedOwnershipDetails.coverage} className="h-2" />
+              </div>
+
+              {/* Gaps Summary */}
+              {selectedOwnershipDetails.totalGaps > 0 && (
+                <div className="p-4 border border-destructive/30 bg-destructive/5 rounded-lg">
+                  <h4 className="font-medium mb-3">Gaps Identificados ({selectedOwnershipDetails.totalGaps})</h4>
+                  <div className="flex items-center gap-4 mb-4">
+                    {selectedOwnershipDetails.criticalCount > 0 && (
+                      <Badge variant="destructive">{selectedOwnershipDetails.criticalCount} Críticos</Badge>
+                    )}
+                    {selectedOwnershipDetails.highCount > 0 && (
+                      <Badge className="bg-orange-500">{selectedOwnershipDetails.highCount} Altos</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    {selectedOwnershipDetails.gaps.map((gap, idx) => (
+                      <div 
+                        key={gap.questionId}
+                        className="flex items-start justify-between gap-2 p-2 bg-background rounded border border-border"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={cn("criticality-badge text-xs", `criticality-${gap.criticality.toLowerCase()}`)}>
+                              {gap.criticality}
+                            </span>
+                          </div>
+                          <p className="text-sm">{gap.questionText}</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => {
+                            setSelectedOwnership(null);
+                            navigate(`/assessment?q=${gap.questionId}`);
+                          }}
+                        >
+                          Revisar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Subcategories */}
+              <div>
+                <h4 className="font-medium mb-3">Subcategorias ({selectedOwnershipDetails.subcategories.length})</h4>
+                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                  {selectedOwnershipDetails.subcategories.map(sm => (
+                    <div 
+                      key={sm.subcatId}
+                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border"
+                    >
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{sm.subcatName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {sm.domainName} · {sm.answeredQuestions}/{sm.totalQuestions} perguntas
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={cn("criticality-badge", `criticality-${sm.criticality.toLowerCase()}`)}>
+                          {sm.criticality}
+                        </span>
+                        <span 
+                          className="font-mono text-sm min-w-[40px] text-right"
+                          style={{ color: sm.maturityLevel.color }}
+                        >
+                          {Math.round(sm.score * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-4 border-t">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setOwnershipFilter(selectedOwnershipDetails.name);
+                    setSelectedOwnership(null);
+                  }}
+                >
+                  Filtrar Dashboard por {selectedOwnershipDetails.name}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

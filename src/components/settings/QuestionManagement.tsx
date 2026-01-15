@@ -25,9 +25,37 @@ import {
   enableDefaultQuestion,
   getAllCustomFrameworks
 } from '@/lib/database';
+import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
+import { supabase } from '@/integrations/supabase/client';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
+
+const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
+  brain: Brain,
+  cloud: Cloud,
+  code: Code,
+  shield: Shield,
+  lock: Lock,
+  database: Database,
+  server: Server,
+  key: Key
+};
+
+interface TaxonomyDomain {
+  domainId: string;
+  domainName: string;
+  securityDomainId: string;
+}
+
+interface TaxonomySubcategory {
+  subcatId: string;
+  subcatName: string;
+  domainId: string;
+  securityDomainId: string;
+  criticality?: string;
+}
 
 interface QuestionFormData {
   questionId: string;
@@ -40,6 +68,7 @@ interface QuestionFormData {
   frameworks: string[];
   ownershipType?: OwnershipType;
   criticality?: CriticalityType;
+  securityDomainId?: string;
 }
 
 const emptyFormData: QuestionFormData = {
@@ -52,7 +81,8 @@ const emptyFormData: QuestionFormData = {
   riskSummary: '',
   frameworks: [],
   ownershipType: undefined,
-  criticality: 'Medium'
+  criticality: 'Medium',
+  securityDomainId: ''
 };
 
 const criticalityLabels: Record<CriticalityType, string> = {
@@ -72,6 +102,9 @@ export function QuestionManagement() {
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [disabledQuestionIds, setDisabledQuestionIds] = useState<string[]>([]);
   const [customFrameworksList, setCustomFrameworksList] = useState<{ frameworkId: string; shortName: string }[]>([]);
+  const [securityDomains, setSecurityDomains] = useState<SecurityDomain[]>([]);
+  const [taxonomyDomains, setTaxonomyDomains] = useState<TaxonomyDomain[]>([]);
+  const [taxonomySubcategories, setTaxonomySubcategories] = useState<TaxonomySubcategory[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<CustomQuestion | null>(null);
@@ -79,20 +112,51 @@ export function QuestionManagement() {
   const [frameworksText, setFrameworksText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDomain, setFilterDomain] = useState<string>('all');
+  const [filterSecurityDomain, setFilterSecurityDomain] = useState<string>('all');
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [questions, disabled, customFw] = await Promise.all([
+    const [questions, disabled, customFw, secDomains] = await Promise.all([
       getAllCustomQuestions(),
       getDisabledQuestions(),
-      getAllCustomFrameworks()
+      getAllCustomFrameworks(),
+      getAllSecurityDomains()
     ]);
     setCustomQuestions(questions);
     setDisabledQuestionIds(disabled);
     setCustomFrameworksList(customFw.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })));
+    setSecurityDomains(secDomains);
+
+    // Load taxonomy domains and subcategories from database
+    const { data: domainsData } = await supabase
+      .from('domains')
+      .select('domain_id, domain_name, security_domain_id')
+      .order('display_order');
+    
+    const { data: subcatsData } = await supabase
+      .from('subcategories')
+      .select('subcat_id, subcat_name, domain_id, security_domain_id, criticality');
+
+    if (domainsData) {
+      setTaxonomyDomains(domainsData.map(d => ({
+        domainId: d.domain_id,
+        domainName: d.domain_name,
+        securityDomainId: d.security_domain_id || ''
+      })));
+    }
+
+    if (subcatsData) {
+      setTaxonomySubcategories(subcatsData.map(s => ({
+        subcatId: s.subcat_id,
+        subcatName: s.subcat_name,
+        domainId: s.domain_id,
+        securityDomainId: s.security_domain_id || '',
+        criticality: s.criticality
+      })));
+    }
   };
 
   const allFrameworkOptions = useMemo(() => [
@@ -100,11 +164,23 @@ export function QuestionManagement() {
     ...customFrameworksList
   ], [customFrameworksList]);
 
+  // Get domains for selected security domain in form
+  const filteredTaxonomyDomains = useMemo(() => {
+    if (!formData.securityDomainId) return taxonomyDomains;
+    return taxonomyDomains.filter(d => d.securityDomainId === formData.securityDomainId);
+  }, [taxonomyDomains, formData.securityDomainId]);
+
+  // Get subcategories for selected taxonomy domain in form
+  const filteredSubcategories = useMemo(() => {
+    if (!formData.domainId) return [];
+    return taxonomySubcategories.filter(s => s.domainId === formData.domainId);
+  }, [taxonomySubcategories, formData.domainId]);
+
   // Combine default and custom questions with disabled status
   const allQuestions = useMemo(() => {
     const defaultWithStatus = defaultQuestions.map(q => ({
       ...q,
-      criticality: 'Medium' as const, // Default questions don't have criticality, use default
+      criticality: 'Medium' as const,
       isCustom: false as const,
       isDisabled: disabledQuestionIds.includes(q.questionId)
     }));
@@ -124,9 +200,18 @@ export function QuestionManagement() {
         q.questionText.toLowerCase().includes(searchQuery.toLowerCase()) ||
         q.questionId.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesDomain = filterDomain === 'all' || q.domainId === filterDomain;
-      return matchesSearch && matchesDomain;
+      const matchesSecurityDomain = filterSecurityDomain === 'all' || 
+        (q as any).securityDomainId === filterSecurityDomain ||
+        taxonomyDomains.find(d => d.domainId === q.domainId)?.securityDomainId === filterSecurityDomain;
+      return matchesSearch && matchesDomain && matchesSecurityDomain;
     });
-  }, [allQuestions, searchQuery, filterDomain]);
+  }, [allQuestions, searchQuery, filterDomain, filterSecurityDomain, taxonomyDomains]);
+
+  const getSecurityDomainInfo = (domainId: string) => {
+    const taxDomain = taxonomyDomains.find(d => d.domainId === domainId);
+    if (!taxDomain) return null;
+    return securityDomains.find(sd => sd.domainId === taxDomain.securityDomainId);
+  };
 
   const openNewDialog = () => {
     setEditingQuestion(null);
@@ -137,9 +222,11 @@ export function QuestionManagement() {
   };
 
   const openEditDialog = (question: typeof allQuestions[0]) => {
-    // For both custom and default questions, we can edit
-    // For default questions, this will create a custom override
     setEditingQuestion(question.isCustom ? (question as CustomQuestion) : null);
+    
+    // Find security domain from taxonomy
+    const taxDomain = taxonomyDomains.find(d => d.domainId === question.domainId);
+    
     setFormData({
       questionId: question.questionId,
       subcatId: question.subcatId,
@@ -150,12 +237,12 @@ export function QuestionManagement() {
       riskSummary: question.riskSummary,
       frameworks: question.frameworks,
       ownershipType: question.ownershipType,
-      criticality: question.criticality || 'Medium'
+      criticality: question.criticality || 'Medium',
+      securityDomainId: taxDomain?.securityDomainId || (question as any).securityDomainId || ''
     });
     setFrameworksText(question.frameworks.join('\n'));
     setIsDialogOpen(true);
     
-    // Store if we're editing a default question (to create override)
     setIsEditingDefault(!question.isCustom);
   };
 
@@ -171,11 +258,14 @@ export function QuestionManagement() {
       return false;
     }
     if (!formData.domainId) {
-      toast.error('Selecione um domínio');
+      toast.error('Selecione um domínio de taxonomia');
+      return false;
+    }
+    if (!formData.securityDomainId) {
+      toast.error('Selecione um domínio de segurança');
       return false;
     }
 
-    // Check for duplicate ID only when creating new (not editing)
     const existingCustomIds = customQuestions.map(q => q.questionId);
     if (!editingQuestion && !isEditingDefault && existingCustomIds.includes(formData.questionId)) {
       toast.error('Já existe uma pergunta personalizada com este ID');
@@ -196,30 +286,23 @@ export function QuestionManagement() {
     const frameworks = frameworksText.split('\n').filter(f => f.trim());
 
     try {
+      const questionData = {
+        ...formData,
+        frameworks
+      };
+
       if (editingQuestion) {
-        // Editing existing custom question
-        await updateCustomQuestion(editingQuestion.questionId, {
-          ...formData,
-          frameworks
-        });
+        await updateCustomQuestion(editingQuestion.questionId, questionData);
         toast.success('Pergunta atualizada com sucesso');
       } else if (isEditingDefault) {
-        // Creating custom override for default question
-        // First disable the default question
         await disableDefaultQuestion(formData.questionId);
-        // Then create a custom version with same ID
         await createCustomQuestion({
-          ...formData,
-          frameworks,
+          ...questionData,
           isDisabled: false
         });
         toast.success('Pergunta padrão substituída por versão personalizada');
       } else {
-        // Creating new custom question
-        await createCustomQuestion({
-          ...formData,
-          frameworks
-        });
+        await createCustomQuestion(questionData);
         toast.success('Pergunta criada com sucesso');
       }
       await loadData();
@@ -302,7 +385,43 @@ export function QuestionManagement() {
             Visualize, crie e edite perguntas da avaliação
           </p>
         </div>
-        <Button onClick={openNewDialog}>Nova Pergunta</Button>
+        <Button onClick={openNewDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Pergunta
+        </Button>
+      </div>
+
+      {/* Security Domain Filter */}
+      <div className="flex items-center gap-3">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <div className="flex gap-2 flex-wrap">
+          <Badge
+            variant={filterSecurityDomain === 'all' ? 'default' : 'outline'}
+            className="cursor-pointer"
+            onClick={() => setFilterSecurityDomain('all')}
+          >
+            Todos os Domínios
+          </Badge>
+          {securityDomains.filter(d => d.isEnabled).map(domain => {
+            const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+            const colorStyles = DOMAIN_COLORS[domain.color];
+            return (
+              <Badge
+                key={domain.domainId}
+                variant={filterSecurityDomain === domain.domainId ? 'default' : 'outline'}
+                className={cn(
+                  "cursor-pointer flex items-center gap-1",
+                  filterSecurityDomain === domain.domainId && colorStyles?.bg,
+                  filterSecurityDomain === domain.domainId && colorStyles?.text
+                )}
+                onClick={() => setFilterSecurityDomain(domain.domainId)}
+              >
+                <IconComp className="h-3 w-3" />
+                {domain.shortName}
+              </Badge>
+            );
+          })}
+        </div>
       </div>
 
       {/* Filters */}
@@ -315,16 +434,18 @@ export function QuestionManagement() {
           />
         </div>
         <Select value={filterDomain} onValueChange={setFilterDomain}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por domínio" />
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Filtrar por área" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os domínios</SelectItem>
-            {domains.map(d => (
-              <SelectItem key={d.domainId} value={d.domainId}>
-                {d.domainName}
-              </SelectItem>
-            ))}
+            <SelectItem value="all">Todas as áreas</SelectItem>
+            {taxonomyDomains
+              .filter(d => filterSecurityDomain === 'all' || d.securityDomainId === filterSecurityDomain)
+              .map(d => (
+                <SelectItem key={d.domainId} value={d.domainId}>
+                  {d.domainName}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
@@ -414,6 +535,41 @@ export function QuestionManagement() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Security Domain Selection */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <FolderTree className="h-4 w-4" />
+                Domínio de Segurança *
+              </Label>
+              <Select
+                value={formData.securityDomainId}
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  securityDomainId: value,
+                  domainId: '', // Reset taxonomy domain when security domain changes
+                  subcatId: ''
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o domínio de segurança" />
+                </SelectTrigger>
+                <SelectContent>
+                  {securityDomains.filter(d => d.isEnabled).map(domain => {
+                    const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+                    const colorStyles = DOMAIN_COLORS[domain.color];
+                    return (
+                      <SelectItem key={domain.domainId} value={domain.domainId}>
+                        <div className="flex items-center gap-2">
+                          <IconComp className={cn("h-4 w-4", colorStyles?.text)} />
+                          {domain.domainName}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="questionId">ID da Pergunta *</Label>
@@ -431,16 +587,17 @@ export function QuestionManagement() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Domínio *</Label>
+                <Label>Área de Taxonomia *</Label>
                 <Select 
                   value={formData.domainId} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, domainId: value }))}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, domainId: value, subcatId: '' }))}
+                  disabled={!formData.securityDomainId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder={formData.securityDomainId ? "Selecione a área" : "Selecione o domínio primeiro"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {domains.map(d => (
+                    {filteredTaxonomyDomains.map(d => (
                       <SelectItem key={d.domainId} value={d.domainId}>
                         {d.domainName}
                       </SelectItem>
@@ -449,13 +606,37 @@ export function QuestionManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="subcatId">ID Subcategoria</Label>
-                <Input
-                  id="subcatId"
+                <Label>Subcategoria</Label>
+                <Select
                   value={formData.subcatId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, subcatId: e.target.value }))}
-                  placeholder="GOVERN-01"
-                />
+                  onValueChange={(value) => {
+                    const subcat = filteredSubcategories.find(s => s.subcatId === value);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      subcatId: value,
+                      criticality: subcat?.criticality as CriticalityType || prev.criticality
+                    }));
+                  }}
+                  disabled={!formData.domainId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.domainId ? "Selecione" : "Selecione a área primeiro"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredSubcategories.map(s => (
+                      <SelectItem key={s.subcatId} value={s.subcatId}>
+                        <div className="flex items-center gap-2">
+                          {s.subcatName}
+                          {s.criticality && (
+                            <Badge variant="outline" className="text-[10px]">
+                              {s.criticality}
+                            </Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

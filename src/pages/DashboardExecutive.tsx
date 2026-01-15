@@ -112,17 +112,29 @@ export default function DashboardExecutive() {
   }, [loadData]);
 
   // Refresh when the user comes back to the tab/window (covers enable/disable done elsewhere)
+  // Uses a flag to prevent multiple rapid reloads
   useEffect(() => {
-    const onFocus = () => loadData();
-    const onVisibility = () => {
-      if (!document.hidden) loadData();
+    let lastLoadTime = Date.now();
+    const MIN_RELOAD_INTERVAL = 30000; // 30 seconds minimum between reloads
+
+    const shouldReload = () => {
+      const now = Date.now();
+      if (now - lastLoadTime >= MIN_RELOAD_INTERVAL) {
+        lastLoadTime = now;
+        return true;
+      }
+      return false;
     };
 
-    window.addEventListener('focus', onFocus);
+    const onVisibility = () => {
+      if (!document.hidden && shouldReload()) {
+        loadData();
+      }
+    };
+
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
-      window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [loadData]);

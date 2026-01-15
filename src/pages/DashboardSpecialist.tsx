@@ -93,6 +93,7 @@ export default function DashboardSpecialist() {
   const [expandedFrameworks, setExpandedFrameworks] = useState<Set<string>>(new Set());
   const [selectedResponseType, setSelectedResponseType] = useState<string | null>(null);
   const [selectedCriticality, setSelectedCriticality] = useState<string | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   // Load active questions and frameworks
@@ -390,6 +391,72 @@ export default function DashboardSpecialist() {
       domainsCount: Object.keys(byDomain).length,
     };
   }, [selectedCriticality, allCriticalGaps, domains]);
+
+  // Selected domain details for modal
+  const selectedDomainDetails = useMemo(() => {
+    if (!selectedDomain) return null;
+
+    const domainMetrics = metrics.domainMetrics.find(dm => dm.domainId === selectedDomain);
+    if (!domainMetrics) return null;
+
+    const domainData = domains.find(d => d.domainId === selectedDomain);
+
+    // Get all questions for this domain
+    const domainQuestions = questionsForDashboard.filter(q => q.domainId === selectedDomain);
+
+    // Calculate question-level details
+    const questionDetails = domainQuestions.map(q => {
+      const answer = answers.get(q.questionId);
+      return {
+        questionId: q.questionId,
+        questionText: q.questionText,
+        subcatId: q.subcatId,
+        ownershipType: q.ownershipType,
+        response: answer?.response || 'Não respondido',
+        evidenceOk: answer?.evidenceOk || null,
+      };
+    });
+
+    // Calculate response breakdown
+    const responseBreakdown = {
+      Sim: questionDetails.filter(q => q.response === 'Sim').length,
+      Parcial: questionDetails.filter(q => q.response === 'Parcial').length,
+      Não: questionDetails.filter(q => q.response === 'Não').length,
+      NA: questionDetails.filter(q => q.response === 'NA').length,
+      'Não respondido': questionDetails.filter(q => q.response === 'Não respondido').length,
+    };
+
+    // Get gaps for this domain
+    const domainGaps = allCriticalGaps.filter(g => g.domainId === selectedDomain);
+
+    // Group gaps by criticality
+    const gapsByCriticality = {
+      Critical: domainGaps.filter(g => g.criticality === 'Critical').length,
+      High: domainGaps.filter(g => g.criticality === 'High').length,
+      Medium: domainGaps.filter(g => g.criticality === 'Medium').length,
+      Low: domainGaps.filter(g => g.criticality === 'Low').length,
+    };
+
+    // Group by subcategory
+    const bySubcategory: Record<string, typeof domainGaps> = {};
+    domainGaps.forEach(g => {
+      const subcatName = g.subcatName || g.subcatId;
+      if (!bySubcategory[subcatName]) bySubcategory[subcatName] = [];
+      bySubcategory[subcatName].push(g);
+    });
+
+    return {
+      ...domainMetrics,
+      description: domainData?.description || '',
+      bankingRelevance: domainData?.bankingRelevance || '',
+      strategicQuestion: domainData?.strategicQuestion || '',
+      questions: questionDetails,
+      responseBreakdown,
+      gaps: domainGaps,
+      gapsByCriticality,
+      bySubcategory,
+    };
+  }, [selectedDomain, metrics.domainMetrics, domains, questionsForDashboard, answers, allCriticalGaps]);
 
   // Unique domains for filter - only from filtered questions
   const domainOptions = useMemo(() => {
@@ -1144,9 +1211,22 @@ export default function DashboardSpecialist() {
         <TabsContent value="domains" className="space-y-4">
           <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
             <h3 className="font-semibold mb-4">Detalhamento por Domínio</h3>
+            <p className="text-xs text-muted-foreground mb-3">Clique nas barras para ver detalhes</p>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={domainChartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <BarChart 
+                  data={domainChartData} 
+                  layout="vertical" 
+                  margin={{ left: 20, right: 20 }}
+                  onClick={(data) => {
+                    if (data?.activePayload?.[0]?.payload) {
+                      const domainName = data.activePayload[0].payload.fullName;
+                      const domainData = metrics.domainMetrics.find(dm => dm.domainName === domainName);
+                      if (domainData) setSelectedDomain(domainData.domainId);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
                   <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} />
                   <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
                   <Tooltip 
@@ -1158,7 +1238,7 @@ export default function DashboardSpecialist() {
                   />
                   <Bar dataKey="score" name="score" radius={[0, 4, 4, 0]}>
                     {domainChartData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
+                      <Cell key={index} fill={entry.color} className="cursor-pointer hover:opacity-80 transition-opacity" />
                     ))}
                   </Bar>
                 </BarChart>
@@ -1171,9 +1251,9 @@ export default function DashboardSpecialist() {
             {metrics.domainMetrics.map((dm, idx) => (
               <div 
                 key={dm.domainId}
-                className="card-elevated p-4 cursor-pointer hover:border-primary/50 transition-colors animate-in fade-in-0 slide-in-from-bottom-4 duration-400"
+                className="card-elevated p-4 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all animate-in fade-in-0 slide-in-from-bottom-4 duration-400"
                 style={{ animationDelay: `${200 + idx * 50}ms`, animationFillMode: 'backwards' }}
-                onClick={() => setDomainFilter(dm.domainId)}
+                onClick={() => setSelectedDomain(dm.domainId)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-sm">{dm.domainName}</h4>
@@ -1785,6 +1865,226 @@ export default function DashboardSpecialist() {
                   }}
                 >
                   Filtrar por Esta Criticidade
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Domain Details Modal */}
+      <Dialog open={!!selectedDomain} onOpenChange={(open) => !open && setSelectedDomain(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedDomainDetails && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedDomainDetails.maturityLevel.color }}
+                  >
+                    {Math.round(selectedDomainDetails.score * 100)}%
+                  </div>
+                  <div>
+                    <DialogTitle className="text-left">{selectedDomainDetails.domainName}</DialogTitle>
+                    <DialogDescription className="text-left">
+                      {selectedDomainDetails.nistFunction && `${selectedDomainDetails.nistFunction} · `}
+                      {selectedDomainDetails.maturityLevel.name}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-4 gap-3 mt-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold" style={{ color: selectedDomainDetails.maturityLevel.color }}>
+                    {Math.round(selectedDomainDetails.score * 100)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{Math.round(selectedDomainDetails.coverage * 100)}%</div>
+                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold">{selectedDomainDetails.answeredQuestions}/{selectedDomainDetails.totalQuestions}</div>
+                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
+                  <div className="text-2xl font-bold text-destructive">{selectedDomainDetails.gaps.length}</div>
+                  <div className="text-xs text-muted-foreground">Gaps</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">Progresso da Avaliação</span>
+                  <span className="font-medium">{selectedDomainDetails.answeredQuestions} de {selectedDomainDetails.totalQuestions}</span>
+                </div>
+                <Progress value={selectedDomainDetails.coverage * 100} className="h-2" />
+              </div>
+
+              {/* Response Breakdown */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
+                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(selectedDomainDetails.responseBreakdown).map(([key, value]) => (
+                    value > 0 && (
+                      <div 
+                        key={key} 
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium",
+                          key === 'Sim' && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+                          key === 'Parcial' && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+                          key === 'Não' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                          key === 'NA' && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+                          key === 'Não respondido' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}
+                      >
+                        {key}: {value}
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Gaps by Criticality */}
+              {selectedDomainDetails.gaps.length > 0 && (
+                <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
+                  <h4 className="font-medium text-sm mb-2">Gaps por Criticidade</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {Object.entries(selectedDomainDetails.gapsByCriticality).map(([key, value]) => (
+                      value > 0 && (
+                        <div 
+                          key={key} 
+                          className={cn("criticality-badge", `criticality-${key.toLowerCase()}`)}
+                        >
+                          {key}: {value}
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Gaps by Subcategory */}
+              {selectedDomainDetails.gaps.length > 0 && (
+                <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '450ms', animationFillMode: 'backwards' }}>
+                  <h4 className="font-medium text-sm mb-2">
+                    Gaps por Subcategoria ({selectedDomainDetails.gaps.length})
+                  </h4>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {Object.entries(selectedDomainDetails.bySubcategory).map(([subcatName, gaps], subcatIdx) => (
+                      <Collapsible 
+                        key={subcatName}
+                        defaultOpen={subcatIdx === 0}
+                        className="animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                        style={{ animationDelay: `${500 + subcatIdx * 50}ms`, animationFillMode: 'backwards' }}
+                      >
+                        <CollapsibleTrigger className="w-full p-3 bg-muted/30 rounded-lg flex items-center justify-between hover:bg-muted/50 transition-colors">
+                          <span className="font-medium text-sm">{subcatName}</span>
+                          <span className="text-xs text-muted-foreground">{gaps.length} gaps</span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="space-y-2 mt-2 pl-2">
+                            {gaps.map((gap) => (
+                              <div 
+                                key={gap.questionId} 
+                                className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-mono text-xs text-muted-foreground">{gap.questionId}</span>
+                                    <span className={cn("criticality-badge text-xs", `criticality-${gap.criticality.toLowerCase()}`)}>
+                                      {gap.criticality}
+                                    </span>
+                                    <span className={cn(
+                                      "text-xs px-2 py-0.5 rounded",
+                                      gap.response === 'Não' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                      gap.response === 'Parcial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                      'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                    )}>
+                                      {gap.response}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm line-clamp-2">{gap.questionText}</p>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="shrink-0"
+                                  onClick={() => {
+                                    setSelectedDomain(null);
+                                    navigate(`/assessment?questionId=${gap.questionId}`);
+                                  }}
+                                >
+                                  Revisar
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Subcategories Summary */}
+              <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '550ms', animationFillMode: 'backwards' }}>
+                <h4 className="font-medium text-sm mb-2">
+                  Subcategorias ({selectedDomainDetails.subcategoryMetrics.length})
+                </h4>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {selectedDomainDetails.subcategoryMetrics.map((sm, idx) => (
+                    <div 
+                      key={sm.subcatId}
+                      className="p-2 bg-muted/20 rounded-lg cursor-pointer hover:bg-muted/40 transition-colors"
+                      onClick={() => {
+                        setSelectedDomain(null);
+                        setSelectedSubcategory(sm.subcatId);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium truncate" title={sm.subcatName}>{sm.subcatName}</span>
+                        <span 
+                          className="text-xs font-bold"
+                          style={{ color: sm.maturityLevel.color }}
+                        >
+                          {Math.round(sm.score * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full" 
+                          style={{ 
+                            width: `${sm.score * 100}%`,
+                            backgroundColor: sm.maturityLevel.color 
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-6 flex justify-end gap-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '600ms', animationFillMode: 'backwards' }}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedDomain(null)}
+                >
+                  Fechar
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setSelectedDomain(null);
+                    setDomainFilter(selectedDomainDetails.domainId);
+                  }}
+                >
+                  Filtrar por Este Domínio
                 </Button>
               </div>
             </>

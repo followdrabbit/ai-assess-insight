@@ -1,6 +1,10 @@
 import taxonomyData from '@/data/taxonomy.json';
 import questionsData from '@/data/questions.json';
 import maturityRefData from '@/data/maturityRef.json';
+import cloudSecurityTaxonomy from '@/data/cloud-security-taxonomy.json';
+import cloudSecurityQuestions from '@/data/cloud-security-questions.json';
+import devsecOpsTaxonomy from '@/data/devsecops-taxonomy.json';
+import devsecOpsQuestions from '@/data/devsecops-questions.json';
 
 export interface Domain {
   domainId: string;
@@ -10,6 +14,7 @@ export interface Domain {
   strategicQuestion?: string;
   description?: string;
   bankingRelevance?: string;
+  securityDomainId?: string;
 }
 
 export interface Subcategory {
@@ -24,6 +29,7 @@ export interface Subcategory {
   ownershipType?: 'Executive' | 'GRC' | 'Engineering';
   riskSummary?: string;
   frameworkRefs?: string[];
+  securityDomainId?: string;
 }
 
 export interface Question {
@@ -35,8 +41,9 @@ export interface Question {
   imperativeChecks: string;
   riskSummary: string;
   frameworks: string[];
-  frameworkId?: string; // NEW: explicit primary framework association
+  frameworkId?: string;
   ownershipType?: 'Executive' | 'GRC' | 'Engineering';
+  securityDomainId?: string;
 }
 
 export interface MaturityLevel {
@@ -72,10 +79,73 @@ export interface FrameworkCategory {
   frameworks: string[];
 }
 
-// Type assertions for imported data
-export const domains: Domain[] = taxonomyData.domains;
-export const subcategories: Subcategory[] = taxonomyData.subcategories as Subcategory[];
-export const questions: Question[] = questionsData.questions as Question[];
+// Merge domains from all security domains
+const aiSecurityDomains: Domain[] = (taxonomyData.domains as Domain[]).map(d => ({
+  ...d,
+  securityDomainId: 'AI_SECURITY'
+}));
+
+const cloudSecurityDomains: Domain[] = (cloudSecurityTaxonomy.domains as Domain[]).map(d => ({
+  ...d,
+  securityDomainId: 'CLOUD_SECURITY'
+}));
+
+const devsecOpsDomains: Domain[] = (devsecOpsTaxonomy.domains as Domain[]).map(d => ({
+  ...d,
+  securityDomainId: 'DEVSECOPS'
+}));
+
+// Merge subcategories from all security domains
+const aiSecuritySubcategories: Subcategory[] = (taxonomyData.subcategories as Subcategory[]).map(s => ({
+  ...s,
+  securityDomainId: 'AI_SECURITY'
+}));
+
+const cloudSecuritySubcategories: Subcategory[] = (cloudSecurityTaxonomy.subcategories as Subcategory[]).map(s => ({
+  ...s,
+  securityDomainId: 'CLOUD_SECURITY'
+}));
+
+const devsecOpsSubcategories: Subcategory[] = (devsecOpsTaxonomy.subcategories as Subcategory[]).map(s => ({
+  ...s,
+  securityDomainId: 'DEVSECOPS'
+}));
+
+// Merge questions from all security domains
+const aiSecurityQuestions: Question[] = (questionsData.questions as Question[]).map(q => ({
+  ...q,
+  securityDomainId: 'AI_SECURITY'
+}));
+
+const cloudSecurityQuestionsData: Question[] = (cloudSecurityQuestions.questions as Question[]).map(q => ({
+  ...q,
+  securityDomainId: 'CLOUD_SECURITY'
+}));
+
+const devsecOpsQuestionsData: Question[] = (devsecOpsQuestions.questions as Question[]).map(q => ({
+  ...q,
+  securityDomainId: 'DEVSECOPS'
+}));
+
+// Exported merged data
+export const domains: Domain[] = [
+  ...aiSecurityDomains,
+  ...cloudSecurityDomains,
+  ...devsecOpsDomains
+];
+
+export const subcategories: Subcategory[] = [
+  ...aiSecuritySubcategories,
+  ...cloudSecuritySubcategories,
+  ...devsecOpsSubcategories
+];
+
+export const questions: Question[] = [
+  ...aiSecurityQuestions,
+  ...cloudSecurityQuestionsData,
+  ...devsecOpsQuestionsData
+];
+
 export const maturityLevels: MaturityLevel[] = maturityRefData.levels;
 export const criticalityLevels: CriticalityLevel[] = maturityRefData.criticalityLevels;
 export const responseOptions: ResponseOption[] = maturityRefData.responseOptions;
@@ -92,14 +162,13 @@ export const ownershipTypes = ['Executive', 'GRC', 'Engineering'] as const;
 export type OwnershipType = typeof ownershipTypes[number];
 
 // Rationalized Framework Categories for AI Security Maturity
-// Aligned with authoritative frameworks for Brazilian financial institutions
 export const frameworkCategoryIds = [
-  'NIST_AI_RMF',           // Primary organizing axis
-  'SECURITY_BASELINE',     // ISO 27001/27002 foundation
-  'AI_RISK_MGMT',          // ISO/IEC 23894 formal AI risk
-  'SECURE_DEVELOPMENT',    // NIST SSDF + CSA guidance
-  'PRIVACY_LGPD',          // LGPD and data protection
-  'THREAT_EXPOSURE',       // OWASP LLM + API Security
+  'NIST_AI_RMF',
+  'SECURITY_BASELINE',
+  'AI_RISK_MGMT',
+  'SECURE_DEVELOPMENT',
+  'PRIVACY_LGPD',
+  'THREAT_EXPOSURE',
 ] as const;
 export type FrameworkCategoryId = typeof frameworkCategoryIds[number];
 
@@ -162,18 +231,30 @@ export function getQuestionsByOwnership(ownershipType: OwnershipType): Question[
   return questions.filter(q => q.ownershipType === ownershipType);
 }
 
+// Get domains by security domain
+export function getDomainsBySecurityDomain(securityDomainId: string): Domain[] {
+  return domains.filter(d => d.securityDomainId === securityDomainId);
+}
+
+// Get subcategories by security domain
+export function getSubcategoriesBySecurityDomain(securityDomainId: string): Subcategory[] {
+  return subcategories.filter(s => s.securityDomainId === securityDomainId);
+}
+
+// Get questions by security domain
+export function getQuestionsBySecurityDomain(securityDomainId: string): Question[] {
+  return questions.filter(q => q.securityDomainId === securityDomainId);
+}
+
 // Normalize framework name to rationalized category
-// AUTHORITATIVE SET ONLY - removes noise from deprecated/academic frameworks
 export function getFrameworkCategory(framework: string): FrameworkCategoryId | null {
   const lowerFramework = framework.toLowerCase();
   
-  // NIST AI RMF - Primary organizing axis (GOVERN, MAP, MEASURE, MANAGE)
   if (lowerFramework.includes('nist ai rmf') || 
       lowerFramework.includes('ai rmf')) {
     return 'NIST_AI_RMF';
   }
   
-  // Security Baseline - ISO 27001/27002 foundation
   if (lowerFramework.includes('iso 27001') || 
       lowerFramework.includes('iso/iec 27001') ||
       lowerFramework.includes('iso 27002') ||
@@ -184,7 +265,6 @@ export function getFrameworkCategory(framework: string): FrameworkCategoryId | n
     return 'SECURITY_BASELINE';
   }
   
-  // AI Risk Management - ISO/IEC 23894 + ISO 42001
   if (lowerFramework.includes('iso/iec 23894') || 
       lowerFramework.includes('iso 23894') ||
       lowerFramework.includes('iso/iec 42001') || 
@@ -193,7 +273,6 @@ export function getFrameworkCategory(framework: string): FrameworkCategoryId | n
     return 'AI_RISK_MGMT';
   }
   
-  // Secure Development - NIST SSDF + CSA + SLSA
   if (lowerFramework.includes('nist ssdf') || 
       lowerFramework.includes('ssdf') ||
       lowerFramework.includes('slsa') || 
@@ -203,7 +282,6 @@ export function getFrameworkCategory(framework: string): FrameworkCategoryId | n
     return 'SECURE_DEVELOPMENT';
   }
   
-  // Privacy - LGPD and data protection (Brazil-focused)
   if (lowerFramework.includes('lgpd') || 
       lowerFramework.includes('privacy framework') ||
       lowerFramework.includes('lc 105') ||
@@ -211,17 +289,12 @@ export function getFrameworkCategory(framework: string): FrameworkCategoryId | n
     return 'PRIVACY_LGPD';
   }
   
-  // Threat Exposure - OWASP LLM + API Security (Tech-focused)
   if (lowerFramework.includes('owasp llm') ||
       lowerFramework.includes('owasp api') ||
       lowerFramework.includes('api security')) {
     return 'THREAT_EXPOSURE';
   }
   
-  // DE-EMPHASIZED: Return null for frameworks that should not be primary dimensions
-  // These are explicitly excluded from primary views:
-  // - MITRE ATLAS, STRIDE, CIS Benchmarks, SOC 2, EU AI Act
-  // - Any generic or overlapping framework
   if (lowerFramework.includes('mitre') ||
       lowerFramework.includes('stride') ||
       lowerFramework.includes('cis controls') ||
@@ -230,7 +303,7 @@ export function getFrameworkCategory(framework: string): FrameworkCategoryId | n
       lowerFramework.includes('eu ai act') ||
       lowerFramework.includes('ieee ead') ||
       lowerFramework.includes('gdpr')) {
-    return null; // Explicitly excluded from primary analysis
+    return null;
   }
   
   return null;
@@ -301,4 +374,17 @@ export function getQuestionCountByFrameworkCategory(): Record<FrameworkCategoryI
     counts[cat] = getQuestionsByFrameworkCategory(cat).length;
   });
   return counts as Record<FrameworkCategoryId, number>;
+}
+
+// Get statistics by security domain
+export function getStatsBySecurityDomain(securityDomainId: string): {
+  totalDomains: number;
+  totalSubcategories: number;
+  totalQuestions: number;
+} {
+  return {
+    totalDomains: getDomainsBySecurityDomain(securityDomainId).length,
+    totalSubcategories: getSubcategoriesBySecurityDomain(securityDomainId).length,
+    totalQuestions: getQuestionsBySecurityDomain(securityDomainId).length,
+  };
 }

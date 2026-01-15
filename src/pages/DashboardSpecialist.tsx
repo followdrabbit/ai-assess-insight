@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { domains, maturityLevels } from '@/lib/dataset';
-import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage } from '@/lib/scoring';
+import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, ActiveQuestion } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
 import { FrameworkCategoryId } from '@/lib/dataset';
@@ -22,6 +22,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { questions as defaultQuestions } from '@/lib/dataset';
+import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -58,6 +67,13 @@ export default function DashboardSpecialist() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
 
+  // Framework states
+  const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
+  const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
+  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
   const [criticalityFilter, setCriticalityFilter] = useState<CriticalityFilter>('all');
@@ -68,9 +84,179 @@ export default function DashboardSpecialist() {
   const [selectedHeatmapDomain, setSelectedHeatmapDomain] = useState<string>('all');
   const [expandedFrameworks, setExpandedFrameworks] = useState<Set<string>>(new Set());
 
-  const metrics = useMemo(() => calculateOverallMetrics(answers), [answers]);
-  const allCriticalGaps = useMemo(() => getCriticalGaps(answers, 0.5), [answers]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers), [answers]);
+  // Load active questions and frameworks
+  const loadData = useCallback(async () => {
+    setQuestionsLoading(true);
+    try {
+      const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
+        getAllCustomQuestions(),
+        getDisabledQuestions(),
+        getEnabledFrameworks(),
+        getSelectedFrameworks(),
+        getAllCustomFrameworks()
+      ]);
+
+      // Combine default and custom questions, excluding disabled ones
+      const active: ActiveQuestion[] = [
+        ...defaultQuestions
+          .filter(q => !disabledQuestionIds.includes(q.questionId))
+          .map(q => ({
+            questionId: q.questionId,
+            questionText: q.questionText,
+            subcatId: q.subcatId,
+            domainId: q.domainId,
+            ownershipType: q.ownershipType,
+            frameworks: q.frameworks || []
+          })),
+        ...customQuestions
+          .filter(q => !q.isDisabled)
+          .map(q => ({
+            questionId: q.questionId,
+            questionText: q.questionText,
+            subcatId: q.subcatId || '',
+            domainId: q.domainId,
+            ownershipType: q.ownershipType,
+            frameworks: q.frameworks || []
+          }))
+      ];
+
+      setAllActiveQuestions(active);
+      setEnabledFrameworkIds(enabledIds);
+
+      // Combine default and custom frameworks, filter by enabled
+      const allFrameworks: Framework[] = [
+        ...defaultFrameworks,
+        ...customFrameworks.map(cf => ({
+          frameworkId: cf.frameworkId,
+          frameworkName: cf.frameworkName,
+          shortName: cf.shortName,
+          description: cf.description,
+          targetAudience: cf.targetAudience,
+          assessmentScope: cf.assessmentScope,
+          defaultEnabled: cf.defaultEnabled,
+          version: cf.version,
+          category: cf.category as 'core' | 'high-value' | 'tech-focused',
+          references: cf.references
+        }))
+      ];
+
+      const enabledSet = new Set(enabledIds);
+      const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
+      setEnabledFrameworks(enabled);
+
+      // Sanitize selected frameworks
+      const enabledIdSet = new Set(enabledIds);
+      const sanitizedSelected = (selectedIds || []).filter(id => enabledIdSet.has(id));
+      setSelectedFrameworkIds(sanitizedSelected);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+      setAllActiveQuestions(defaultQuestions.map(q => ({
+        questionId: q.questionId,
+        questionText: q.questionText,
+        subcatId: q.subcatId,
+        domainId: q.domainId,
+        ownershipType: q.ownershipType,
+        frameworks: q.frameworks || []
+      })));
+      setEnabledFrameworkIds(defaultEnabledIds);
+      setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Refresh on focus/visibility
+  useEffect(() => {
+    const onFocus = () => loadData();
+    const onVisibility = () => {
+      if (!document.hidden) loadData();
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [loadData]);
+
+  // Filter questions by enabled frameworks
+  const questionsFilteredByEnabledFrameworks = useMemo(() => {
+    if (enabledFrameworkIds.length === 0) return allActiveQuestions;
+
+    const enabledSet = new Set(enabledFrameworkIds);
+    return allActiveQuestions.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      return questionFrameworkIds.some(id => enabledSet.has(id));
+    });
+  }, [allActiveQuestions, enabledFrameworkIds]);
+
+  // Apply user selection on top of enabled frameworks
+  const questionsForDashboard = useMemo(() => {
+    if (selectedFrameworkIds.length === 0) return questionsFilteredByEnabledFrameworks;
+
+    const selectedSet = new Set(selectedFrameworkIds);
+    return questionsFilteredByEnabledFrameworks.filter(q => {
+      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
+      return questionFrameworkIds.some(id => selectedSet.has(id));
+    });
+  }, [questionsFilteredByEnabledFrameworks, selectedFrameworkIds]);
+
+  // Handle framework selection change
+  const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
+    setSelectedFrameworkIds(frameworkIds);
+    try {
+      await setSelectedFrameworks(frameworkIds);
+    } catch (error) {
+      console.error('Error saving framework selection:', error);
+    }
+  };
+
+  // Toggle framework selection
+  const toggleFramework = (frameworkId: string) => {
+    const newSelection = selectedFrameworkIds.includes(frameworkId)
+      ? selectedFrameworkIds.filter(id => id !== frameworkId)
+      : [...selectedFrameworkIds, frameworkId];
+    handleFrameworkSelectionChange(newSelection);
+  };
+
+  // Clear framework selection
+  const clearFrameworkSelection = () => {
+    handleFrameworkSelectionChange([]);
+  };
+
+  // Group frameworks by category
+  const frameworksByCategory = useMemo(() => {
+    const groups: Record<string, Framework[]> = {
+      'core': [],
+      'high-value': [],
+      'tech-focused': []
+    };
+    enabledFrameworks.forEach(fw => {
+      const cat = fw.category || 'core';
+      if (groups[cat]) groups[cat].push(fw);
+    });
+    return groups;
+  }, [enabledFrameworks]);
+
+  const categoryLabels: Record<string, string> = {
+    'core': 'Frameworks Principais',
+    'high-value': 'Alto Valor',
+    'tech-focused': 'Foco Técnico'
+  };
+
+  // Calculate metrics using filtered questions
+  const metrics = useMemo(() => calculateOverallMetrics(answers, questionsForDashboard), [answers, questionsForDashboard]);
+  const allCriticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsForDashboard), [answers, questionsForDashboard]);
+  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsForDashboard), [answers, questionsForDashboard]);
 
   // Response distribution for pie chart
   const responseDistribution = useMemo(() => {
@@ -93,10 +279,11 @@ export default function DashboardSpecialist() {
     ].filter(d => d.value > 0);
   }, [answers, metrics.totalQuestions]);
 
-  // Unique domains for filter
+  // Unique domains for filter - only from filtered questions
   const domainOptions = useMemo(() => {
-    return domains.map(d => ({ id: d.domainId, name: d.domainName }));
-  }, []);
+    const domainIds = new Set(questionsForDashboard.map(q => q.domainId));
+    return domains.filter(d => domainIds.has(d.domainId)).map(d => ({ id: d.domainId, name: d.domainName }));
+  }, [questionsForDashboard]);
 
   // Filtered and sorted gaps
   const filteredGaps = useMemo(() => {
@@ -181,8 +368,35 @@ export default function DashboardSpecialist() {
     nistFunction: dm.nistFunction,
   }));
 
+  // Map framework IDs to their category IDs for filtering
+  const frameworkIdToCategoryId: Record<string, FrameworkCategoryId> = {
+    'NIST_AI_RMF': 'NIST_AI_RMF',
+    'ISO_27001_27002': 'SECURITY_BASELINE',
+    'ISO_23894': 'AI_RISK_MGMT',
+    'LGPD': 'PRIVACY_LGPD',
+    'NIST_SSDF': 'SECURE_DEVELOPMENT',
+    'CSA_CCM': 'SECURE_DEVELOPMENT',
+    'CSA_AI': 'SECURE_DEVELOPMENT',
+    'OWASP_LLM': 'THREAT_EXPOSURE',
+    'OWASP_API': 'THREAT_EXPOSURE'
+  };
+
+  // Get selected category IDs based on selected frameworks
+  const selectedCategoryIds = useMemo(() => {
+    const effectiveFrameworkIds = selectedFrameworkIds.length > 0 
+      ? selectedFrameworkIds 
+      : enabledFrameworks.map(f => f.frameworkId);
+    
+    const categoryIds = new Set<FrameworkCategoryId>();
+    effectiveFrameworkIds.forEach(fwId => {
+      const categoryId = frameworkIdToCategoryId[fwId];
+      if (categoryId) categoryIds.add(categoryId);
+    });
+    return categoryIds;
+  }, [selectedFrameworkIds, enabledFrameworks]);
+
   const frameworkCategoryData = metrics.frameworkCategoryMetrics
-    .filter(fc => fc.totalQuestions > 0)
+    .filter(fc => fc.totalQuestions > 0 && selectedCategoryIds.has(fc.categoryId))
     .map(fc => ({
       categoryId: fc.categoryId,
       name: frameworkCategoryLabels[fc.categoryId] || fc.categoryId,
@@ -194,17 +408,43 @@ export default function DashboardSpecialist() {
       maturityLevel: fc.maturityLevel,
     }));
 
-  // Group frameworks by category for better navigation
+  // Filter framework coverage by selected frameworks
+  const filteredFrameworkCoverage = useMemo(() => {
+    const frameworkIdToName: Record<string, string> = {
+      'NIST_AI_RMF': 'NIST AI RMF',
+      'ISO_27001_27002': 'ISO/IEC 27001 / 27002',
+      'ISO_23894': 'ISO/IEC 23894',
+      'LGPD': 'LGPD',
+      'NIST_SSDF': 'NIST SSDF',
+      'CSA_CCM': 'CSA AI Security',
+      'CSA_AI': 'CSA AI Security',
+      'OWASP_LLM': 'OWASP Top 10 for LLM Applications',
+      'OWASP_API': 'OWASP API Security Top 10'
+    };
+    
+    const effectiveFrameworkIds = selectedFrameworkIds.length > 0 
+      ? selectedFrameworkIds 
+      : enabledFrameworks.map(f => f.frameworkId);
+    
+    const selectedFrameworkNames = new Set(
+      effectiveFrameworkIds.map(id => frameworkIdToName[id]).filter(Boolean)
+    );
+    
+    return frameworkCoverage.filter(fw => 
+      selectedFrameworkNames.has(fw.framework)
+    );
+  }, [frameworkCoverage, selectedFrameworkIds, enabledFrameworks]);
+
+  // Group filtered frameworks by category for better navigation
   const groupedFrameworks = useMemo(() => {
-    const groups: Record<string, typeof frameworkCoverage> = {};
-    frameworkCoverage.forEach(fw => {
-      // Extract category from framework name
+    const groups: Record<string, typeof filteredFrameworkCoverage> = {};
+    filteredFrameworkCoverage.forEach(fw => {
       const category = fw.framework.split(' ')[0] || 'Outros';
       if (!groups[category]) groups[category] = [];
       groups[category].push(fw);
     });
     return groups;
-  }, [frameworkCoverage]);
+  }, [filteredFrameworkCoverage]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -229,7 +469,7 @@ export default function DashboardSpecialist() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || questionsLoading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
   }
 
@@ -259,6 +499,99 @@ export default function DashboardSpecialist() {
           <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
         </div>
       )}
+
+      {/* Framework Selection Section */}
+      <div className="card-elevated p-4 space-y-4 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h3 className="font-medium text-sm">Escopo da Análise Técnica</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {selectedFrameworkIds.length === 0 
+                ? `Todos os ${enabledFrameworks.length} frameworks habilitados`
+                : `${selectedFrameworkIds.length} de ${enabledFrameworks.length} frameworks selecionados`
+              }
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs"
+              onClick={clearFrameworkSelection}
+              disabled={selectedFrameworkIds.length === 0}
+            >
+              Limpar Seleção
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  Selecionar Frameworks
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 bg-popover" align="end">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">Frameworks Habilitados</h4>
+                    <span className="text-xs text-muted-foreground">
+                      {enabledFrameworks.length} disponíveis
+                    </span>
+                  </div>
+                  
+                  {Object.entries(frameworksByCategory).map(([category, frameworks]) => (
+                    frameworks.length > 0 && (
+                      <div key={category}>
+                        <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                          {categoryLabels[category]}
+                        </h5>
+                        <div className="space-y-2">
+                          {frameworks.map(fw => (
+                            <div 
+                              key={fw.frameworkId}
+                              className="flex items-center gap-2"
+                            >
+                              <Checkbox
+                                id={`spec-${fw.frameworkId}`}
+                                checked={selectedFrameworkIds.includes(fw.frameworkId)}
+                                onCheckedChange={() => toggleFramework(fw.frameworkId)}
+                              />
+                              <label 
+                                htmlFor={`spec-${fw.frameworkId}`}
+                                className="text-sm cursor-pointer flex-1"
+                              >
+                                {fw.shortName}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Framework Pills */}
+        <div className="flex flex-wrap gap-2">
+          {enabledFrameworks.map(fw => {
+            const isSelected = selectedFrameworkIds.length === 0 || selectedFrameworkIds.includes(fw.frameworkId);
+            return (
+              <Badge
+                key={fw.frameworkId}
+                variant={isSelected ? "default" : "outline"}
+                className={cn(
+                  "cursor-pointer transition-all text-xs",
+                  !isSelected && "opacity-50 hover:opacity-75"
+                )}
+                onClick={() => toggleFramework(fw.frameworkId)}
+              >
+                {fw.shortName}
+              </Badge>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Quick Filter Pills */}
       <div className="flex flex-wrap gap-2">
@@ -324,15 +657,15 @@ export default function DashboardSpecialist() {
 
       {/* Specialist KPIs */}
       <div className="stats-grid">
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
           <div className="kpi-label">Total de Perguntas</div>
           <div className="kpi-value">{metrics.totalQuestions}</div>
           <div className="text-sm text-muted-foreground mt-2">
-            Em {domains.length} domínios
+            Em {metrics.domainMetrics.length} domínios
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
           <div className="kpi-label">Respondidas</div>
           <div className="kpi-value">{metrics.answeredQuestions}</div>
           <div className="text-sm text-muted-foreground mt-2">
@@ -340,7 +673,7 @@ export default function DashboardSpecialist() {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
           <div className="kpi-label">Controles Ausentes</div>
           <div className="kpi-value text-destructive">
             {quickStats.noCount + quickStats.notRespondedCount}
@@ -350,7 +683,7 @@ export default function DashboardSpecialist() {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
           <div className="kpi-label">Controles Parciais</div>
           <div className="kpi-value text-amber-600">
             {quickStats.partialCount}
@@ -386,7 +719,7 @@ export default function DashboardSpecialist() {
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Domínio" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="all">Todos Domínios</SelectItem>
                 {domainOptions.map(d => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
@@ -397,7 +730,7 @@ export default function DashboardSpecialist() {
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="criticality">Criticidade</SelectItem>
                 <SelectItem value="score">Score</SelectItem>
                 <SelectItem value="subcategory">Subcategoria</SelectItem>
@@ -425,7 +758,7 @@ export default function DashboardSpecialist() {
 
           {/* Gaps Table */}
           {filteredGaps.length > 0 ? (
-            <div className="card-elevated overflow-hidden">
+            <div className="card-elevated overflow-hidden animate-in fade-in-0 duration-500">
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead>
@@ -440,8 +773,12 @@ export default function DashboardSpecialist() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredGaps.slice(0, 50).map(gap => (
-                      <tr key={gap.questionId} className="group">
+                    {filteredGaps.slice(0, 50).map((gap, idx) => (
+                      <tr 
+                        key={gap.questionId} 
+                        className="group animate-in fade-in-0 slide-in-from-left-2 duration-300"
+                        style={{ animationDelay: `${idx * 20}ms`, animationFillMode: 'backwards' }}
+                      >
                         <td className="font-mono text-xs whitespace-nowrap">{gap.questionId}</td>
                         <td className="whitespace-nowrap text-sm">{gap.subcatName}</td>
                         <td className="max-w-md">
@@ -470,7 +807,7 @@ export default function DashboardSpecialist() {
                             variant="ghost"
                             size="sm"
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => navigate(`/assessment?q=${gap.questionId}`)}
+                            onClick={() => navigate(`/assessment?questionId=${gap.questionId}`)}
                           >
                             Ir →
                           </Button>
@@ -502,7 +839,7 @@ export default function DashboardSpecialist() {
               <SelectTrigger className="w-[250px]">
                 <SelectValue placeholder="Filtrar por domínio" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="all">Todos os Domínios</SelectItem>
                 {domainOptions.map(d => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
@@ -519,7 +856,7 @@ export default function DashboardSpecialist() {
             </div>
           </div>
 
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
             <h3 className="font-semibold mb-4">
               Mapa de Calor por Subcategoria
               {selectedHeatmapDomain !== 'all' && (
@@ -529,11 +866,15 @@ export default function DashboardSpecialist() {
               )}
             </h3>
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-1">
-              {heatmapData.map(sm => (
+              {heatmapData.map((sm, idx) => (
                 <div
                   key={sm.subcatId}
-                  className="heatmap-cell aspect-square flex items-center justify-center text-xs font-medium text-white cursor-pointer hover:opacity-80 transition-opacity relative group"
-                  style={{ backgroundColor: sm.maturityLevel.color }}
+                  className="heatmap-cell aspect-square flex items-center justify-center text-xs font-medium text-white cursor-pointer hover:opacity-80 transition-opacity relative group animate-in fade-in-0 zoom-in-90 duration-300"
+                  style={{ 
+                    backgroundColor: sm.maturityLevel.color,
+                    animationDelay: `${idx * 15}ms`,
+                    animationFillMode: 'backwards'
+                  }}
                   onClick={() => navigate('/assessment')}
                 >
                   {Math.round(sm.score * 100)}
@@ -551,7 +892,7 @@ export default function DashboardSpecialist() {
 
           {/* Response Distribution */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <h3 className="font-semibold mb-4">Distribuição de Respostas</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -576,14 +917,18 @@ export default function DashboardSpecialist() {
               </div>
             </div>
 
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-right-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
               <h3 className="font-semibold mb-4">Resumo por Criticidade</h3>
               <div className="space-y-4">
-                {['Critical', 'High', 'Medium', 'Low'].map(crit => {
+                {['Critical', 'High', 'Medium', 'Low'].map((crit, idx) => {
                   const count = allCriticalGaps.filter(g => g.criticality === crit).length;
                   const percent = allCriticalGaps.length > 0 ? (count / allCriticalGaps.length) * 100 : 0;
                   return (
-                    <div key={crit}>
+                    <div 
+                      key={crit}
+                      className="animate-in fade-in-0 slide-in-from-right-2 duration-300"
+                      style={{ animationDelay: `${400 + idx * 100}ms`, animationFillMode: 'backwards' }}
+                    >
                       <div className="flex items-center justify-between mb-1">
                         <span className={cn("criticality-badge", `criticality-${crit.toLowerCase()}`)}>
                           {crit}
@@ -593,7 +938,7 @@ export default function DashboardSpecialist() {
                       <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                         <div 
                           className={cn(
-                            "h-full",
+                            "h-full transition-all duration-500",
                             crit === 'Critical' ? 'bg-red-500' :
                             crit === 'High' ? 'bg-orange-500' :
                             crit === 'Medium' ? 'bg-blue-500' :
@@ -612,7 +957,7 @@ export default function DashboardSpecialist() {
 
         {/* Domains Tab */}
         <TabsContent value="domains" className="space-y-4">
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
             <h3 className="font-semibold mb-4">Detalhamento por Domínio</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -638,10 +983,11 @@ export default function DashboardSpecialist() {
 
           {/* Domain Cards */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {metrics.domainMetrics.map(dm => (
+            {metrics.domainMetrics.map((dm, idx) => (
               <div 
                 key={dm.domainId}
-                className="card-elevated p-4 cursor-pointer hover:border-primary/50 transition-colors"
+                className="card-elevated p-4 cursor-pointer hover:border-primary/50 transition-colors animate-in fade-in-0 slide-in-from-bottom-4 duration-400"
+                style={{ animationDelay: `${200 + idx * 50}ms`, animationFillMode: 'backwards' }}
                 onClick={() => setDomainFilter(dm.domainId)}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -684,11 +1030,15 @@ export default function DashboardSpecialist() {
         {/* Frameworks Tab */}
         <TabsContent value="frameworks" className="space-y-4">
           {/* Framework Categories */}
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
             <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {frameworkCategoryData.map(fc => (
-                <div key={fc.categoryId} className="p-4 bg-muted/50 rounded-lg">
+              {frameworkCategoryData.map((fc, idx) => (
+                <div 
+                  key={fc.categoryId} 
+                  className="p-4 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+                  style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'backwards' }}
+                >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-sm">{fc.name}</span>
                     <span 
@@ -717,17 +1067,20 @@ export default function DashboardSpecialist() {
           </div>
 
           {/* Grouped Framework Coverage */}
-          <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Cobertura Detalhada por Framework</h3>
+          <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+            <h3 className="font-semibold mb-4">Cobertura Detalhada por Framework ({filteredFrameworkCoverage.length})</h3>
             <div className="space-y-2">
-              {Object.entries(groupedFrameworks).map(([category, frameworks]) => (
+              {Object.entries(groupedFrameworks).map(([category, frameworks], catIdx) => (
                 <Collapsible
                   key={category}
                   open={expandedFrameworks.has(category)}
                   onOpenChange={() => toggleFrameworkExpanded(category)}
                 >
                   <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                    <div 
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors animate-in fade-in-0 slide-in-from-left-2 duration-300"
+                      style={{ animationDelay: `${300 + catIdx * 100}ms`, animationFillMode: 'backwards' }}
+                    >
                       <div className="flex items-center gap-3">
                         <span className="font-medium">{category}</span>
                         <span className="text-xs text-muted-foreground">
@@ -746,8 +1099,12 @@ export default function DashboardSpecialist() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
-                      {frameworks.map(fw => (
-                        <div key={fw.framework} className="p-3 bg-background rounded-lg border border-border">
+                      {frameworks.map((fw, fwIdx) => (
+                        <div 
+                          key={fw.framework} 
+                          className="p-3 bg-background rounded-lg border border-border animate-in fade-in-0 zoom-in-95 duration-300"
+                          style={{ animationDelay: `${fwIdx * 50}ms`, animationFillMode: 'backwards' }}
+                        >
                           <div className="font-medium text-sm truncate" title={fw.framework}>
                             {fw.framework}
                           </div>

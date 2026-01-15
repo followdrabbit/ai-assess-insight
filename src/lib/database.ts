@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 // ============ TYPES ============
 export interface Answer {
@@ -573,22 +574,39 @@ export async function getMaturitySnapshots(daysBack: number = 90): Promise<Matur
   
   if (error) throw error;
   
-  return (data || []).map(row => ({
-    id: row.id,
-    snapshotDate: row.snapshot_date,
-    snapshotType: row.snapshot_type as 'automatic' | 'manual',
-    overallScore: Number(row.overall_score),
-    overallCoverage: Number(row.overall_coverage),
-    evidenceReadiness: Number(row.evidence_readiness),
-    maturityLevel: row.maturity_level,
-    totalQuestions: row.total_questions,
-    answeredQuestions: row.answered_questions,
-    criticalGaps: row.critical_gaps,
-    domainMetrics: (row.domain_metrics as unknown as DomainSnapshot[]) || [],
-    frameworkMetrics: (row.framework_metrics as unknown as FrameworkSnapshot[]) || [],
-    frameworkCategoryMetrics: (row.framework_category_metrics as unknown as FrameworkCategorySnapshot[]) || [],
-    createdAt: row.created_at || ''
-  }));
+  return (data || []).map(row => {
+    // Parse JSON fields safely - they may be strings or already parsed objects
+    const parseJsonField = <T>(field: unknown): T[] => {
+      if (!field) return [];
+      if (Array.isArray(field)) return field as T[];
+      if (typeof field === 'string') {
+        try {
+          const parsed = JSON.parse(field);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    return {
+      id: row.id,
+      snapshotDate: row.snapshot_date,
+      snapshotType: row.snapshot_type as 'automatic' | 'manual',
+      overallScore: Number(row.overall_score),
+      overallCoverage: Number(row.overall_coverage),
+      evidenceReadiness: Number(row.evidence_readiness),
+      maturityLevel: row.maturity_level,
+      totalQuestions: row.total_questions,
+      answeredQuestions: row.answered_questions,
+      criticalGaps: row.critical_gaps,
+      domainMetrics: parseJsonField<DomainSnapshot>(row.domain_metrics),
+      frameworkMetrics: parseJsonField<FrameworkSnapshot>(row.framework_metrics),
+      frameworkCategoryMetrics: parseJsonField<FrameworkCategorySnapshot>(row.framework_category_metrics),
+      createdAt: row.created_at || ''
+    };
+  });
 }
 
 export async function saveMaturitySnapshot(
@@ -618,9 +636,9 @@ export async function saveMaturitySnapshot(
           total_questions: snapshot.totalQuestions,
           answered_questions: snapshot.answeredQuestions,
           critical_gaps: snapshot.criticalGaps,
-          domain_metrics: JSON.stringify(snapshot.domainMetrics),
-          framework_metrics: JSON.stringify(snapshot.frameworkMetrics),
-          framework_category_metrics: JSON.stringify(snapshot.frameworkCategoryMetrics)
+          domain_metrics: snapshot.domainMetrics as unknown as Json,
+          framework_metrics: snapshot.frameworkMetrics as unknown as Json,
+          framework_category_metrics: snapshot.frameworkCategoryMetrics as unknown as Json
         })
         .eq('id', existing.id);
       
@@ -642,9 +660,9 @@ export async function saveMaturitySnapshot(
       total_questions: snapshot.totalQuestions,
       answered_questions: snapshot.answeredQuestions,
       critical_gaps: snapshot.criticalGaps,
-      domain_metrics: JSON.stringify(snapshot.domainMetrics),
-      framework_metrics: JSON.stringify(snapshot.frameworkMetrics),
-      framework_category_metrics: JSON.stringify(snapshot.frameworkCategoryMetrics)
+      domain_metrics: snapshot.domainMetrics as unknown as Json,
+      framework_metrics: snapshot.frameworkMetrics as unknown as Json,
+      framework_category_metrics: snapshot.frameworkCategoryMetrics as unknown as Json
     }]);
   
   if (error) throw error;

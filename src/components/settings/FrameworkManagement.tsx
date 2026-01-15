@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { frameworks as defaultFrameworks, Framework } from '@/lib/frameworks';
@@ -23,9 +24,22 @@ import {
   disableDefaultFramework,
   enableDefaultFramework
 } from '@/lib/database';
+import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, ExternalLink, Filter } from 'lucide-react';
 
 type AudienceType = 'Executive' | 'GRC' | 'Engineering';
 type CategoryType = 'core' | 'high-value' | 'tech-focused' | 'custom';
+
+const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
+  brain: Brain,
+  cloud: Cloud,
+  code: Code,
+  shield: Shield,
+  lock: Lock,
+  database: Database,
+  server: Server,
+  key: Key
+};
 
 interface FrameworkFormData {
   frameworkId: string;
@@ -38,6 +52,7 @@ interface FrameworkFormData {
   version: string;
   category: CategoryType;
   references: string[];
+  securityDomainId: string;
 }
 
 const emptyFormData: FrameworkFormData = {
@@ -50,7 +65,8 @@ const emptyFormData: FrameworkFormData = {
   defaultEnabled: false,
   version: '1.0.0',
   category: 'custom',
-  references: []
+  references: [],
+  securityDomainId: ''
 };
 
 const categoryLabels: Record<CategoryType, string> = {
@@ -69,6 +85,8 @@ const audienceLabels: Record<AudienceType, string> = {
 export function FrameworkManagement() {
   const [customFrameworks, setCustomFrameworks] = useState<CustomFramework[]>([]);
   const [disabledDefaultFrameworks, setDisabledDefaultFrameworks] = useState<Set<string>>(new Set());
+  const [securityDomains, setSecurityDomains] = useState<SecurityDomain[]>([]);
+  const [selectedDomainFilter, setSelectedDomainFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
   const [editingFramework, setEditingFramework] = useState<CustomFramework | null>(null);
@@ -81,11 +99,13 @@ export function FrameworkManagement() {
   }, []);
 
   const loadData = async () => {
-    const [frameworks, disabledIds] = await Promise.all([
+    const [frameworks, disabledIds, domains] = await Promise.all([
       getAllCustomFrameworks(),
-      getDisabledFrameworks()
+      getDisabledFrameworks(),
+      getAllSecurityDomains()
     ]);
     setCustomFrameworks(frameworks);
+    setSecurityDomains(domains);
     // Track which default frameworks have custom overrides OR are disabled
     const overriddenIds = new Set([
       ...frameworks.map(f => f.frameworkId),
@@ -94,12 +114,22 @@ export function FrameworkManagement() {
     setDisabledDefaultFrameworks(overriddenIds);
   };
 
-  const allFrameworks = useMemo(() => [
-    ...defaultFrameworks
-      .filter(f => !disabledDefaultFrameworks.has(f.frameworkId))
-      .map(f => ({ ...f, isCustom: false as const, isDisabled: false })),
-    ...customFrameworks.map(f => ({ ...f, isDisabled: false }))
-  ], [customFrameworks, disabledDefaultFrameworks]);
+  const allFrameworks = useMemo(() => {
+    const combined = [
+      ...defaultFrameworks
+        .filter(f => !disabledDefaultFrameworks.has(f.frameworkId))
+        .map(f => ({ ...f, isCustom: false as const, isDisabled: false })),
+      ...customFrameworks.map(f => ({ ...f, isDisabled: false }))
+    ];
+    
+    if (selectedDomainFilter === 'all') return combined;
+    return combined.filter(f => f.securityDomainId === selectedDomainFilter);
+  }, [customFrameworks, disabledDefaultFrameworks, selectedDomainFilter]);
+
+  const getSecurityDomainInfo = (domainId?: string) => {
+    if (!domainId) return null;
+    return securityDomains.find(d => d.domainId === domainId);
+  };
 
   const openNewDialog = () => {
     setEditingFramework(null);
@@ -122,7 +152,8 @@ export function FrameworkManagement() {
       defaultEnabled: framework.defaultEnabled,
       version: framework.version,
       category: framework.category as CategoryType,
-      references: framework.references
+      references: framework.references,
+      securityDomainId: framework.securityDomainId || ''
     });
     setReferencesText(framework.references.join('\n'));
     setIsDialogOpen(true);
@@ -143,6 +174,10 @@ export function FrameworkManagement() {
     }
     if (formData.targetAudience.length === 0) {
       toast.error('Selecione pelo menos um público-alvo');
+      return false;
+    }
+    if (!formData.securityDomainId) {
+      toast.error('Selecione um domínio de segurança');
       return false;
     }
 
@@ -167,26 +202,22 @@ export function FrameworkManagement() {
     const references = referencesText.split('\n').filter(r => r.trim());
 
     try {
+      const frameworkData = {
+        ...formData,
+        references
+      };
+
       if (editingFramework) {
         // Editing existing custom framework
-        await updateCustomFramework(editingFramework.frameworkId, {
-          ...formData,
-          references
-        });
+        await updateCustomFramework(editingFramework.frameworkId, frameworkData);
         toast.success('Framework atualizado com sucesso');
       } else if (isEditingDefault) {
         // Creating custom override for default framework
-        await createCustomFramework({
-          ...formData,
-          references
-        });
+        await createCustomFramework(frameworkData);
         toast.success('Framework padrão substituído por versão personalizada');
       } else {
         // Creating new custom framework
-        await createCustomFramework({
-          ...formData,
-          references
-        });
+        await createCustomFramework(frameworkData);
         toast.success('Framework criado com sucesso');
       }
       await loadData();
@@ -244,89 +275,147 @@ export function FrameworkManagement() {
             Visualize, crie e edite frameworks de avaliação
           </p>
         </div>
-        <Button onClick={openNewDialog}>Novo Framework</Button>
+        <Button onClick={openNewDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Framework
+        </Button>
+      </div>
+
+      {/* Domain Filter */}
+      <div className="flex items-center gap-3">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <div className="flex gap-2 flex-wrap">
+          <Badge
+            variant={selectedDomainFilter === 'all' ? 'default' : 'outline'}
+            className="cursor-pointer"
+            onClick={() => setSelectedDomainFilter('all')}
+          >
+            Todos ({defaultFrameworks.length + customFrameworks.length})
+          </Badge>
+          {securityDomains.filter(d => d.isEnabled).map(domain => {
+            const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+            const colorStyles = DOMAIN_COLORS[domain.color];
+            const count = [...defaultFrameworks, ...customFrameworks].filter(f => f.securityDomainId === domain.domainId).length;
+            return (
+              <Badge
+                key={domain.domainId}
+                variant={selectedDomainFilter === domain.domainId ? 'default' : 'outline'}
+                className={cn(
+                  "cursor-pointer flex items-center gap-1",
+                  selectedDomainFilter === domain.domainId && colorStyles?.bg,
+                  selectedDomainFilter === domain.domainId && colorStyles?.text
+                )}
+                onClick={() => setSelectedDomainFilter(domain.domainId)}
+              >
+                <IconComp className="h-3 w-3" />
+                {domain.shortName} ({count})
+              </Badge>
+            );
+          })}
+        </div>
       </div>
 
       {/* All Frameworks */}
       <div className="space-y-3">
         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-          Todos os Frameworks ({allFrameworks.length})
+          Frameworks {selectedDomainFilter !== 'all' && `- ${getSecurityDomainInfo(selectedDomainFilter)?.shortName}`} ({allFrameworks.length})
         </h4>
         <div className="grid gap-3 md:grid-cols-2">
-          {allFrameworks.map(fw => (
-            <Card key={fw.frameworkId} className={cn(!fw.isCustom && "opacity-90")}>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      {fw.shortName}
-                      <Badge variant={fw.isCustom ? "secondary" : "outline"} className="text-[10px]">
-                        {fw.isCustom ? 'Personalizado' : 'Padrão'}
+          {allFrameworks.map(fw => {
+            const domainInfo = getSecurityDomainInfo(fw.securityDomainId);
+            const IconComp = domainInfo ? ICON_COMPONENTS[domainInfo.icon] || Shield : null;
+            const colorStyles = domainInfo ? DOMAIN_COLORS[domainInfo.color] : null;
+            
+            return (
+              <Card key={fw.frameworkId} className={cn(!fw.isCustom && "opacity-90")}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {fw.shortName}
+                        <Badge variant={fw.isCustom ? "secondary" : "outline"} className="text-[10px]">
+                          {fw.isCustom ? 'Personalizado' : 'Padrão'}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription className="text-xs mt-0.5">
+                        {fw.frameworkId} • v{fw.version}
+                      </CardDescription>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className={cn(
+                        "text-[10px]",
+                        fw.category === 'core' && "bg-primary",
+                        fw.category === 'high-value' && "bg-amber-500",
+                        fw.category === 'tech-focused' && "bg-blue-500",
+                        fw.category === 'custom' && "bg-purple-500"
+                      )}>
+                        {categoryLabels[fw.category as CategoryType]}
                       </Badge>
-                    </CardTitle>
-                    <CardDescription className="text-xs mt-0.5">
-                      {fw.frameworkId} • v{fw.version}
-                    </CardDescription>
+                      {domainInfo && (
+                        <Badge variant="outline" className={cn("text-[10px] flex items-center gap-1", colorStyles?.border)}>
+                          {IconComp && <IconComp className={cn("h-3 w-3", colorStyles?.text)} />}
+                          {domainInfo.shortName}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <Badge className={cn(
-                    "text-[10px]",
-                    fw.category === 'core' && "bg-primary",
-                    fw.category === 'high-value' && "bg-amber-500",
-                    fw.category === 'tech-focused' && "bg-blue-500",
-                    fw.category === 'custom' && "bg-purple-500"
-                  )}>
-                    {categoryLabels[fw.category as CategoryType]}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {fw.description}
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEditDialog(fw)}>
-                    Editar
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">Excluir</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          {fw.isCustom ? 'Excluir framework?' : 'Desabilitar framework padrão?'}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {fw.isCustom ? (
-                            <>
-                              Você deseja excluir permanentemente o framework "{fw.shortName}"?
-                              Esta ação não pode ser desfeita. Perguntas associadas não serão afetadas.
-                              {defaultFrameworks.some(df => df.frameworkId === fw.frameworkId) && (
-                                <span className="block mt-2 text-foreground">
-                                  O framework padrão original será restaurado.
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              Você deseja desabilitar o framework padrão "{fw.shortName}"?
-                              Ele será removido da avaliação mas poderá ser restaurado posteriormente.
-                            </>
-                          )}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(fw.frameworkId, fw.isCustom)}>
-                          {fw.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="pt-0 space-y-3">
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {fw.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {fw.targetAudience.map(aud => (
+                      <Badge key={aud} variant="outline" className="text-[10px]">
+                        {audienceLabels[aud]}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => openEditDialog(fw)}>
+                      Editar
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">Excluir</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            {fw.isCustom ? 'Excluir framework?' : 'Desabilitar framework padrão?'}
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {fw.isCustom ? (
+                              <>
+                                Você deseja excluir permanentemente o framework "{fw.shortName}"?
+                                Esta ação não pode ser desfeita. Perguntas associadas não serão afetadas.
+                                {defaultFrameworks.some(df => df.frameworkId === fw.frameworkId) && (
+                                  <span className="block mt-2 text-foreground">
+                                    O framework padrão original será restaurado.
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                Você deseja desabilitar o framework padrão "{fw.shortName}"?
+                                Ele será removido da avaliação mas poderá ser restaurado posteriormente.
+                              </>
+                            )}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(fw.frameworkId, fw.isCustom)}>
+                            {fw.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
@@ -414,6 +503,36 @@ export function FrameworkManagement() {
                 onChange={(e) => setFormData(prev => ({ ...prev, assessmentScope: e.target.value }))}
                 placeholder="Ex: Segurança de aplicações de IA"
               />
+            </div>
+
+            {/* Security Domain Selector */}
+            <div className="space-y-2">
+              <Label>Domínio de Segurança *</Label>
+              <Select
+                value={formData.securityDomainId}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, securityDomainId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um domínio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {securityDomains.filter(d => d.isEnabled).map(domain => {
+                    const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+                    const colorStyles = DOMAIN_COLORS[domain.color];
+                    return (
+                      <SelectItem key={domain.domainId} value={domain.domainId}>
+                        <div className="flex items-center gap-2">
+                          <IconComp className={cn("h-4 w-4", colorStyles?.text)} />
+                          {domain.domainName}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Associe este framework a um domínio de segurança específico
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

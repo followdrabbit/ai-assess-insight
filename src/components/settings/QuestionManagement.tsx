@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { questions as defaultQuestions, domains, Question } from '@/lib/dataset';
@@ -26,8 +28,15 @@ import {
   getAllCustomFrameworks
 } from '@/lib/database';
 import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
+import { 
+  validateBulkImportFile, 
+  importBulkQuestions, 
+  downloadImportTemplate,
+  BulkImportValidation,
+  ParsedQuestion
+} from '@/lib/questionBulkImport';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -113,6 +122,14 @@ export function QuestionManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDomain, setFilterDomain] = useState<string>('all');
   const [filterSecurityDomain, setFilterSecurityDomain] = useState<string>('all');
+
+  // Bulk import state
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
+  const [bulkImportValidation, setBulkImportValidation] = useState<BulkImportValidation | null>(null);
+  const [bulkImportDomainId, setBulkImportDomainId] = useState<string>('');
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -373,6 +390,79 @@ export function QuestionManagement() {
     setIsDialogOpen(true);
   };
 
+  // Bulk import handlers
+  const handleBulkImportFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!bulkImportDomainId) {
+      toast.error('Selecione um domínio de segurança primeiro');
+      return;
+    }
+
+    const validation = await validateBulkImportFile(file, bulkImportDomainId);
+    setBulkImportValidation(validation);
+
+    if (validation.totalRows === 0) {
+      toast.error(validation.errors[0] || 'Arquivo vazio ou inválido');
+    }
+
+    // Reset file input
+    if (importFileRef.current) {
+      importFileRef.current.value = '';
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!bulkImportValidation) return;
+
+    const validQuestions = bulkImportValidation.questions.filter(q => q.isValid);
+    if (validQuestions.length === 0) {
+      toast.error('Nenhuma pergunta válida para importar');
+      return;
+    }
+
+    setImporting(true);
+    setImportProgress(0);
+
+    try {
+      const result = await importBulkQuestions(bulkImportValidation.questions, { skipInvalid: true });
+
+      if (result.success) {
+        toast.success(`${result.imported} perguntas importadas com sucesso!`);
+        if (result.failed > 0) {
+          toast.warning(`${result.failed} perguntas falharam na importação`);
+        }
+        setShowBulkImportDialog(false);
+        setBulkImportValidation(null);
+        await loadData();
+      } else {
+        toast.error('Erro ao importar perguntas');
+      }
+    } catch (error) {
+      console.error('Bulk import error:', error);
+      toast.error('Erro ao processar importação');
+    } finally {
+      setImporting(false);
+      setImportProgress(0);
+    }
+  };
+
+  const resetBulkImportDialog = () => {
+    setShowBulkImportDialog(false);
+    setBulkImportValidation(null);
+    setBulkImportDomainId('');
+  };
+
+  const handleDownloadTemplate = () => {
+    if (!bulkImportDomainId) {
+      toast.error('Selecione um domínio de segurança primeiro');
+      return;
+    }
+    downloadImportTemplate(bulkImportDomainId);
+    toast.success('Template baixado com sucesso');
+  };
+
   const defaultQuestionsFiltered = filteredQuestions.filter(q => !q.isCustom);
   const customQuestionsFiltered = filteredQuestions.filter(q => q.isCustom);
 
@@ -385,10 +475,16 @@ export function QuestionManagement() {
             Visualize, crie e edite perguntas da avaliação
           </p>
         </div>
-        <Button onClick={openNewDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Pergunta
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowBulkImportDialog(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importar em Lote
+          </Button>
+          <Button onClick={openNewDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Pergunta
+          </Button>
+        </div>
       </div>
 
       {/* Security Domain Filter */}
@@ -773,6 +869,206 @@ export function QuestionManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Import Dialog */}
+      <Dialog open={showBulkImportDialog} onOpenChange={(open) => { if (!open) resetBulkImportDialog(); }}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Importar Perguntas em Lote
+            </DialogTitle>
+            <DialogDescription>
+              Importe múltiplas perguntas de um arquivo CSV ou Excel
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Domain Selection */}
+            <div className="space-y-2">
+              <Label>Domínio de Segurança *</Label>
+              <Select value={bulkImportDomainId} onValueChange={setBulkImportDomainId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o domínio de destino" />
+                </SelectTrigger>
+                <SelectContent>
+                  {securityDomains.filter(d => d.isEnabled).map(domain => {
+                    const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+                    return (
+                      <SelectItem key={domain.domainId} value={domain.domainId}>
+                        <div className="flex items-center gap-2">
+                          <IconComp className="h-4 w-4" />
+                          {domain.domainName}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Template Download */}
+            <div className="p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-sm">Template de Importação</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Baixe o template Excel com as colunas corretas
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDownloadTemplate}
+                  disabled={!bulkImportDomainId}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar Template
+                </Button>
+              </div>
+            </div>
+
+            {/* File Upload */}
+            <div className="space-y-2">
+              <Label>Arquivo de Perguntas</Label>
+              <div className="flex gap-2">
+                <input
+                  ref={importFileRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleBulkImportFileSelect}
+                  className="hidden"
+                  disabled={!bulkImportDomainId}
+                />
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => importFileRef.current?.click()}
+                  disabled={!bulkImportDomainId}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Selecionar Arquivo CSV/Excel
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Formatos suportados: .csv, .xlsx, .xls
+              </p>
+            </div>
+
+            {/* Validation Results */}
+            {bulkImportValidation && (
+              <div className="space-y-3">
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <div className="text-xl font-bold">{bulkImportValidation.totalRows}</div>
+                    <div className="text-xs text-muted-foreground">Linhas Total</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <div className="text-xl font-bold text-green-600">{bulkImportValidation.validRows}</div>
+                    <div className="text-xs text-muted-foreground">Válidas</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <div className="text-xl font-bold text-red-600">
+                      {bulkImportValidation.totalRows - bulkImportValidation.validRows}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Com Erros</div>
+                  </div>
+                </div>
+
+                {/* Column Mapping */}
+                {Object.keys(bulkImportValidation.columnMapping).length > 0 && (
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <div className="flex items-center gap-2 text-blue-600 text-sm font-medium mb-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Colunas Detectadas
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(bulkImportValidation.columnMapping).map(([field, original]) => (
+                        <Badge key={field} variant="secondary" className="text-xs">
+                          {original} → {field}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Errors */}
+                {bulkImportValidation.errors.length > 0 && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <div className="flex items-center gap-2 text-red-600 text-sm font-medium mb-2">
+                      <XCircle className="h-4 w-4" />
+                      Erros ({bulkImportValidation.errors.length})
+                    </div>
+                    <ScrollArea className="h-32">
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        {bulkImportValidation.errors.slice(0, 20).map((err, i) => (
+                          <li key={i}>• {err}</li>
+                        ))}
+                        {bulkImportValidation.errors.length > 20 && (
+                          <li className="font-medium">... e mais {bulkImportValidation.errors.length - 20} erros</li>
+                        )}
+                      </ul>
+                    </ScrollArea>
+                  </div>
+                )}
+
+                {/* Warnings */}
+                {bulkImportValidation.warnings.length > 0 && (
+                  <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                    <div className="flex items-center gap-2 text-yellow-600 text-sm font-medium mb-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Avisos ({bulkImportValidation.warnings.length})
+                    </div>
+                    <ScrollArea className="h-24">
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        {bulkImportValidation.warnings.slice(0, 10).map((warn, i) => (
+                          <li key={i}>• {warn}</li>
+                        ))}
+                        {bulkImportValidation.warnings.length > 10 && (
+                          <li className="font-medium">... e mais {bulkImportValidation.warnings.length - 10} avisos</li>
+                        )}
+                      </ul>
+                    </ScrollArea>
+                  </div>
+                )}
+
+                {/* Import Progress */}
+                {importing && (
+                  <div className="space-y-2">
+                    <Progress value={importProgress} />
+                    <p className="text-xs text-center text-muted-foreground">
+                      Importando perguntas...
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={resetBulkImportDialog}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleBulkImport} 
+              disabled={!bulkImportValidation || bulkImportValidation.validRows === 0 || importing}
+            >
+              {importing ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Importar {bulkImportValidation?.validRows || 0} Perguntas
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

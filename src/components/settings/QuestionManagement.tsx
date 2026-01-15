@@ -32,8 +32,11 @@ import {
   validateBulkImportFile, 
   importBulkQuestions, 
   downloadImportTemplate,
+  downloadQuestionsExcel,
+  downloadQuestionsCSV,
   BulkImportValidation,
-  ParsedQuestion
+  ParsedQuestion,
+  ExportableQuestion
 } from '@/lib/questionBulkImport';
 import { supabase } from '@/integrations/supabase/client';
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
@@ -130,6 +133,11 @@ export function QuestionManagement() {
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const importFileRef = useRef<HTMLInputElement>(null);
+
+  // Export state
+  const [exporting, setExporting] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportDomainId, setExportDomainId] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -463,6 +471,88 @@ export function QuestionManagement() {
     toast.success('Template baixado com sucesso');
   };
 
+  // Export handlers
+  const handleExportExcel = async () => {
+    if (!exportDomainId) {
+      toast.error('Selecione um domínio de segurança');
+      return;
+    }
+
+    const domain = securityDomains.find(d => d.domainId === exportDomainId);
+    if (!domain) return;
+
+    // Get questions for this domain
+    const questionsToExport = allQuestions.filter(q => {
+      const taxDomain = taxonomyDomains.find(d => d.domainId === q.domainId);
+      return taxDomain?.securityDomainId === exportDomainId || (q as any).securityDomainId === exportDomainId;
+    });
+
+    if (questionsToExport.length === 0) {
+      toast.error('Nenhuma pergunta encontrada para este domínio');
+      return;
+    }
+
+    setExporting(true);
+    try {
+      await downloadQuestionsExcel(
+        questionsToExport as ExportableQuestion[],
+        exportDomainId,
+        domain.domainName
+      );
+      toast.success(`${questionsToExport.length} perguntas exportadas com sucesso`);
+      setShowExportDialog(false);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Erro ao exportar perguntas');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!exportDomainId) {
+      toast.error('Selecione um domínio de segurança');
+      return;
+    }
+
+    const domain = securityDomains.find(d => d.domainId === exportDomainId);
+    if (!domain) return;
+
+    // Get questions for this domain
+    const questionsToExport = allQuestions.filter(q => {
+      const taxDomain = taxonomyDomains.find(d => d.domainId === q.domainId);
+      return taxDomain?.securityDomainId === exportDomainId || (q as any).securityDomainId === exportDomainId;
+    });
+
+    if (questionsToExport.length === 0) {
+      toast.error('Nenhuma pergunta encontrada para este domínio');
+      return;
+    }
+
+    setExporting(true);
+    try {
+      await downloadQuestionsCSV(
+        questionsToExport as ExportableQuestion[],
+        exportDomainId
+      );
+      toast.success(`${questionsToExport.length} perguntas exportadas com sucesso`);
+      setShowExportDialog(false);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Erro ao exportar perguntas');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const getExportQuestionCount = () => {
+    if (!exportDomainId) return 0;
+    return allQuestions.filter(q => {
+      const taxDomain = taxonomyDomains.find(d => d.domainId === q.domainId);
+      return taxDomain?.securityDomainId === exportDomainId || (q as any).securityDomainId === exportDomainId;
+    }).length;
+  };
+
   const defaultQuestionsFiltered = filteredQuestions.filter(q => !q.isCustom);
   const customQuestionsFiltered = filteredQuestions.filter(q => q.isCustom);
 
@@ -476,6 +566,10 @@ export function QuestionManagement() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowExportDialog(true)}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
           <Button variant="outline" onClick={() => setShowBulkImportDialog(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Importar em Lote
@@ -1065,6 +1159,113 @@ export function QuestionManagement() {
                   Importar {bulkImportValidation?.validRows || 0} Perguntas
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Exportar Perguntas
+            </DialogTitle>
+            <DialogDescription>
+              Exporte perguntas de um domínio de segurança para backup ou compartilhamento
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Domain Selection */}
+            <div className="space-y-2">
+              <Label>Domínio de Segurança</Label>
+              <Select value={exportDomainId} onValueChange={setExportDomainId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o domínio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {securityDomains.filter(d => d.isEnabled).map(domain => {
+                    const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+                    const domainQuestionCount = allQuestions.filter(q => {
+                      const taxDomain = taxonomyDomains.find(d => d.domainId === q.domainId);
+                      return taxDomain?.securityDomainId === domain.domainId || 
+                             (q as any).securityDomainId === domain.domainId;
+                    }).length;
+                    return (
+                      <SelectItem key={domain.domainId} value={domain.domainId}>
+                        <div className="flex items-center justify-between w-full gap-3">
+                          <div className="flex items-center gap-2">
+                            <IconComp className="h-4 w-4" />
+                            {domain.domainName}
+                          </div>
+                          <Badge variant="secondary" className="text-xs">
+                            {domainQuestionCount} perguntas
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Stats Preview */}
+            {exportDomainId && (
+              <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
+                <h4 className="font-medium text-sm">Resumo da Exportação</h4>
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-2 rounded bg-background">
+                    <div className="text-lg font-bold">{getExportQuestionCount()}</div>
+                    <div className="text-xs text-muted-foreground">Total</div>
+                  </div>
+                  <div className="p-2 rounded bg-background">
+                    <div className="text-lg font-bold">
+                      {allQuestions.filter(q => {
+                        const taxDomain = taxonomyDomains.find(d => d.domainId === q.domainId);
+                        return (taxDomain?.securityDomainId === exportDomainId || 
+                               (q as any).securityDomainId === exportDomainId) && q.isCustom;
+                      }).length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Personalizadas</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Export Format */}
+            <div className="space-y-2">
+              <Label>Formato de Exportação</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col gap-2"
+                  onClick={handleExportExcel}
+                  disabled={!exportDomainId || exporting}
+                >
+                  <FileSpreadsheet className="h-6 w-6 text-green-600" />
+                  <span className="text-xs">Excel (.xlsx)</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col gap-2"
+                  onClick={handleExportCSV}
+                  disabled={!exportDomainId || exporting}
+                >
+                  <FileSpreadsheet className="h-6 w-6 text-blue-600" />
+                  <span className="text-xs">CSV (.csv)</span>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Excel inclui resumos e estatísticas adicionais. CSV é mais leve e compatível.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>

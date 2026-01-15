@@ -10,6 +10,8 @@ import {
   Scale,
   Code,
   Settings,
+  LogOut,
+  User,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -33,8 +35,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 const dashboardSubItems = [
   { path: '/dashboard/executive', label: 'Executivo', icon: Briefcase, description: 'CISO / Head de Segurança' },
@@ -46,7 +51,13 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { state } = useSidebar();
+  const { user, signOut } = useAuth();
   const isCollapsed = state === 'collapsed';
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   const isActive = (path: string) => location.pathname === path;
   const isDashboardActive = location.pathname.startsWith('/dashboard');
@@ -192,9 +203,33 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-3">
-        {!isCollapsed && (
-          <div className="text-[10px] text-muted-foreground text-center">
-            Dados sincronizados
+        {isCollapsed ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSignOut}
+            className="w-full"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="truncate text-muted-foreground text-xs">
+                {user?.email}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="w-full justify-start gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
           </div>
         )}
       </SidebarFooter>

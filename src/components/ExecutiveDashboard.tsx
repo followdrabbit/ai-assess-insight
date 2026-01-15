@@ -377,32 +377,11 @@ export function ExecutiveDashboard({
 
           {/* Framework Selector */}
           <div className="border-t pt-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Frameworks em Análise</span>
-                <span className="text-xs text-muted-foreground">
-                  ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 text-xs"
-                  onClick={selectAllFrameworks}
-                >
-                  Selecionar Todos
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 text-xs"
-                  onClick={clearFrameworkSelection}
-                  disabled={selectedFrameworkIds.length === 0}
-                >
-                  Limpar Seleção
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-medium">Frameworks em Análise</span>
+              <span className="text-xs text-muted-foreground">
+                ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
+              </span>
             </div>
 
             {/* Framework Pills */}

@@ -39,8 +39,10 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
+import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds, getFrameworksBySecurityDomain } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
+import { DomainSwitcher } from '@/components/DomainSwitcher';
+import { getSecurityDomainById, DEFAULT_SECURITY_DOMAINS, SecurityDomain } from '@/lib/securityDomains';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -74,7 +76,7 @@ const criticalityOrder: Record<string, number> = {
 };
 
 export default function DashboardSpecialist() {
-  const { answers, isLoading } = useAnswersStore();
+  const { answers, isLoading, selectedSecurityDomain } = useAnswersStore();
   const navigate = useNavigate();
 
   // Initialize snapshot capturing
@@ -86,6 +88,7 @@ export default function DashboardSpecialist() {
   const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
   const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+  const [currentDomainInfo, setCurrentDomainInfo] = useState<SecurityDomain | null>(null);
 
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -103,10 +106,14 @@ export default function DashboardSpecialist() {
   const [selectedFramework, setSelectedFramework] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
-  // Load active questions and frameworks
+  // Load active questions and frameworks - filtered by security domain
   const loadData = useCallback(async () => {
     setQuestionsLoading(true);
     try {
+      // Load domain info
+      const domainInfo = await getSecurityDomainById(selectedSecurityDomain);
+      setCurrentDomainInfo(domainInfo || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) || null);
+
       const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
         getAllCustomQuestions(),
         getDisabledQuestions(),
@@ -114,6 +121,14 @@ export default function DashboardSpecialist() {
         getSelectedFrameworks(),
         getAllCustomFrameworks()
       ]);
+
+      // Get frameworks for the current security domain
+      const domainFrameworkIds = new Set(
+        getFrameworksBySecurityDomain(selectedSecurityDomain).map(f => f.frameworkId)
+      );
+
+      // Filter enabled frameworks to only those in the current domain
+      const domainEnabledIds = enabledIds.filter(id => domainFrameworkIds.has(id));
 
       // Combine default and custom questions, excluding disabled ones
       const active: ActiveQuestion[] = [
@@ -140,9 +155,9 @@ export default function DashboardSpecialist() {
       ];
 
       setAllActiveQuestions(active);
-      setEnabledFrameworkIds(enabledIds);
+      setEnabledFrameworkIds(domainEnabledIds);
 
-      // Combine default and custom frameworks, filter by enabled
+      // Combine default and custom frameworks, filter by enabled AND domain
       const allFrameworks: Framework[] = [
         ...defaultFrameworks,
         ...customFrameworks.map(cf => ({
@@ -159,18 +174,20 @@ export default function DashboardSpecialist() {
         }))
       ];
 
-      const enabledSet = new Set(enabledIds);
+      const enabledSet = new Set(domainEnabledIds);
       const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
       setEnabledFrameworks(enabled);
 
-      // Sanitize selected frameworks
-      const enabledIdSet = new Set(enabledIds);
-      const sanitizedSelected = (selectedIds || []).filter(id => enabledIdSet.has(id));
+      // Sanitize selected frameworks - only keep those in current domain
+      const sanitizedSelected = (selectedIds || []).filter(id => enabledSet.has(id));
       setSelectedFrameworkIds(sanitizedSelected);
 
     } catch (error) {
       console.error('Error loading data:', error);
-      const defaultEnabledIds = ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+      const domainFrameworkIds = getFrameworksBySecurityDomain(selectedSecurityDomain).map(f => f.frameworkId);
+      const defaultEnabledIds = domainFrameworkIds.filter(id => 
+        ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD', 'CSA_CCM', 'NIST_SSDF'].includes(id)
+      );
       setAllActiveQuestions(defaultQuestions.map(q => ({
         questionId: q.questionId,
         questionText: q.questionText,
@@ -180,13 +197,13 @@ export default function DashboardSpecialist() {
         frameworks: q.frameworks || []
       })));
       setEnabledFrameworkIds(defaultEnabledIds);
-      setEnabledFrameworks(defaultFrameworks.filter(f => f.defaultEnabled));
+      setEnabledFrameworks(defaultFrameworks.filter(f => defaultEnabledIds.includes(f.frameworkId)));
     } finally {
       setQuestionsLoading(false);
     }
-  }, []);
+  }, [selectedSecurityDomain]);
 
-  // Initial load
+  // Reload when security domain changes
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -884,7 +901,7 @@ export default function DashboardSpecialist() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Framework Selector */}
+      {/* Header with Domain Switcher and Framework Selector */}
       <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -895,6 +912,7 @@ export default function DashboardSpecialist() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <DomainSwitcher variant="badge" />
               <Button 
                 variant="outline" 
                 size="sm"

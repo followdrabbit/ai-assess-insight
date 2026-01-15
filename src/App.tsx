@@ -11,7 +11,6 @@ import Assessment from "./pages/Assessment";
 import DashboardExecutive from "./pages/DashboardExecutive";
 import DashboardGRC from "./pages/DashboardGRC";
 import DashboardSpecialist from "./pages/DashboardSpecialist";
-import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -35,7 +34,7 @@ function AppContent() {
           <Route path="dashboard/executive" element={<DashboardExecutive />} />
           <Route path="dashboard/grc" element={<DashboardGRC />} />
           <Route path="dashboard/specialist" element={<DashboardSpecialist />} />
-          <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<NotFound />} />

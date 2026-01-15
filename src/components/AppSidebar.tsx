@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   ClipboardCheck,
@@ -9,6 +10,14 @@ import {
   Scale,
   Code,
   Settings,
+  Brain,
+  Cloud,
+  Lock,
+  Database,
+  Server,
+  Key,
+  ChevronRight,
+  Check,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -32,8 +41,23 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useAnswersStore } from '@/lib/stores';
+import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
+
+const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
+  brain: Brain,
+  cloud: Cloud,
+  code: Code,
+  shield: Shield,
+  lock: Lock,
+  database: Database,
+  server: Server,
+  key: Key
+};
 
 const dashboardSubItems = [
   { path: '/dashboard/executive', label: 'Executivo', icon: Briefcase, description: 'CISO / Head de Segurança' },
@@ -46,21 +70,127 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  
+  const { selectedSecurityDomain, setSelectedSecurityDomain } = useAnswersStore();
+  const [domains, setDomains] = useState<SecurityDomain[]>([]);
+  const [currentDomain, setCurrentDomain] = useState<SecurityDomain | null>(null);
+
+  useEffect(() => {
+    const loadDomains = async () => {
+      const data = await getAllSecurityDomains();
+      setDomains(data.filter(d => d.isEnabled));
+    };
+    loadDomains();
+  }, []);
+
+  useEffect(() => {
+    if (domains.length > 0 && selectedSecurityDomain) {
+      const domain = domains.find(d => d.domainId === selectedSecurityDomain);
+      setCurrentDomain(domain || domains[0]);
+    } else if (domains.length > 0) {
+      setCurrentDomain(domains[0]);
+    }
+  }, [domains, selectedSecurityDomain]);
+
+  const handleDomainChange = async (domainId: string) => {
+    await setSelectedSecurityDomain(domainId);
+    const domain = domains.find(d => d.domainId === domainId);
+    setCurrentDomain(domain || null);
+  };
 
   const isActive = (path: string) => location.pathname === path;
   const isDashboardActive = location.pathname.startsWith('/dashboard');
 
+  const DomainIcon = currentDomain ? (ICON_COMPONENTS[currentDomain.icon] || Shield) : Shield;
+  const domainColors = currentDomain ? (DOMAIN_COLORS[currentDomain.color] || DOMAIN_COLORS.blue) : DOMAIN_COLORS.blue;
+
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
-      <SidebarHeader className="h-14 border-b border-border px-4 flex items-center">
-        <div className="flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
-          {!isCollapsed && (
-            <span className="font-semibold text-sm tracking-tight">
-              AI Security
-            </span>
-          )}
-        </div>
+      {/* Domain Selector Header */}
+      <SidebarHeader className="border-b border-border p-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-2 rounded-md transition-colors",
+                "hover:bg-accent hover:text-accent-foreground",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                isCollapsed && "justify-center px-0"
+              )}
+            >
+              <div className={cn(
+                "flex items-center justify-center rounded-md p-1.5",
+                domainColors.bg
+              )}>
+                <DomainIcon className={cn("h-4 w-4", domainColors.text)} />
+              </div>
+              {!isCollapsed && (
+                <>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {currentDomain?.shortName || 'Selecionar'}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground truncate">
+                      {currentDomain?.domainName || 'Domínio de Segurança'}
+                    </div>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                </>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align={isCollapsed ? "start" : "center"} 
+            side={isCollapsed ? "right" : "bottom"}
+            className="w-64"
+          >
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Trocar Domínio de Segurança
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {domains.map((domain) => {
+              const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+              const colors = DOMAIN_COLORS[domain.color] || DOMAIN_COLORS.blue;
+              const isSelected = domain.domainId === selectedSecurityDomain;
+              
+              return (
+                <DropdownMenuItem
+                  key={domain.domainId}
+                  onClick={() => handleDomainChange(domain.domainId)}
+                  className={cn(
+                    "cursor-pointer gap-3 py-2.5",
+                    isSelected && "bg-accent"
+                  )}
+                >
+                  <div className={cn(
+                    "flex items-center justify-center rounded-md p-1.5",
+                    colors.bg
+                  )}>
+                    <IconComp className={cn("h-4 w-4", colors.text)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">{domain.shortName}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {domain.description}
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <Check className="h-4 w-4 text-primary shrink-0" />
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => navigate('/settings')}
+              className="cursor-pointer gap-3"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="text-sm">Gerenciar Domínios</span>
+              <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarHeader>
 
       <SidebarContent>
@@ -179,9 +309,22 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-3">
-        {!isCollapsed && (
-          <div className="text-[10px] text-muted-foreground text-center">
-            Dados sincronizados
+        {!isCollapsed && currentDomain && (
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              domainColors.bg.replace('bg-', 'bg-').replace('-100', '-500')
+            )} 
+            style={{ 
+              backgroundColor: currentDomain.color === 'purple' ? '#a855f7' :
+                               currentDomain.color === 'blue' ? '#3b82f6' :
+                               currentDomain.color === 'green' ? '#22c55e' :
+                               currentDomain.color === 'orange' ? '#f97316' :
+                               currentDomain.color === 'red' ? '#ef4444' :
+                               currentDomain.color === 'yellow' ? '#eab308' : '#3b82f6'
+            }}
+            />
+            <span className="truncate">{currentDomain.domainName}</span>
           </div>
         )}
       </SidebarFooter>

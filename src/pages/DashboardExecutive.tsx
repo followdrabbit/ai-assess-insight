@@ -6,10 +6,15 @@ import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { questions as defaultQuestions } from '@/lib/dataset';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
+import { useMaturitySnapshots } from '@/hooks/useMaturitySnapshots';
+import MaturityTrendChart from '@/components/MaturityTrendChart';
 
 export default function DashboardExecutive() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
+  
+  // Initialize snapshot capturing
+  useMaturitySnapshots();
   
   const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(true);
@@ -203,6 +208,9 @@ export default function DashboardExecutive() {
         onFrameworkSelectionChange={handleFrameworkSelectionChange}
         activeQuestions={questionsForDashboard}
       />
+
+      {/* Maturity Trend Chart */}
+      <MaturityTrendChart className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" />
     </div>
   );
 }

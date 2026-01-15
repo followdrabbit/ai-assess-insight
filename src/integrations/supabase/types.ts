@@ -368,6 +368,57 @@ export type Database = {
         }
         Relationships: []
       }
+      maturity_snapshots: {
+        Row: {
+          answered_questions: number
+          created_at: string
+          critical_gaps: number
+          domain_metrics: Json
+          evidence_readiness: number
+          framework_category_metrics: Json
+          framework_metrics: Json
+          id: string
+          maturity_level: number
+          overall_coverage: number
+          overall_score: number
+          snapshot_date: string
+          snapshot_type: string
+          total_questions: number
+        }
+        Insert: {
+          answered_questions: number
+          created_at?: string
+          critical_gaps: number
+          domain_metrics?: Json
+          evidence_readiness: number
+          framework_category_metrics?: Json
+          framework_metrics?: Json
+          id?: string
+          maturity_level: number
+          overall_coverage: number
+          overall_score: number
+          snapshot_date?: string
+          snapshot_type?: string
+          total_questions: number
+        }
+        Update: {
+          answered_questions?: number
+          created_at?: string
+          critical_gaps?: number
+          domain_metrics?: Json
+          evidence_readiness?: number
+          framework_category_metrics?: Json
+          framework_metrics?: Json
+          id?: string
+          maturity_level?: number
+          overall_coverage?: number
+          overall_score?: number
+          snapshot_date?: string
+          snapshot_type?: string
+          total_questions?: number
+        }
+        Relationships: []
+      }
       subcategories: {
         Row: {
           created_at: string | null

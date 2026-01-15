@@ -669,22 +669,63 @@ export default function DashboardGRC() {
   }
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard GRC</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Governança, Riscos e Compliance - Foco em cobertura e evidências
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate('/reports')}
-          >
-            Exportar Relatório
-          </Button>
+      {/* Header with Framework Selector */}
+      <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-primary">Dashboard GRC - Governança, Riscos e Compliance</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Foco em cobertura e evidências
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/reports')}
+              >
+                Exportar Relatório
+              </Button>
+            </div>
+          </div>
+
+          {/* Framework Selector */}
+          <div className="border-t pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-medium">Frameworks em Análise</span>
+              <span className="text-xs text-muted-foreground">
+                ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
+              </span>
+            </div>
+
+            {/* Framework Pills */}
+            <div className="flex flex-wrap gap-2">
+              {enabledFrameworks.map(fw => {
+                const isSelected = selectedFrameworkIds.length === 0 || selectedFrameworkIds.includes(fw.frameworkId);
+                return (
+                  <Badge
+                    key={fw.frameworkId}
+                    variant={isSelected ? "default" : "outline"}
+                    className={cn(
+                      "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md",
+                      isSelected 
+                        ? "bg-primary hover:bg-primary/90" 
+                        : "opacity-50 hover:opacity-100 hover:border-primary/50"
+                    )}
+                    onClick={() => toggleFramework(fw.frameworkId)}
+                  >
+                    {fw.shortName}
+                  </Badge>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-2">
+              Clique nos frameworks acima para filtrar os dados exibidos.
+              {selectedFrameworkIds.length > 0 && ` (${selectedFrameworkIds.length} selecionados)`}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -693,45 +734,6 @@ export default function DashboardGRC() {
           <p className="text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
         </div>
       )}
-
-      {/* Framework Selection Section */}
-      <div className="card-elevated p-4 space-y-4">
-        <div>
-          <h3 className="font-medium text-sm">Escopo da Análise</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {selectedFrameworkIds.length === 0 
-              ? `Todos os ${enabledFrameworks.length} frameworks habilitados`
-              : `${selectedFrameworkIds.length} de ${enabledFrameworks.length} frameworks selecionados`
-            }
-          </p>
-        </div>
-
-        {/* Framework Pills */}
-        <div className="flex flex-wrap gap-2">
-          {enabledFrameworks.map(fw => {
-            const isSelected = selectedFrameworkIds.length === 0 || selectedFrameworkIds.includes(fw.frameworkId);
-            return (
-              <Badge
-                key={fw.frameworkId}
-                variant={isSelected ? "default" : "outline"}
-                className={cn(
-                  "cursor-pointer transition-all duration-200 text-xs hover:scale-105 hover:shadow-md",
-                  isSelected 
-                    ? "bg-primary hover:bg-primary/90" 
-                    : "opacity-50 hover:opacity-100 hover:border-primary/50"
-                )}
-                onClick={() => toggleFramework(fw.frameworkId)}
-              >
-                {fw.shortName}
-              </Badge>
-            );
-          })}
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Clique nos frameworks acima para filtrar os dados exibidos.
-          {selectedFrameworkIds.length > 0 && ` (${selectedFrameworkIds.length} selecionados)`}
-        </p>
-      </div>
 
       {/* Quick Status Pills */}
       <div className="flex flex-wrap gap-2">

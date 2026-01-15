@@ -1,4 +1,4 @@
-import { OverallMetrics, CriticalGap, FrameworkCoverage } from './scoring';
+import { OverallMetrics, CriticalGap, FrameworkCoverage, RoadmapItem } from './scoring';
 import { Framework } from './frameworks';
 
 interface ReportData {
@@ -7,6 +7,7 @@ interface ReportData {
   criticalGaps: CriticalGap[];
   frameworkCoverage: FrameworkCoverage[];
   selectedFrameworks: Framework[];
+  roadmap?: RoadmapItem[];
   generatedAt: Date;
 }
 
@@ -516,24 +517,61 @@ export function generateHtmlReport(data: ReportData): string {
       </div>
       ` : ''}
       
+      <!-- Strategic Roadmap -->
+      ${data.roadmap && data.roadmap.length > 0 ? `
+      <div class="section">
+        <h2 class="section-title">Roadmap Estratégico</h2>
+        <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.5rem;">Ações prioritárias para os próximos 90 dias</p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+          ${['immediate', 'short', 'medium'].map(priority => {
+            const items = data.roadmap!.filter(r => r.priority === priority);
+            const config: Record<string, { label: string; color: string; bgColor: string }> = {
+              immediate: { label: '0-30 dias', color: '#dc2626', bgColor: '#fef2f2' },
+              short: { label: '30-60 dias', color: '#d97706', bgColor: '#fffbeb' },
+              medium: { label: '60-90 dias', color: '#2563eb', bgColor: '#eff6ff' }
+            };
+            const cfg = config[priority];
+            return `
+              <div style="background: ${cfg.bgColor}; border-left: 4px solid ${cfg.color}; border-radius: 8px; padding: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: ${cfg.color};"></div>
+                  <h4 style="font-weight: 600; font-size: 0.875rem; color: #374151;">${cfg.label}</h4>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  ${items.length > 0 ? items.map(item => `
+                    <div style="font-size: 0.75rem;">
+                      <p style="font-weight: 500; color: #1f2937; margin-bottom: 0.25rem;">${item.action}</p>
+                      <p style="color: #6b7280;">${item.domain} · ${item.ownershipType}</p>
+                    </div>
+                  `).join('') : '<p style="font-size: 0.75rem; color: #9ca3af;">Nenhuma ação pendente</p>'}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      ` : ''}
+
       <!-- Critical Gaps -->
       ${criticalGaps.length > 0 ? `
       <div class="section">
         <h2 class="section-title">Gaps Críticos (${criticalGaps.length})</h2>
-        ${criticalGaps.slice(0, 30).map(gap => `
+        ${criticalGaps.map((gap, index) => `
           <div class="gap-item">
             <div class="gap-header">
-              <div class="gap-question">${gap.questionText}</div>
+              <div style="display: flex; align-items: flex-start; gap: 0.75rem; flex: 1;">
+                <span style="font-size: 0.875rem; font-weight: 700; color: #9ca3af; min-width: 1.5rem;">${index + 1}</span>
+                <div class="gap-question">${gap.questionText}</div>
+              </div>
               <span class="badge" style="background: ${getCriticalityColor(gap.criticality)}; color: white; margin-left: 1rem; white-space: nowrap;">
                 ${gap.criticality}
               </span>
             </div>
-            <div class="gap-meta">
-              <strong>${gap.domainName}</strong> → ${gap.subcatName} | Resposta: ${gap.response || 'Não respondido'}
+            <div class="gap-meta" style="margin-left: 2.25rem;">
+              <strong>${gap.domainName}</strong> → ${gap.subcatName} | Resposta: ${gap.response || 'Não respondido'} | Score: ${Math.round(gap.effectiveScore * 100)}%
             </div>
           </div>
         `).join('')}
-        ${criticalGaps.length > 30 ? `<p style="color: #6b7280; font-size: 0.875rem; text-align: center; margin-top: 1rem;">... e mais ${criticalGaps.length - 30} gaps não exibidos</p>` : ''}
       </div>
       ` : ''}
     </div>

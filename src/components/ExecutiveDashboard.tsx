@@ -364,6 +364,7 @@ export function ExecutiveDashboard({
       criticalGaps: filteredByFramework.gaps,
       frameworkCoverage: filteredByFramework.coverage,
       selectedFrameworks: selectedFws,
+      roadmap: filteredByFramework.roadmapItems,
       generatedAt: new Date()
     });
   }, [metrics, filteredByFramework, enabledFrameworks, selectedFrameworkIds]);

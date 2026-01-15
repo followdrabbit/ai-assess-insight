@@ -39,6 +39,115 @@ const getDashboardTitle = (type: string): string => {
   }
 };
 
+// Generate SVG donut chart
+function generateDonutChart(value: number, color: string, label: string, size: number = 120): string {
+  const radius = (size - 20) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+  const center = size / 2;
+  
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#e5e7eb" stroke-width="12"/>
+      <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${color}" stroke-width="12"
+        stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" 
+        transform="rotate(-90 ${center} ${center})" stroke-linecap="round"/>
+      <text x="${center}" y="${center - 5}" text-anchor="middle" font-size="24" font-weight="bold" fill="${color}">${value}%</text>
+      <text x="${center}" y="${center + 15}" text-anchor="middle" font-size="10" fill="#6b7280">${label}</text>
+    </svg>
+  `;
+}
+
+// Generate SVG horizontal bar chart
+function generateHorizontalBarChart(data: { name: string; value: number; color: string }[], width: number = 400): string {
+  const barHeight = 28;
+  const gap = 8;
+  const labelWidth = 150;
+  const height = data.length * (barHeight + gap);
+  const maxBarWidth = width - labelWidth - 60;
+  
+  const bars = data.map((item, index) => {
+    const y = index * (barHeight + gap);
+    const barWidth = (item.value / 100) * maxBarWidth;
+    return `
+      <g transform="translate(0, ${y})">
+        <text x="0" y="${barHeight / 2 + 4}" font-size="11" fill="#374151">${item.name.length > 20 ? item.name.slice(0, 18) + '...' : item.name}</text>
+        <rect x="${labelWidth}" y="4" width="${maxBarWidth}" height="${barHeight - 8}" fill="#e5e7eb" rx="4"/>
+        <rect x="${labelWidth}" y="4" width="${barWidth}" height="${barHeight - 8}" fill="${item.color}" rx="4"/>
+        <text x="${labelWidth + maxBarWidth + 8}" y="${barHeight / 2 + 4}" font-size="11" font-weight="600" fill="${item.color}">${item.value}%</text>
+      </g>
+    `;
+  }).join('');
+  
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${bars}</svg>`;
+}
+
+// Generate SVG pie chart for gap distribution
+function generatePieChart(data: { label: string; value: number; color: string }[], size: number = 200): string {
+  const center = size / 2;
+  const radius = (size - 40) / 2;
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  
+  if (total === 0) {
+    return `<svg width="${size}" height="${size}"><text x="${center}" y="${center}" text-anchor="middle" fill="#6b7280">Sem dados</text></svg>`;
+  }
+  
+  let currentAngle = -90;
+  const paths = data.filter(d => d.value > 0).map(item => {
+    const percentage = item.value / total;
+    const angle = percentage * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    currentAngle = endAngle;
+    
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    
+    const x1 = center + radius * Math.cos(startRad);
+    const y1 = center + radius * Math.sin(startRad);
+    const x2 = center + radius * Math.cos(endRad);
+    const y2 = center + radius * Math.sin(endRad);
+    
+    const largeArc = angle > 180 ? 1 : 0;
+    
+    return `<path d="M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${item.color}"/>`;
+  }).join('');
+  
+  const legend = data.filter(d => d.value > 0).map((item, i) => `
+    <g transform="translate(${size + 10}, ${i * 20})">
+      <rect width="12" height="12" fill="${item.color}" rx="2"/>
+      <text x="18" y="10" font-size="11" fill="#374151">${item.label}: ${item.value}</text>
+    </g>
+  `).join('');
+  
+  return `<svg width="${size + 120}" height="${Math.max(size, data.length * 20)}" viewBox="0 0 ${size + 120} ${Math.max(size, data.length * 20)}">${paths}${legend}</svg>`;
+}
+
+// Generate NIST function radar-like visualization
+function generateNistFunctionChart(metrics: OverallMetrics): string {
+  const nistData = [
+    { func: 'GOVERN', label: 'Governar', color: '#3b82f6' },
+    { func: 'MAP', label: 'Mapear', color: '#8b5cf6' },
+    { func: 'MEASURE', label: 'Medir', color: '#06b6d4' },
+    { func: 'MANAGE', label: 'Gerenciar', color: '#10b981' }
+  ];
+  
+  const functionScores = nistData.map(n => {
+    const domains = metrics.domainMetrics.filter(dm => dm.nistFunction === n.func);
+    if (domains.length === 0) return { ...n, score: 0 };
+    const avgScore = domains.reduce((sum, d) => sum + d.score, 0) / domains.length;
+    return { ...n, score: Math.round(avgScore * 100) };
+  });
+  
+  const barData = functionScores.map(f => ({
+    name: f.label,
+    value: f.score,
+    color: f.color
+  }));
+  
+  return generateHorizontalBarChart(barData, 350);
+}
+
 export function generateHtmlReport(data: ReportData): string {
   const { dashboardType, metrics, criticalGaps, frameworkCoverage, selectedFrameworks, generatedAt } = data;
   
@@ -54,6 +163,20 @@ export function generateHtmlReport(data: ReportData): string {
     ? selectedFrameworks.map(f => f.shortName).join(', ')
     : 'Todos os frameworks habilitados';
 
+  // Prepare chart data
+  const domainChartData = metrics.domainMetrics.map(dm => ({
+    name: dm.domainName,
+    value: Math.round(dm.score * 100),
+    color: getMaturityColor(dm.maturityLevel.level)
+  }));
+
+  const gapDistribution = [
+    { label: 'Crítico', value: criticalGaps.filter(g => g.criticality === 'Critical').length, color: '#dc2626' },
+    { label: 'Alto', value: criticalGaps.filter(g => g.criticality === 'High').length, color: '#ea580c' },
+    { label: 'Médio', value: criticalGaps.filter(g => g.criticality === 'Medium').length, color: '#ca8a04' },
+    { label: 'Baixo', value: criticalGaps.filter(g => g.criticality === 'Low').length, color: '#16a34a' }
+  ];
+
   const html = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -62,11 +185,7 @@ export function generateHtmlReport(data: ReportData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${getDashboardTitle(dashboardType)} - ${formattedDate}</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -91,24 +210,12 @@ export function generateHtmlReport(data: ReportData): string {
       padding: 2rem;
     }
     
-    .header h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
+    .header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .header .meta { font-size: 0.875rem; opacity: 0.9; }
     
-    .header .meta {
-      font-size: 0.875rem;
-      opacity: 0.9;
-    }
+    .content { padding: 2rem; }
     
-    .content {
-      padding: 2rem;
-    }
-    
-    .section {
-      margin-bottom: 2rem;
-    }
+    .section { margin-bottom: 2.5rem; page-break-inside: avoid; }
     
     .section-title {
       font-size: 1.125rem;
@@ -121,7 +228,7 @@ export function generateHtmlReport(data: ReportData): string {
     
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 1rem;
       margin-bottom: 2rem;
     }
@@ -131,6 +238,7 @@ export function generateHtmlReport(data: ReportData): string {
       border: 1px solid #e5e7eb;
       border-radius: 8px;
       padding: 1.25rem;
+      text-align: center;
     }
     
     .kpi-label {
@@ -138,18 +246,28 @@ export function generateHtmlReport(data: ReportData): string {
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #6b7280;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
     }
     
-    .kpi-value {
-      font-size: 2rem;
-      font-weight: 700;
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
     }
     
-    .kpi-meta {
-      font-size: 0.75rem;
-      color: #6b7280;
-      margin-top: 0.25rem;
+    .chart-container {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+    
+    .chart-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 1rem;
     }
     
     .badge {
@@ -166,8 +284,7 @@ export function generateHtmlReport(data: ReportData): string {
       font-size: 0.875rem;
     }
     
-    .table th,
-    .table td {
+    .table th, .table td {
       padding: 0.75rem 1rem;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
@@ -179,14 +296,6 @@ export function generateHtmlReport(data: ReportData): string {
       color: #374151;
     }
     
-    .table tr:hover {
-      background: #f9fafb;
-    }
-    
-    .domain-row {
-      background: #f3f4f6;
-    }
-    
     .progress-bar {
       width: 100%;
       height: 8px;
@@ -195,25 +304,7 @@ export function generateHtmlReport(data: ReportData): string {
       overflow: hidden;
     }
     
-    .progress-fill {
-      height: 100%;
-      border-radius: 4px;
-    }
-    
-    .frameworks-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    
-    .framework-badge {
-      background: #1e40af;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-    }
+    .progress-fill { height: 100%; border-radius: 4px; }
     
     .gap-item {
       background: #fef2f2;
@@ -221,6 +312,7 @@ export function generateHtmlReport(data: ReportData): string {
       border-radius: 8px;
       padding: 1rem;
       margin-bottom: 0.75rem;
+      page-break-inside: avoid;
     }
     
     .gap-header {
@@ -230,15 +322,33 @@ export function generateHtmlReport(data: ReportData): string {
       margin-bottom: 0.5rem;
     }
     
-    .gap-question {
-      font-weight: 500;
-      color: #1f2937;
-      flex: 1;
+    .gap-question { font-weight: 500; color: #1f2937; flex: 1; }
+    .gap-meta { font-size: 0.75rem; color: #6b7280; }
+    
+    .summary-box {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
     }
     
-    .gap-meta {
-      font-size: 0.75rem;
-      color: #6b7280;
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      text-align: center;
+    }
+    
+    .summary-item h3 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    
+    .summary-item p {
+      font-size: 0.875rem;
+      color: #4b5563;
     }
     
     .footer {
@@ -251,18 +361,10 @@ export function generateHtmlReport(data: ReportData): string {
     }
     
     @media print {
-      body {
-        background: white;
-        padding: 0;
-      }
-      
-      .container {
-        box-shadow: none;
-      }
-      
-      .gap-item {
-        break-inside: avoid;
-      }
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; }
+      .section { page-break-inside: avoid; }
+      .gap-item { break-inside: avoid; }
     }
   </style>
 </head>
@@ -277,48 +379,76 @@ export function generateHtmlReport(data: ReportData): string {
     </div>
     
     <div class="content">
-      <!-- KPIs -->
-      <div class="section">
-        <h2 class="section-title">Indicadores Principais</h2>
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Score Geral</div>
-            <div class="kpi-value" style="color: ${getMaturityColor(metrics.maturityLevel.level)}">
-              ${Math.round(metrics.overallScore * 100)}%
-            </div>
-            <div class="kpi-meta">
-              <span class="badge" style="background: ${getMaturityColor(metrics.maturityLevel.level)}; color: white;">
-                Nível ${metrics.maturityLevel.level}: ${metrics.maturityLevel.name}
-              </span>
-            </div>
+      <!-- Executive Summary -->
+      <div class="summary-box">
+        <div class="summary-grid">
+          <div class="summary-item">
+            <h3 style="color: ${getMaturityColor(metrics.maturityLevel.level)}">${Math.round(metrics.overallScore * 100)}%</h3>
+            <p>Score Geral - Nível ${metrics.maturityLevel.level}: ${metrics.maturityLevel.name}</p>
           </div>
-          
-          <div class="kpi-card">
-            <div class="kpi-label">Gaps Críticos</div>
-            <div class="kpi-value" style="color: #dc2626">${criticalGaps.length}</div>
-            <div class="kpi-meta">
-              ${criticalGaps.filter(g => g.criticality === 'Critical').length} críticos, 
-              ${criticalGaps.filter(g => g.criticality === 'High').length} altos
-            </div>
+          <div class="summary-item">
+            <h3 style="color: #1e40af">${Math.round(metrics.coverage * 100)}%</h3>
+            <p>Cobertura (${metrics.answeredQuestions}/${metrics.totalQuestions} questões)</p>
           </div>
-          
-          <div class="kpi-card">
-            <div class="kpi-label">Cobertura</div>
-            <div class="kpi-value" style="color: #1e40af">${Math.round(metrics.coverage * 100)}%</div>
-            <div class="kpi-meta">${metrics.answeredQuestions} de ${metrics.totalQuestions} questões</div>
-          </div>
-          
-          <div class="kpi-card">
-            <div class="kpi-label">Prontidão de Evidências</div>
-            <div class="kpi-value" style="color: #059669">${Math.round(metrics.evidenceReadiness * 100)}%</div>
-            <div class="kpi-meta">Documentação e evidências</div>
+          <div class="summary-item">
+            <h3 style="color: #dc2626">${criticalGaps.length}</h3>
+            <p>Gaps Identificados</p>
           </div>
         </div>
       </div>
       
-      <!-- Domain Metrics -->
+      <!-- Visual KPIs with Donut Charts -->
       <div class="section">
-        <h2 class="section-title">Métricas por Domínio</h2>
+        <h2 class="section-title">Indicadores de Maturidade</h2>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            ${generateDonutChart(Math.round(metrics.overallScore * 100), getMaturityColor(metrics.maturityLevel.level), 'Score')}
+          </div>
+          <div class="kpi-card">
+            ${generateDonutChart(Math.round(metrics.coverage * 100), '#1e40af', 'Cobertura')}
+          </div>
+          <div class="kpi-card">
+            ${generateDonutChart(Math.round(metrics.evidenceReadiness * 100), '#059669', 'Evidências')}
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Distribuição de Gaps</div>
+            <div style="margin-top: 0.5rem;">
+              ${gapDistribution.map(g => `
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                  <div style="width: 12px; height: 12px; border-radius: 2px; background: ${g.color}"></div>
+                  <span style="font-size: 0.75rem;">${g.label}: ${g.value}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="chart-container">
+          <div class="chart-title">Score por Domínio</div>
+          ${generateHorizontalBarChart(domainChartData, 450)}
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Funções NIST AI RMF</div>
+          ${generateNistFunctionChart(metrics)}
+        </div>
+      </div>
+      
+      <!-- Gap Distribution Chart -->
+      ${criticalGaps.length > 0 ? `
+      <div class="section">
+        <h2 class="section-title">Distribuição de Riscos</h2>
+        <div style="display: flex; justify-content: center; padding: 1rem;">
+          ${generatePieChart(gapDistribution, 180)}
+        </div>
+      </div>
+      ` : ''}
+      
+      <!-- Domain Metrics Table -->
+      <div class="section">
+        <h2 class="section-title">Detalhamento por Domínio</h2>
         <table class="table">
           <thead>
             <tr>
@@ -326,6 +456,7 @@ export function generateHtmlReport(data: ReportData): string {
               <th>Score</th>
               <th>Cobertura</th>
               <th>Gaps</th>
+              <th>Nível</th>
               <th>Progresso</th>
             </tr>
           </thead>
@@ -333,12 +464,17 @@ export function generateHtmlReport(data: ReportData): string {
             ${metrics.domainMetrics.map(dm => `
               <tr>
                 <td><strong>${dm.domainName}</strong></td>
-                <td style="color: ${getMaturityColor(dm.maturityLevel.level)}">${Math.round(dm.score * 100)}%</td>
+                <td style="color: ${getMaturityColor(dm.maturityLevel.level)}; font-weight: 600;">${Math.round(dm.score * 100)}%</td>
                 <td>${Math.round(dm.coverage * 100)}%</td>
                 <td>${dm.criticalGaps}</td>
                 <td>
+                  <span class="badge" style="background: ${getMaturityColor(dm.maturityLevel.level)}; color: white;">
+                    ${dm.maturityLevel.name}
+                  </span>
+                </td>
+                <td style="width: 150px;">
                   <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.round(dm.coverage * 100)}%; background: ${getMaturityColor(dm.maturityLevel.level)}"></div>
+                    <div class="progress-fill" style="width: ${Math.round(dm.score * 100)}%; background: ${getMaturityColor(dm.maturityLevel.level)}"></div>
                   </div>
                 </td>
               </tr>
@@ -358,15 +494,21 @@ export function generateHtmlReport(data: ReportData): string {
               <th>Score Médio</th>
               <th>Cobertura</th>
               <th>Questões</th>
+              <th>Progresso</th>
             </tr>
           </thead>
           <tbody>
             ${frameworkCoverage.map(fc => `
               <tr>
                 <td><strong>${fc.framework}</strong></td>
-                <td>${Math.round(fc.averageScore * 100)}%</td>
+                <td style="font-weight: 600;">${Math.round(fc.averageScore * 100)}%</td>
                 <td>${Math.round(fc.coverage * 100)}%</td>
                 <td>${fc.answeredQuestions}/${fc.totalQuestions}</td>
+                <td style="width: 150px;">
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.round(fc.coverage * 100)}%; background: #3b82f6"></div>
+                  </div>
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -378,26 +520,27 @@ export function generateHtmlReport(data: ReportData): string {
       ${criticalGaps.length > 0 ? `
       <div class="section">
         <h2 class="section-title">Gaps Críticos (${criticalGaps.length})</h2>
-        ${criticalGaps.slice(0, 20).map(gap => `
+        ${criticalGaps.slice(0, 30).map(gap => `
           <div class="gap-item">
             <div class="gap-header">
               <div class="gap-question">${gap.questionText}</div>
-              <span class="badge" style="background: ${getCriticalityColor(gap.criticality)}; color: white; margin-left: 1rem;">
+              <span class="badge" style="background: ${getCriticalityColor(gap.criticality)}; color: white; margin-left: 1rem; white-space: nowrap;">
                 ${gap.criticality}
               </span>
             </div>
             <div class="gap-meta">
-              ${gap.domainName} → ${gap.subcatName} | Resposta: ${gap.response || 'Não respondido'}
+              <strong>${gap.domainName}</strong> → ${gap.subcatName} | Resposta: ${gap.response || 'Não respondido'}
             </div>
           </div>
         `).join('')}
-        ${criticalGaps.length > 20 ? `<p style="color: #6b7280; font-size: 0.875rem;">... e mais ${criticalGaps.length - 20} gaps</p>` : ''}
+        ${criticalGaps.length > 30 ? `<p style="color: #6b7280; font-size: 0.875rem; text-align: center; margin-top: 1rem;">... e mais ${criticalGaps.length - 30} gaps não exibidos</p>` : ''}
       </div>
       ` : ''}
     </div>
     
     <div class="footer">
-      Relatório gerado automaticamente pelo Sistema de Avaliação de Maturidade em Segurança de IA
+      <p>Relatório gerado automaticamente pelo Sistema de Avaliação de Maturidade em Segurança de IA</p>
+      <p style="margin-top: 0.5rem;">${formattedDate}</p>
     </div>
   </div>
 </body>

@@ -36,12 +36,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { getDetailedAuditLogs, getAuditLogStats, type DetailedAuditLog } from '@/lib/auditLog';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 const COLORS = {
   create: 'hsl(142, 76%, 36%)',
@@ -311,7 +306,15 @@ export function AuditLogsPanel() {
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [value, name]}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--background))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      fontSize: '12px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -347,7 +350,15 @@ export function AuditLogsPanel() {
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [value, name]}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--background))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      fontSize: '12px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -373,7 +384,15 @@ export function AuditLogsPanel() {
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
                   <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip 
+                    formatter={(value: number) => [value, t('auditLogs.totalEvents')]}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--background))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      fontSize: '12px'
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -766,6 +766,7 @@ export async function saveMaturitySnapshot(
 ): Promise<void> {
   const today = new Date().toISOString().split('T')[0];
   const securityDomainId = snapshot.securityDomainId || null;
+  const userId = await getCurrentUserId();
   
   // Check if we already have a snapshot for today with same type and domain
   if (!forceInsert && snapshot.snapshotType === 'automatic') {
@@ -813,6 +814,7 @@ export async function saveMaturitySnapshot(
       snapshot_date: snapshot.snapshotDate || today,
       snapshot_type: snapshot.snapshotType,
       security_domain_id: securityDomainId,
+      user_id: userId,
       overall_score: snapshot.overallScore,
       overall_coverage: snapshot.overallCoverage,
       evidence_readiness: snapshot.evidenceReadiness,
@@ -889,6 +891,8 @@ export async function getChartAnnotations(securityDomainId?: string): Promise<Ch
 }
 
 export async function createChartAnnotation(annotation: Omit<ChartAnnotation, 'id' | 'createdAt' | 'updatedAt'>): Promise<ChartAnnotation> {
+  const userId = await getCurrentUserId();
+  
   const { data, error } = await supabase
     .from('chart_annotations')
     .insert([{
@@ -897,7 +901,8 @@ export async function createChartAnnotation(annotation: Omit<ChartAnnotation, 'i
       description: annotation.description || null,
       annotation_type: annotation.annotationType,
       color: annotation.color || '#3b82f6',
-      security_domain_id: annotation.securityDomainId || null
+      security_domain_id: annotation.securityDomainId || null,
+      user_id: userId
     }])
     .select()
     .single();

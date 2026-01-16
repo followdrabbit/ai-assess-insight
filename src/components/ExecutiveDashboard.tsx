@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie } from 'recharts';
 import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DomainSpecificIndicators } from '@/components/DomainSpecificIndicators';
+import { Answer } from '@/lib/database';
 import { 
-  MaturityScoreHelp, 
+  MaturityScoreHelp,
   CoverageHelp, 
   EvidenceReadinessHelp, 
   CriticalGapsHelp,
@@ -134,6 +136,7 @@ interface ExecutiveDashboardProps {
   activeQuestions: ActiveQuestion[];
   domainSwitcher?: React.ReactNode;
   securityDomainId?: string; // Current security domain context
+  answers?: Map<string, Answer>; // Answers map for domain-specific indicators
 }
 
 type CriticalityFilter = 'all' | 'Critical' | 'High' | 'Medium' | 'Low';
@@ -149,7 +152,8 @@ export function ExecutiveDashboard({
   onFrameworkSelectionChange,
   activeQuestions,
   domainSwitcher,
-  securityDomainId = 'AI_SECURITY'
+  securityDomainId = 'AI_SECURITY',
+  answers = new Map()
 }: ExecutiveDashboardProps) {
   const navigate = useNavigate();
   
@@ -692,6 +696,13 @@ export function ExecutiveDashboard({
           <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
         </div>
       </div>
+
+      {/* Domain-Specific Indicators */}
+      <DomainSpecificIndicators 
+        securityDomainId={securityDomainId}
+        questions={activeQuestions}
+        answers={answers}
+      />
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-3 gap-6">

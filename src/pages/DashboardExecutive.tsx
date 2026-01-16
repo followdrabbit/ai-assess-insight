@@ -20,6 +20,7 @@ export default function DashboardExecutive() {
     selectedFrameworkIds,
     handleFrameworkSelectionChange,
     questionsForDashboard,
+    answers,
   } = useDashboardMetrics();
 
   if (isLoading || questionsLoading) {
@@ -52,6 +53,7 @@ export default function DashboardExecutive() {
         activeQuestions={questionsForDashboard}
         domainSwitcher={<DomainSwitcher variant="badge" />}
         securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'}
+        answers={answers}
       />
 
       {/* Maturity Trend Chart */}

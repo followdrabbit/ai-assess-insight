@@ -6,6 +6,7 @@ import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { cn } from '@/lib/utils';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
+import { DomainSpecificIndicators } from '@/components/DomainSpecificIndicators';
 import { 
   MaturityScoreHelp, 
   CoverageHelp, 
@@ -755,6 +756,13 @@ export default function DashboardGRC() {
           </div>
         </div>
       </div>
+
+      {/* Domain-Specific Indicators */}
+      <DomainSpecificIndicators 
+        securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'}
+        questions={questionsForDashboard}
+        answers={answers}
+      />
 
       {/* Tabs for different views */}
       <Tabs defaultValue="domains" className="space-y-4">

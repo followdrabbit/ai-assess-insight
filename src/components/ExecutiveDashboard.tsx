@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie } from 'recharts';
 import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -48,12 +49,31 @@ import {
   DashboardRoadmapGrid,
 } from '@/components/dashboard';
 
-// NIST AI RMF function display names (for AI_SECURITY domain)
-const nistFunctionLabels: Record<string, string> = {
-  GOVERN: 'Governar',
-  MAP: 'Mapear',
-  MEASURE: 'Medir',
-  MANAGE: 'Gerenciar',
+// Domain function keys for i18n
+const getDomainFunctionLabels = (t: (key: string) => string, securityDomainId: string): Record<string, string> => {
+  switch (securityDomainId) {
+    case 'CLOUD_SECURITY':
+      return {
+        GOVERN: t('domainFunctions.cloudGovern'),
+        MANAGE: t('domainFunctions.cloudManage'),
+        MEASURE: t('domainFunctions.cloudMeasure'),
+        MAP: t('domainFunctions.cloudMap'),
+      };
+    case 'DEVSECOPS':
+      return {
+        GOVERN: t('domainFunctions.devsecopsGovern'),
+        MANAGE: t('domainFunctions.devsecopsManage'),
+        MEASURE: t('domainFunctions.devsecopsMeasure'),
+        MAP: t('domainFunctions.devsecopsMap'),
+      };
+    default:
+      return {
+        GOVERN: t('domainFunctions.aiGovern'),
+        MAP: t('domainFunctions.aiMap'),
+        MEASURE: t('domainFunctions.aiMeasure'),
+        MANAGE: t('domainFunctions.aiManage'),
+      };
+  }
 };
 
 const nistFunctionColors: Record<string, string> = {
@@ -63,39 +83,25 @@ const nistFunctionColors: Record<string, string> = {
   MANAGE: 'hsl(var(--chart-4))',
 };
 
-// Cloud Security domain functions (for CLOUD_SECURITY domain)
-const cloudFunctionLabels: Record<string, string> = {
-  GOVERN: 'Governança',
-  MANAGE: 'Gerenciamento',
-  MEASURE: 'Monitoramento',
-  MAP: 'Mapeamento',
-};
-
-// DevSecOps domain functions (for DEVSECOPS domain)
-const devsecOpsFunctionLabels: Record<string, string> = {
-  GOVERN: 'Políticas',
-  MANAGE: 'Proteção',
-  MEASURE: 'Detecção',
-  MAP: 'Preparação',
-};
-
-// Domain-specific chart titles and descriptions
-const domainChartConfig: Record<string, { title: string; description: string; functionLabels: Record<string, string> }> = {
-  AI_SECURITY: {
-    title: 'Funções NIST AI RMF',
-    description: 'Maturidade nas funções do framework de gestão de riscos de IA',
-    functionLabels: nistFunctionLabels,
-  },
-  CLOUD_SECURITY: {
-    title: 'Pilares Cloud Security',
-    description: 'Maturidade nos pilares de segurança cloud (CSA CCM)',
-    functionLabels: cloudFunctionLabels,
-  },
-  DEVSECOPS: {
-    title: 'Práticas DevSecOps',
-    description: 'Maturidade nas práticas de segurança de desenvolvimento',
-    functionLabels: devsecOpsFunctionLabels,
-  },
+// Domain-specific chart config keys
+const getDomainChartConfig = (t: (key: string) => string, securityDomainId: string) => {
+  switch (securityDomainId) {
+    case 'CLOUD_SECURITY':
+      return {
+        title: t('domainFunctions.cloudTitle'),
+        description: t('domainFunctions.cloudDescription'),
+      };
+    case 'DEVSECOPS':
+      return {
+        title: t('domainFunctions.devsecopsTitle'),
+        description: t('domainFunctions.devsecopsDescription'),
+      };
+    default:
+      return {
+        title: t('domainFunctions.aiTitle'),
+        description: t('domainFunctions.aiDescription'),
+      };
+  }
 };
 
 // Framework category labels and colors imported from shared lib
@@ -140,7 +146,11 @@ export function ExecutiveDashboard({
   answers = new Map()
 }: ExecutiveDashboardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
+  // Get domain-specific labels using i18n
+  const currentFunctionLabels = getDomainFunctionLabels(t, securityDomainId);
+  const currentDomainConfig = getDomainChartConfig(t, securityDomainId);
   // Filter states
   const [criticalityFilter, setCriticalityFilter] = useState<CriticalityFilter>('all');
   const [nistFilter, setNistFilter] = useState<NistFunctionFilter>('all');
@@ -339,11 +349,10 @@ export function ExecutiveDashboard({
     criticalGaps: dm.criticalGaps,
   }));
 
-  // Get domain-specific chart configuration
-  const currentDomainConfig = domainChartConfig[securityDomainId] || domainChartConfig.AI_SECURITY;
+  // nistFunctionData uses the already-defined currentFunctionLabels from component top
 
   const nistFunctionData = metrics.nistFunctionMetrics.map(nf => ({
-    function: currentDomainConfig.functionLabels[nf.function] || nf.function,
+    function: currentFunctionLabels[nf.function] || nf.function,
     functionId: nf.function,
     score: Math.round(nf.score * 100),
     fullMark: 100,
@@ -609,7 +618,7 @@ export function ExecutiveDashboard({
             </div>
             {nistFilter !== 'all' && (
               <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                Filtro: {nistFunctionLabels[nistFilter]}
+                Filtro: {currentFunctionLabels[nistFilter]}
               </span>
             )}
           </div>
@@ -882,7 +891,7 @@ export function ExecutiveDashboard({
               <div className="flex items-center gap-3 flex-shrink-0">
                 {gap.nistFunction && (
                   <span className="text-xs bg-muted px-2 py-0.5 rounded hidden md:inline transition-all duration-200">
-                    {nistFunctionLabels[gap.nistFunction]}
+                    {currentFunctionLabels[gap.nistFunction]}
                   </span>
                 )}
                 <span className={cn(

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Home, ChevronRight, LucideIcon } from 'lucide-react';
 
@@ -14,6 +15,8 @@ interface PageBreadcrumbProps {
 }
 
 export function PageBreadcrumb({ items, className }: PageBreadcrumbProps) {
+  const { t } = useTranslation();
+  
   return (
     <Breadcrumb className={className}>
       <BreadcrumbList>
@@ -21,7 +24,7 @@ export function PageBreadcrumb({ items, className }: PageBreadcrumbProps) {
           <BreadcrumbLink asChild>
             <Link to="/" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
               <Home className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Início</span>
+              <span className="hidden sm:inline">{t('navigation.home')}</span>
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>

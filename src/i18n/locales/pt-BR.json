@@ -90,6 +90,21 @@
     "passwordReqSpecial": "Um caractere especial (!@#$%^&*)",
     "passwordTooWeak": "A senha não atende aos requisitos de segurança"
   },
+  "forgotPassword": {
+    "title": "Esqueceu a Senha?",
+    "description": "Digite seu email para receber um link de recuperação",
+    "emailPlaceholder": "seu@email.com",
+    "sending": "Enviando...",
+    "backToLogin": "Voltar para Login",
+    "emailSentTo": "Enviamos um link de recuperação para {{email}}. Clique no link para criar uma nova senha."
+  },
+  "resetPassword": {
+    "enterNewPassword": "Digite sua nova senha"
+  },
+  "notFound": {
+    "message": "Ops! Página não encontrada",
+    "returnHome": "Voltar para Início"
+  },
   "navigation": {
     "home": "Início",
     "dashboard": "Dashboard",
@@ -1054,6 +1069,27 @@
     "personaGRCDesc": "Security Manager - Cobertura, evidências e auditabilidade",
     "personaSpecialist": "Especialista",
     "personaSpecialistDesc": "Arquiteto / Engenheiro - Detalhes técnicos e implementação"
+  },
+  "domainFunctions": {
+    "aiGovern": "Governar",
+    "aiMap": "Mapear",
+    "aiMeasure": "Medir",
+    "aiManage": "Gerenciar",
+    "aiTitle": "Funções NIST AI RMF",
+    "aiDescription": "Maturidade nas funções do framework de gestão de riscos de IA",
+    "cloudGovern": "Governança",
+    "cloudManage": "Gerenciamento",
+    "cloudMeasure": "Monitoramento",
+    "cloudMap": "Mapeamento",
+    "cloudTitle": "Pilares Cloud Security",
+    "cloudDescription": "Maturidade nos pilares de segurança cloud (CSA CCM)",
+    "devsecopsGovern": "Políticas",
+    "devsecopsManage": "Proteção",
+    "devsecopsMeasure": "Detecção",
+    "devsecopsMap": "Preparação",
+    "devsecopsTitle": "Práticas DevSecOps",
+    "devsecopsDescription": "Maturidade nas práticas de segurança de desenvolvimento",
+    "filter": "Filtro"
   },
   "errors": {
     "generic": "Ocorreu um erro",

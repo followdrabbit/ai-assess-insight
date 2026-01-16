@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, KeyRound, CheckCircle } from 'lucide-react';
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -43,12 +45,12 @@ export default function ResetPassword() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
+      setError(t('auth.passwordsNoMatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
+      setError(t('auth.passwordTooShort'));
       return;
     }
 
@@ -69,7 +71,7 @@ export default function ResetPassword() {
         }, 3000);
       }
     } catch (err) {
-      setError('Ocorreu um erro ao redefinir a senha');
+      setError(t('errors.changePassword'));
     } finally {
       setLoading(false);
     }
@@ -88,14 +90,14 @@ export default function ResetPassword() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Link Inválido</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth.invalidLink')}</CardTitle>
             <CardDescription>
-              Este link de recuperação expirou ou é inválido
+              {t('auth.linkExpired')}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button onClick={() => navigate('/forgot-password')}>
-              Solicitar Novo Link
+              {t('auth.requestNewLink')}
             </Button>
           </CardFooter>
         </Card>
@@ -113,13 +115,13 @@ export default function ResetPassword() {
                 <CheckCircle className="h-8 w-8 text-green-500" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold">Senha Redefinida!</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth.passwordReset')}</CardTitle>
             <CardDescription>
-              Sua senha foi alterada com sucesso
+              {t('auth.passwordResetSuccess')}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center text-muted-foreground">
-            <p>Você será redirecionado automaticamente...</p>
+            <p>{t('auth.redirecting')}</p>
           </CardContent>
         </Card>
       </div>
@@ -135,9 +137,9 @@ export default function ResetPassword() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Nova Senha</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('auth.newPassword')}</CardTitle>
           <CardDescription>
-            Digite sua nova senha
+            {t('resetPassword.enterNewPassword')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -149,7 +151,7 @@ export default function ResetPassword() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="password">Nova Senha</Label>
+              <Label htmlFor="password">{t('auth.newPassword')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -163,7 +165,7 @@ export default function ResetPassword() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -182,12 +184,12 @@ export default function ResetPassword() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  {t('common.loading')}
                 </>
               ) : (
                 <>
                   <KeyRound className="mr-2 h-4 w-4" />
-                  Redefinir Senha
+                  {t('auth.resetPassword')}
                 </>
               )}
             </Button>

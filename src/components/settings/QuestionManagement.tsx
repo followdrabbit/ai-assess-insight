@@ -52,9 +52,10 @@ import {
 } from '@/lib/questionVersioning';
 import { VersionComparisonView } from './VersionComparisonView';
 import { VersionAnnotations } from './VersionAnnotations';
+import { VersionTags, VersionTagsBadges } from './VersionTags';
 import { supabase } from '@/integrations/supabase/client';
 import { downloadVersionHistoryHtml, openVersionHistoryPrintView } from '@/lib/versionHistoryExport';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -1479,6 +1480,12 @@ export function QuestionManagement() {
                                   <span className="text-muted-foreground/70">• {version.changeSummary}</span>
                                 )}
                               </div>
+                              {/* Tags display */}
+                              {version.tags && version.tags.length > 0 && (
+                                <div className="mt-2">
+                                  <VersionTagsBadges tags={version.tags} />
+                                </div>
+                              )}
                             </div>
                             {index > 0 && (
                               <Button
@@ -1540,6 +1547,21 @@ export function QuestionManagement() {
                       </div>
                     )}
                     
+                    {/* Tags Section */}
+                    <div className="border-t pt-4">
+                      <VersionTags
+                        version={selectedVersion}
+                        onTagsChange={(versionId, newTags) => {
+                          setVersions(prev => prev.map(v => 
+                            v.id === versionId ? { ...v, tags: newTags } : v
+                          ));
+                          if (selectedVersion.id === versionId) {
+                            setSelectedVersion({ ...selectedVersion, tags: newTags });
+                          }
+                        }}
+                      />
+                    </div>
+
                     {/* Annotations Section */}
                     <div className="border-t pt-4">
                       <VersionAnnotations

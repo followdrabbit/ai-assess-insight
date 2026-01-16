@@ -36,7 +36,26 @@ export interface QuestionVersion {
   changedBy: string | null;
   createdAt: string;
   annotations: VersionAnnotation[];
+  tags: string[];
 }
+
+// Predefined tag options with metadata
+export interface VersionTagOption {
+  id: string;
+  label: string;
+  color: string;
+  icon?: string;
+}
+
+export const VERSION_TAG_OPTIONS: VersionTagOption[] = [
+  { id: 'approved', label: 'Aprovado', color: 'bg-green-500/10 text-green-600 border-green-500/30' },
+  { id: 'reviewed', label: 'Revisado', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
+  { id: 'baseline', label: 'Baseline', color: 'bg-purple-500/10 text-purple-600 border-purple-500/30' },
+  { id: 'draft', label: 'Rascunho', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' },
+  { id: 'deprecated', label: 'Descontinuado', color: 'bg-red-500/10 text-red-600 border-red-500/30' },
+  { id: 'audit', label: 'Auditoria', color: 'bg-orange-500/10 text-orange-600 border-orange-500/30' },
+  { id: 'compliance', label: 'Compliance', color: 'bg-teal-500/10 text-teal-600 border-teal-500/30' },
+];
 
 export interface VersionDiff {
   field: string;
@@ -328,7 +347,8 @@ function mapVersionRow(row: any): QuestionVersion {
     changeSummary: row.change_summary,
     changedBy: row.changed_by,
     createdAt: row.created_at,
-    annotations: row.annotations || []
+    annotations: row.annotations || [],
+    tags: row.tags || []
   };
 }
 
@@ -338,6 +358,112 @@ export const CHANGE_TYPE_LABELS: Record<string, string> = {
   update: 'Atualização',
   revert: 'Reversão'
 };
+
+/**
+ * Add a tag to a version
+ */
+export async function addVersionTag(
+  versionId: string,
+  tag: string
+): Promise<boolean> {
+  try {
+    const { data: version, error: fetchError } = await questionVersionsTable()
+      .select('tags')
+      .eq('id', versionId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching version for tag:', fetchError);
+      return false;
+    }
+
+    const versionData = version as unknown as { tags: string[] | null };
+    const currentTags = versionData?.tags || [];
+    
+    if (currentTags.includes(tag)) {
+      return true; // Tag already exists
+    }
+
+    const updatedTags = [...currentTags, tag];
+
+    const { error: updateError } = await questionVersionsTable()
+      .update({ tags: updatedTags })
+      .eq('id', versionId);
+
+    if (updateError) {
+      console.error('Error adding tag:', updateError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in addVersionTag:', error);
+    return false;
+  }
+}
+
+/**
+ * Remove a tag from a version
+ */
+export async function removeVersionTag(
+  versionId: string,
+  tag: string
+): Promise<boolean> {
+  try {
+    const { data: version, error: fetchError } = await questionVersionsTable()
+      .select('tags')
+      .eq('id', versionId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching version for tag removal:', fetchError);
+      return false;
+    }
+
+    const versionData = version as unknown as { tags: string[] | null };
+    const currentTags = versionData?.tags || [];
+    
+    const updatedTags = currentTags.filter(t => t !== tag);
+
+    const { error: updateError } = await questionVersionsTable()
+      .update({ tags: updatedTags })
+      .eq('id', versionId);
+
+    if (updateError) {
+      console.error('Error removing tag:', updateError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in removeVersionTag:', error);
+    return false;
+  }
+}
+
+/**
+ * Set all tags for a version (replace existing)
+ */
+export async function setVersionTags(
+  versionId: string,
+  tags: string[]
+): Promise<boolean> {
+  try {
+    const { error: updateError } = await questionVersionsTable()
+      .update({ tags })
+      .eq('id', versionId);
+
+    if (updateError) {
+      console.error('Error setting tags:', updateError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in setVersionTags:', error);
+    return false;
+  }
+}
 
 /**
  * Add an annotation to a version

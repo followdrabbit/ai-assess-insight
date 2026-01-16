@@ -3,13 +3,15 @@ import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell, Moon, Sun, Monitor, Globe } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell, Moon, Sun, Monitor, Globe, Volume2, Mic, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -35,10 +37,21 @@ interface NotificationPreferences {
   notify_new_features: boolean;
 }
 
+interface VoiceSettings {
+  voice_language: string;
+  voice_rate: number;
+  voice_pitch: number;
+  voice_volume: number;
+  voice_name: string | null;
+  voice_auto_speak: boolean;
+}
+
 export default function Profile() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
+  const { voices, speak, stop, isSpeaking } = useSpeechSynthesis();
+  
   const [profile, setProfile] = useState<Profile>({
     display_name: '',
     organization: '',
@@ -51,11 +64,20 @@ export default function Profile() {
     notify_weekly_digest: false,
     notify_new_features: true,
   });
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
+    voice_language: 'pt-BR',
+    voice_rate: 1.0,
+    voice_pitch: 1.0,
+    voice_volume: 1.0,
+    voice_name: null,
+    voice_auto_speak: false,
+  });
   const [language, setLanguage] = useState('pt-BR');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [savingLanguage, setSavingLanguage] = useState(false);
+  const [savingVoice, setSavingVoice] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Password change state
@@ -75,7 +97,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features, language')
+        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features, language, voice_language, voice_rate, voice_pitch, voice_volume, voice_name, voice_auto_speak')
         .eq('user_id', user.id)
         .single();
       
@@ -98,6 +120,14 @@ export default function Profile() {
           notify_security_alerts: data.notify_security_alerts ?? true,
           notify_weekly_digest: data.notify_weekly_digest ?? false,
           notify_new_features: data.notify_new_features ?? true,
+        });
+        setVoiceSettings({
+          voice_language: (data as any).voice_language || 'pt-BR',
+          voice_rate: Number((data as any).voice_rate) || 1.0,
+          voice_pitch: Number((data as any).voice_pitch) || 1.0,
+          voice_volume: Number((data as any).voice_volume) || 1.0,
+          voice_name: (data as any).voice_name || null,
+          voice_auto_speak: (data as any).voice_auto_speak ?? false,
         });
         const userLang = (data as any).language || 'pt-BR';
         setLanguage(userLang);
@@ -255,6 +285,60 @@ export default function Profile() {
       setChangingPassword(false);
     }
   };
+
+  const handleSaveVoiceSetting = async <K extends keyof VoiceSettings>(key: K, value: VoiceSettings[K]) => {
+    if (!user) return;
+    
+    const previousValue = voiceSettings[key];
+    setVoiceSettings(prev => ({ ...prev, [key]: value }));
+    setSavingVoice(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          [key]: value,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      toast.success(t('profile.voiceSettingsSaved', 'Voice setting saved!'));
+    } catch (err: any) {
+      // Revert on error
+      setVoiceSettings(prev => ({ ...prev, [key]: previousValue }));
+      toast.error(err.message || t('errors.saveVoiceSettings', 'Error saving voice setting'));
+    } finally {
+      setSavingVoice(false);
+    }
+  };
+
+  const testVoice = () => {
+    const voice = voices.find(v => v.name === voiceSettings.voice_name) || 
+                  voices.find(v => v.lang === voiceSettings.voice_language) ||
+                  voices[0];
+    
+    const testText = voiceSettings.voice_language.startsWith('pt') 
+      ? 'Olá! Esta é uma demonstração das configurações de voz.'
+      : voiceSettings.voice_language.startsWith('es')
+      ? '¡Hola! Esta es una demostración de la configuración de voz.'
+      : 'Hello! This is a demonstration of the voice settings.';
+
+    if (isSpeaking) {
+      stop();
+    } else {
+      speak(testText, {
+        voice,
+        rate: voiceSettings.voice_rate,
+        pitch: voiceSettings.voice_pitch,
+        volume: voiceSettings.voice_volume,
+      });
+    }
+  };
+
+  // Filter voices by selected language
+  const filteredVoices = voices.filter(v => v.lang.startsWith(voiceSettings.voice_language.split('-')[0]));
 
   if (loading) {
     return (
@@ -518,6 +602,201 @@ export default function Profile() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Voice Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Volume2 className="h-5 w-5" />
+            {t('profile.voiceSettings', 'Voice Settings')}
+          </CardTitle>
+          <CardDescription>
+            {t('profile.voiceSettingsDescription', 'Configure speech recognition and text-to-speech preferences')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* Voice Language */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="flex items-center gap-2">
+                  <Mic className="h-4 w-4" />
+                  {t('profile.voiceLanguage', 'Voice Language')}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('profile.voiceLanguageDescription', 'Language for speech recognition and synthesis')}
+                </p>
+              </div>
+              <Select 
+                value={voiceSettings.voice_language} 
+                onValueChange={(v) => handleSaveVoiceSetting('voice_language', v)}
+                disabled={savingVoice}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Voice Selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('profile.preferredVoice', 'Preferred Voice')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('profile.preferredVoiceDescription', 'Select a voice for text-to-speech')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select 
+                    value={voiceSettings.voice_name || ''} 
+                    onValueChange={(v) => handleSaveVoiceSetting('voice_name', v || null)}
+                    disabled={savingVoice}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder={t('profile.selectVoice', 'Select voice')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">
+                        {t('profile.autoSelectVoice', 'Auto (System Default)')}
+                      </SelectItem>
+                      {filteredVoices.length > 0 ? (
+                        filteredVoices.map((voice) => (
+                          <SelectItem key={voice.name} value={voice.name}>
+                            {voice.name} ({voice.lang})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        voices.slice(0, 10).map((voice) => (
+                          <SelectItem key={voice.name} value={voice.name}>
+                            {voice.name} ({voice.lang})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={testVoice}
+                    className={isSpeaking ? 'text-primary' : ''}
+                  >
+                    <Play className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Speech Rate */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('profile.speechRate', 'Speech Rate')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('profile.speechRateDescription', 'How fast the voice speaks')}
+                  </p>
+                </div>
+                <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_rate.toFixed(1)}x</span>
+              </div>
+              <Slider
+                value={[voiceSettings.voice_rate]}
+                min={0.5}
+                max={2}
+                step={0.1}
+                onValueCommit={(value) => handleSaveVoiceSetting('voice_rate', value[0])}
+                onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_rate: value[0] }))}
+                disabled={savingVoice}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{t('profile.slower', 'Slower')}</span>
+                <span>{t('profile.normal', 'Normal')}</span>
+                <span>{t('profile.faster', 'Faster')}</span>
+              </div>
+            </div>
+
+            {/* Pitch */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('profile.voicePitch', 'Voice Pitch')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('profile.voicePitchDescription', 'How high or low the voice sounds')}
+                  </p>
+                </div>
+                <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_pitch.toFixed(1)}</span>
+              </div>
+              <Slider
+                value={[voiceSettings.voice_pitch]}
+                min={0.5}
+                max={2}
+                step={0.1}
+                onValueCommit={(value) => handleSaveVoiceSetting('voice_pitch', value[0])}
+                onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_pitch: value[0] }))}
+                disabled={savingVoice}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{t('profile.lower', 'Lower')}</span>
+                <span>{t('profile.default', 'Default')}</span>
+                <span>{t('profile.higher', 'Higher')}</span>
+              </div>
+            </div>
+
+            {/* Volume */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t('profile.voiceVolume', 'Voice Volume')}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('profile.voiceVolumeDescription', 'Volume level for text-to-speech')}
+                  </p>
+                </div>
+                <span className="text-sm font-medium w-12 text-right">{Math.round(voiceSettings.voice_volume * 100)}%</span>
+              </div>
+              <Slider
+                value={[voiceSettings.voice_volume]}
+                min={0}
+                max={1}
+                step={0.1}
+                onValueCommit={(value) => handleSaveVoiceSetting('voice_volume', value[0])}
+                onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_volume: value[0] }))}
+                disabled={savingVoice}
+                className="w-full"
+              />
+            </div>
+
+            {/* Auto-speak */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="space-y-0.5">
+                <Label htmlFor="voice_auto_speak" className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4" />
+                  {t('profile.autoSpeak', 'Auto-speak AI Responses')}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('profile.autoSpeakDescription', 'Automatically read AI assistant responses aloud')}
+                </p>
+              </div>
+              <Switch
+                id="voice_auto_speak"
+                checked={voiceSettings.voice_auto_speak}
+                onCheckedChange={(checked) => handleSaveVoiceSetting('voice_auto_speak', checked)}
+                disabled={savingVoice}
+              />
             </div>
           </div>
         </CardContent>

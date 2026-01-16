@@ -85,53 +85,53 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col gap-12 py-8">
+    <div className="flex flex-col gap-8 sm:gap-12 py-4 sm:py-8">
       {/* Breadcrumb */}
       <PageBreadcrumb items={breadcrumbItems} className="mb-2" />
 
       {/* Hero Section */}
-      <section className="text-center space-y-6 py-12">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-          <Shield className="h-4 w-4" />
+      <section className="text-center space-y-4 sm:space-y-6 py-6 sm:py-12 px-2">
+        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium">
+          <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           TrustLayer
         </div>
         
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground max-w-3xl mx-auto">
+        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground max-w-3xl mx-auto leading-tight">
           {t('home.heroTitle')}{' '}
           <span className="text-primary">{t('home.heroHighlight')}</span>
         </h1>
         
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
           {t('home.heroDescription')}
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-          <Button size="lg" onClick={() => navigate('/assessment')} className="gap-2">
+        <div className="flex flex-col xs:flex-row gap-3 sm:gap-4 justify-center pt-2 sm:pt-4">
+          <Button size="default" onClick={() => navigate('/assessment')} className="gap-2 w-full xs:w-auto">
             {t('home.startAssessment')}
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button size="lg" variant="outline" onClick={() => navigate('/dashboard')}>
+          <Button size="default" variant="outline" onClick={() => navigate('/dashboard')} className="w-full xs:w-auto">
             {t('home.viewDashboard')}
           </Button>
         </div>
       </section>
 
       {/* Quick Start Guide */}
-      <section className="space-y-8">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-2">
-            <PlayCircle className="h-4 w-4" />
+      <section className="space-y-6 sm:space-y-8">
+        <div className="text-center space-y-2 px-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs sm:text-sm font-medium mb-2">
+            <PlayCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {t('home.gettingStarted')}
           </div>
-          <h2 className="text-2xl font-semibold text-foreground">
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
             {t('home.howToUse')}
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
             {t('home.howToUseDesc')}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {steps.map((step) => (
             <Card 
               key={step.number} 
@@ -183,27 +183,27 @@ export default function Home() {
       </section>
 
       {/* Features Grid */}
-      <section className="space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-semibold text-foreground">
+      <section className="space-y-6 sm:space-y-8">
+        <div className="text-center space-y-2 px-2">
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
             {t('home.mainFeatures')}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {t('home.mainFeaturesDesc')}
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {features.map((feature) => (
             <Card key={feature.titleKey} className="border-border hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
-                  <feature.icon className="h-5 w-5 text-primary" />
+              <CardHeader className="pb-2 sm:pb-3">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                  <feature.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
-                <CardTitle className="text-base">{t(feature.titleKey)}</CardTitle>
+                <CardTitle className="text-sm sm:text-base">{t(feature.titleKey)}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-xs sm:text-sm">
                   {t(feature.descKey)}
                 </CardDescription>
               </CardContent>
@@ -213,42 +213,42 @@ export default function Home() {
       </section>
 
       {/* Benefits Section */}
-      <section className="grid md:grid-cols-2 gap-8 items-center py-8">
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-foreground">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center py-6 sm:py-8">
+        <div className="space-y-4 sm:space-y-6">
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
             {t('home.whyUse')}
           </h2>
-          <ul className="space-y-3">
+          <ul className="space-y-2 sm:space-y-3">
             {benefitKeys.map((key) => (
-              <li key={key} className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <span className="text-muted-foreground">{t(key)}</span>
+              <li key={key} className="flex items-start gap-2 sm:gap-3">
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 shrink-0" />
+                <span className="text-sm sm:text-base text-muted-foreground">{t(key)}</span>
               </li>
             ))}
           </ul>
         </div>
         
         <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-          <CardHeader>
+          <CardHeader className="pb-2 sm:pb-4">
             <div className="flex items-center gap-2 text-primary">
-              <TrendingUp className="h-5 w-5" />
-              <span className="text-sm font-medium">{t('home.fullCoverage')}</span>
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-xs sm:text-sm font-medium">{t('home.fullCoverage')}</span>
             </div>
-            <CardTitle className="text-3xl">{t('home.domainsCount')}</CardTitle>
-            <CardDescription>{t('home.domainsLabel')}</CardDescription>
+            <CardTitle className="text-2xl sm:text-3xl">{t('home.domainsCount')}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">{t('home.domainsLabel')}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="p-3 rounded-lg bg-background/50">
-                <div className="text-2xl font-bold text-foreground">82</div>
-                <div className="text-xs text-muted-foreground">{t('home.questionsLabel')}</div>
+          <CardContent className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 text-center">
+              <div className="p-2 sm:p-3 rounded-lg bg-background/50">
+                <div className="text-xl sm:text-2xl font-bold text-foreground">82</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">{t('home.questionsLabel')}</div>
               </div>
-              <div className="p-3 rounded-lg bg-background/50">
-                <div className="text-2xl font-bold text-foreground">6+</div>
-                <div className="text-xs text-muted-foreground">{t('home.frameworksLabel')}</div>
+              <div className="p-2 sm:p-3 rounded-lg bg-background/50">
+                <div className="text-xl sm:text-2xl font-bold text-foreground">6+</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">{t('home.frameworksLabel')}</div>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {t('home.basedOn')}
             </p>
           </CardContent>
@@ -256,19 +256,19 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="text-center py-12 px-6 rounded-xl bg-muted/50 border border-border">
-        <h2 className="text-2xl font-semibold text-foreground mb-3">
+      <section className="text-center py-8 sm:py-12 px-4 sm:px-6 rounded-xl bg-muted/50 border border-border">
+        <h2 className="text-xl sm:text-2xl font-semibold text-foreground mb-2 sm:mb-3">
           {t('home.readyToStart')}
         </h2>
-        <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+        <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-lg mx-auto">
           {t('home.readyToStartDesc')}
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" onClick={() => navigate('/assessment')} className="gap-2">
+        <div className="flex flex-col xs:flex-row gap-3 sm:gap-4 justify-center">
+          <Button size="default" onClick={() => navigate('/assessment')} className="gap-2 w-full xs:w-auto">
             {t('home.getStarted')}
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button size="lg" variant="outline" onClick={() => navigate('/assessment')} className="gap-2">
+          <Button size="default" variant="outline" onClick={() => navigate('/assessment')} className="gap-2 w-full xs:w-auto">
             <Sparkles className="h-4 w-4" />
             {t('home.tryDemo')}
           </Button>

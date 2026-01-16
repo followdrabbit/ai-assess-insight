@@ -47,7 +47,7 @@ export function DashboardKPICard({
     <div 
       className={cn(
         "kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500",
-        "hover:shadow-lg transition-shadow",
+        "hover:shadow-lg transition-shadow p-3 sm:p-4",
         onClick && "cursor-pointer",
         variantStyles[variant],
         className
@@ -59,19 +59,19 @@ export function DashboardKPICard({
       onClick={onClick}
     >
       {/* Decorative element */}
-      <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
+      <div className="absolute top-0 right-0 w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-bl-full" />
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-1">
-        <div className="kpi-label flex items-center gap-1.5">
+      <div className="flex items-center justify-between mb-1 gap-1">
+        <div className="kpi-label flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm truncate">
           {icon}
-          {label}
+          <span className="truncate">{label}</span>
         </div>
         {helpTooltip}
       </div>
 
       {/* Value */}
-      <div className="kpi-value">
+      <div className="kpi-value text-xl sm:text-2xl md:text-3xl">
         {value}{suffix}
       </div>
 

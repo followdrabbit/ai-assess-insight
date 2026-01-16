@@ -96,7 +96,7 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
             variant="outline"
             size="sm"
             className={cn(
-              "h-7 gap-1.5 px-2 rounded-full",
+              "h-6 sm:h-7 gap-1 sm:gap-1.5 px-1.5 sm:px-2 rounded-full",
               "transition-colors hover:bg-accent",
               displayInfo?.bgClass,
               displayInfo?.textClass,
@@ -105,9 +105,9 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
               className
             )}
           >
-            <IconComponent className={cn("h-3.5 w-3.5", isChanging && "animate-pulse")} />
-            <span className="text-xs font-medium">{currentDomain?.shortName}</span>
-            <ChevronDown className="h-3 w-3 opacity-60" />
+            <IconComponent className={cn("h-3 w-3 sm:h-3.5 sm:w-3.5", isChanging && "animate-pulse")} />
+            <span className="text-[10px] sm:text-xs font-medium">{currentDomain?.shortName}</span>
+            <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 z-50">

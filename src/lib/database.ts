@@ -782,3 +782,116 @@ export async function getLastSnapshotDate(): Promise<string | null> {
   if (error || !data) return null;
   return data.snapshot_date;
 }
+
+// ============ CHART ANNOTATIONS ============
+export interface ChartAnnotation {
+  id: string;
+  annotationDate: string;
+  title: string;
+  description?: string;
+  annotationType: string;
+  color?: string;
+  securityDomainId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getChartAnnotations(securityDomainId?: string): Promise<ChartAnnotation[]> {
+  let query = supabase
+    .from('chart_annotations')
+    .select('*')
+    .order('annotation_date', { ascending: false });
+  
+  if (securityDomainId) {
+    query = query.or(`security_domain_id.eq.${securityDomainId},security_domain_id.is.null`);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching chart annotations:', error);
+    throw error;
+  }
+  
+  return (data || []).map(row => ({
+    id: row.id,
+    annotationDate: row.annotation_date,
+    title: row.title,
+    description: row.description || undefined,
+    annotationType: row.annotation_type,
+    color: row.color || undefined,
+    securityDomainId: row.security_domain_id || undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+}
+
+export async function createChartAnnotation(annotation: Omit<ChartAnnotation, 'id' | 'createdAt' | 'updatedAt'>): Promise<ChartAnnotation> {
+  const { data, error } = await supabase
+    .from('chart_annotations')
+    .insert([{
+      annotation_date: annotation.annotationDate,
+      title: annotation.title,
+      description: annotation.description || null,
+      annotation_type: annotation.annotationType,
+      color: annotation.color || '#3b82f6',
+      security_domain_id: annotation.securityDomainId || null
+    }])
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error creating chart annotation:', error);
+    throw error;
+  }
+  
+  return {
+    id: data.id,
+    annotationDate: data.annotation_date,
+    title: data.title,
+    description: data.description || undefined,
+    annotationType: data.annotation_type,
+    color: data.color || undefined,
+    securityDomainId: data.security_domain_id || undefined,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+}
+
+export async function updateChartAnnotation(
+  id: string, 
+  updates: Partial<Omit<ChartAnnotation, 'id' | 'createdAt' | 'updatedAt'>>
+): Promise<void> {
+  const updateData: Record<string, any> = {
+    updated_at: new Date().toISOString()
+  };
+  
+  if (updates.annotationDate !== undefined) updateData.annotation_date = updates.annotationDate;
+  if (updates.title !== undefined) updateData.title = updates.title;
+  if (updates.description !== undefined) updateData.description = updates.description || null;
+  if (updates.annotationType !== undefined) updateData.annotation_type = updates.annotationType;
+  if (updates.color !== undefined) updateData.color = updates.color;
+  if (updates.securityDomainId !== undefined) updateData.security_domain_id = updates.securityDomainId || null;
+  
+  const { error } = await supabase
+    .from('chart_annotations')
+    .update(updateData)
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error updating chart annotation:', error);
+    throw error;
+  }
+}
+
+export async function deleteChartAnnotation(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('chart_annotations')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error deleting chart annotation:', error);
+    throw error;
+  }
+}

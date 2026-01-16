@@ -5,6 +5,7 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { AIAssistantPanel } from '@/components/ai-assistant';
 
 export default function Layout() {
   const { t } = useTranslation();
@@ -30,6 +31,9 @@ export default function Layout() {
           <main className="flex-1 overflow-auto p-6">
             <Outlet />
           </main>
+
+          {/* AI Assistant FAB */}
+          <AIAssistantPanel />
 
           {/* Footer */}
           <footer className="border-t border-border py-3 px-4">

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Wrench } from 'lucide-react';
+import { Wrench, Download } from 'lucide-react';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
@@ -54,6 +54,14 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
+import {
+  DashboardHeader,
+  DashboardFrameworkSelector,
+  DashboardFilterBar,
+  DashboardKPIGrid,
+  DashboardKPICard,
+  DashboardSection,
+} from '@/components/dashboard';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -755,68 +763,20 @@ export default function DashboardSpecialist() {
       />
 
       {/* Header with Domain Switcher and Framework Selector */}
-      <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-primary">Dashboard Especialista - Detalhes Técnicos</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Arquiteto / Engenheiro - Implementação e gaps técnicos
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <DomainSwitcher variant="badge" />
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleExportReport}
-                className="h-7 rounded-full px-3 text-xs gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Exportar Relatório
-              </Button>
-            </div>
-          </div>
-
-          {/* Framework Selector */}
-          <div className="border-t pt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-medium">Frameworks em Análise</span>
-              <FrameworkCategoryHelp />
-              <span className="text-xs text-muted-foreground">
-                ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
-              </span>
-            </div>
-
-            {/* Framework Pills */}
-            <div className="flex flex-wrap gap-2">
-              {enabledFrameworks.map(fw => {
-                const isSelected = selectedFrameworkIds.length === 0 || selectedFrameworkIds.includes(fw.frameworkId);
-                return (
-                  <Badge
-                    key={fw.frameworkId}
-                    variant={isSelected ? "default" : "outline"}
-                    className={cn(
-                      "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md",
-                      isSelected 
-                        ? "bg-primary hover:bg-primary/90" 
-                        : "opacity-50 hover:opacity-100 hover:border-primary/50"
-                    )}
-                    onClick={() => toggleFramework(fw.frameworkId)}
-                  >
-                    {fw.shortName}
-                  </Badge>
-                );
-              })}
-            </div>
-
-            <p className="text-xs text-muted-foreground mt-2">
-              Clique nos frameworks acima para filtrar os dados exibidos.
-              {selectedFrameworkIds.length > 0 && ` (${selectedFrameworkIds.length} selecionados)`}
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardHeader
+        title="Dashboard Especialista - Detalhes Técnicos"
+        subtitle="Arquiteto / Engenheiro - Implementação e gaps técnicos"
+        icon={Wrench}
+        domainSwitcher={<DomainSwitcher variant="badge" />}
+        onExport={handleExportReport}
+      >
+        <DashboardFrameworkSelector
+          frameworks={enabledFrameworks}
+          selectedIds={selectedFrameworkIds}
+          onToggle={toggleFramework}
+          helpTooltip={<FrameworkCategoryHelp />}
+        />
+      </DashboardHeader>
 
 
       {/* Quick Filter Pills - Enhanced with animations */}

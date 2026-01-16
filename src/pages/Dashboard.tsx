@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAnswersStore } from '@/lib/stores';
 import { domains, subcategories, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, questions as defaultQuestions } from '@/lib/dataset';
 import { frameworkCategoryLabels, frameworkCategoryColors } from '@/lib/frameworkCategories';
@@ -21,26 +22,10 @@ import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getS
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 import { LayoutDashboard } from 'lucide-react';
 
-// NIST AI RMF function display names
-const nistFunctionLabels: Record<string, string> = {
-  GOVERN: 'Governar',
-  MAP: 'Mapear',
-  MEASURE: 'Medir',
-  MANAGE: 'Gerenciar',
-};
-
-const nistFunctionColors: Record<string, string> = {
-  GOVERN: 'hsl(var(--chart-1))',
-  MAP: 'hsl(var(--chart-2))',
-  MEASURE: 'hsl(var(--chart-3))',
-  MANAGE: 'hsl(var(--chart-4))',
-};
-
-// Framework category labels and colors imported from shared lib
-
 export default function Dashboard() {
   const { answers, isLoading } = useAnswersStore();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [persona, setPersona] = useState<PersonaType>('executive');
   
   const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
@@ -48,6 +33,24 @@ export default function Dashboard() {
   const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
   const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
+
+  // NIST AI RMF function display names - using translation keys
+  const getNistFunctionLabel = (func: string) => {
+    const labels: Record<string, string> = {
+      GOVERN: t('dashboard.nistGovern', 'Govern'),
+      MAP: t('dashboard.nistMap', 'Map'),
+      MEASURE: t('dashboard.nistMeasure', 'Measure'),
+      MANAGE: t('dashboard.nistManage', 'Manage'),
+    };
+    return labels[func] || func;
+  };
+
+  const nistFunctionColors: Record<string, string> = {
+    GOVERN: 'hsl(var(--chart-1))',
+    MAP: 'hsl(var(--chart-2))',
+    MEASURE: 'hsl(var(--chart-3))',
+    MANAGE: 'hsl(var(--chart-4))',
+  };
 
   // Load active questions and frameworks
   useEffect(() => {
@@ -212,7 +215,7 @@ export default function Dashboard() {
   }));
 
   const nistFunctionData = metrics.nistFunctionMetrics.map(nf => ({
-    function: nistFunctionLabels[nf.function] || nf.function,
+    function: getNistFunctionLabel(nf.function),
     score: Math.round(nf.score * 100),
     fullMark: 100,
     color: nistFunctionColors[nf.function],
@@ -240,8 +243,17 @@ export default function Dashboard() {
     answered: om.answeredQuestions,
   }));
 
+  // Status translation helper
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'incomplete': return t('dashboard.incomplete');
+      case 'at-risk': return t('dashboard.atRisk');
+      default: return t('dashboard.adequate');
+    }
+  };
+
   if (isLoading || dataLoading) {
-    return <div className="flex items-center justify-center h-64">Carregando...</div>;
+    return <div className="flex items-center justify-center h-64">{t('common.loading')}</div>;
   }
 
   return (
@@ -249,16 +261,16 @@ export default function Dashboard() {
       {/* Breadcrumb */}
       <PageBreadcrumb 
         items={[
-          { label: 'Dashboard', icon: LayoutDashboard }
+          { label: t('navigation.dashboard'), icon: LayoutDashboard }
         ]} 
       />
 
       {/* Header with Persona Selector */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard de Maturidade</h1>
+          <h1 className="text-2xl font-bold">{t('dashboard.maturityDashboard')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Selecione sua visão para personalizar os indicadores
+            {t('dashboard.selectView')}
           </p>
         </div>
         <PersonaSelector value={persona} onChange={setPersona} />
@@ -266,12 +278,12 @@ export default function Dashboard() {
 
       {answers.size === 0 && (
         <div className="card-elevated p-6 text-center">
-          <p className="text-muted-foreground mb-4">Nenhuma avaliação realizada ainda.</p>
+          <p className="text-muted-foreground mb-4">{t('dashboard.noData')}</p>
           <button 
             onClick={() => navigate('/assessment')}
             className="text-primary hover:underline font-medium"
           >
-            Iniciar avaliação
+            {t('dashboard.startAssessment')}
           </button>
         </div>
       )}
@@ -297,29 +309,29 @@ export default function Dashboard() {
           <div className="stats-grid">
             <div className="kpi-card">
               <div className="flex items-center justify-between mb-1">
-                <div className="kpi-label">Cobertura Geral</div>
+                <div className="kpi-label">{t('dashboard.overallCoverage')}</div>
                 <CoverageHelp />
               </div>
               <div className="kpi-value">{Math.round(metrics.coverage * 100)}%</div>
               <div className="text-sm text-muted-foreground mt-2">
-                {metrics.answeredQuestions} de {metrics.totalQuestions}
+                {metrics.answeredQuestions} {t('common.of')} {metrics.totalQuestions}
               </div>
             </div>
 
             <div className="kpi-card">
               <div className="flex items-center justify-between mb-1">
-                <div className="kpi-label">Prontidão de Evidências</div>
+                <div className="kpi-label">{t('dashboard.evidenceReadiness')}</div>
                 <EvidenceReadinessHelp />
               </div>
               <div className="kpi-value">{Math.round(metrics.evidenceReadiness * 100)}%</div>
               <div className="text-sm text-muted-foreground mt-2">
-                Para auditoria
+                {t('dashboard.forAudit')}
               </div>
             </div>
 
             <div className="kpi-card">
               <div className="flex items-center justify-between mb-1">
-                <div className="kpi-label">Score Geral</div>
+                <div className="kpi-label">{t('dashboard.overallScore')}</div>
                 <MaturityScoreHelp />
               </div>
               <div className="kpi-value" style={{ color: metrics.maturityLevel.color }}>
@@ -331,29 +343,29 @@ export default function Dashboard() {
             </div>
 
             <div className="kpi-card">
-              <div className="kpi-label">Controles sem Evidência</div>
+              <div className="kpi-label">{t('dashboard.controlsWithoutEvidence')}</div>
               <div className="kpi-value text-amber-600">
                 {Math.round((1 - metrics.evidenceReadiness) * metrics.answeredQuestions)}
               </div>
               <div className="text-sm text-muted-foreground mt-2">
-                Necessitam documentação
+                {t('dashboard.needDocumentation')}
               </div>
             </div>
           </div>
 
           {/* Coverage vs Maturity by Domain */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Cobertura vs Maturidade por Domínio</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.coverageVsMaturity')}</h3>
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Domínio</th>
-                    <th>NIST Function</th>
-                    <th>Cobertura</th>
-                    <th>Maturidade</th>
-                    <th>Gaps</th>
-                    <th>Status</th>
+                    <th>{t('dashboard.domain')}</th>
+                    <th>{t('dashboard.nistFunction')}</th>
+                    <th>{t('dashboard.coverage')}</th>
+                    <th>{t('dashboard.maturity')}</th>
+                    <th>{t('dashboard.gaps')}</th>
+                    <th>{t('dashboard.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -401,8 +413,7 @@ export default function Dashboard() {
                             status === 'at-risk' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
                             'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                           )}>
-                            {status === 'incomplete' ? 'Incompleto' :
-                             status === 'at-risk' ? 'Em Risco' : 'Adequado'}
+                            {getStatusLabel(status)}
                           </span>
                         </td>
                       </tr>
@@ -416,7 +427,7 @@ export default function Dashboard() {
           {/* Evidence Readiness by Ownership */}
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Maturidade por Responsável</h3>
+              <h3 className="font-semibold mb-4">{t('dashboard.maturityByOwner')}</h3>
               <div className="space-y-4">
                 {ownershipData.map(od => (
                   <div key={od.name}>
@@ -432,7 +443,7 @@ export default function Dashboard() {
                         />
                       </div>
                       <span className="text-xs text-muted-foreground w-20">
-                        {od.answered}/{od.total} resp.
+                        {od.answered}/{od.total}
                       </span>
                     </div>
                   </div>
@@ -441,7 +452,7 @@ export default function Dashboard() {
             </div>
 
             <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Cobertura por Framework</h3>
+              <h3 className="font-semibold mb-4">{t('dashboard.frameworkCoverage')}</h3>
               <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
                 {frameworkCoverage.map(fw => (
                   <div key={fw.framework} className="flex items-center justify-between">
@@ -462,17 +473,17 @@ export default function Dashboard() {
 
           {/* Framework Category Maturity - GRC View */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.maturityByFrameworkCategory', 'Maturity by Framework Category')}</h3>
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Categoria</th>
-                    <th>Perguntas</th>
-                    <th>Respondidas</th>
-                    <th>Cobertura</th>
-                    <th>Maturidade</th>
-                    <th>Status</th>
+                    <th>{t('dashboard.category', 'Category')}</th>
+                    <th>{t('assessment.questions')}</th>
+                    <th>{t('assessment.answered')}</th>
+                    <th>{t('dashboard.coverage')}</th>
+                    <th>{t('dashboard.maturity')}</th>
+                    <th>{t('dashboard.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -516,8 +527,7 @@ export default function Dashboard() {
                             status === 'at-risk' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
                             'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                           )}>
-                            {status === 'incomplete' ? 'Incompleto' :
-                             status === 'at-risk' ? 'Em Risco' : 'Adequado'}
+                            {getStatusLabel(status)}
                           </span>
                         </td>
                       </tr>
@@ -530,7 +540,7 @@ export default function Dashboard() {
 
           {/* Subcategories with Low Evidence */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Subcategorias com Baixa Prontidão de Evidências</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.lowEvidenceSubcategories', 'Subcategories with Low Evidence Readiness')}</h3>
             <div className="space-y-2">
               {metrics.domainMetrics
                 .flatMap(dm => dm.subcategoryMetrics)
@@ -545,7 +555,7 @@ export default function Dashboard() {
                     <div>
                       <p className="font-medium text-sm">{sm.subcatName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {sm.ownershipType || 'GRC'} · {sm.answeredQuestions}/{sm.totalQuestions} perguntas
+                        {sm.ownershipType || 'GRC'} · {sm.answeredQuestions}/{sm.totalQuestions} {t('assessment.questions').toLowerCase()}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -572,45 +582,45 @@ export default function Dashboard() {
           {/* Specialist KPIs */}
           <div className="stats-grid">
             <div className="kpi-card">
-              <div className="kpi-label">Total de Perguntas</div>
+              <div className="kpi-label">{t('dashboard.totalQuestions')}</div>
               <div className="kpi-value">{metrics.totalQuestions}</div>
               <div className="text-sm text-muted-foreground mt-2">
-                Em {domains.length} domínios
+                {t('dashboard.inDomains', { count: domains.length })}
               </div>
             </div>
 
             <div className="kpi-card">
-              <div className="kpi-label">Respondidas</div>
+              <div className="kpi-label">{t('assessment.answered')}</div>
               <div className="kpi-value">{metrics.answeredQuestions}</div>
               <div className="text-sm text-muted-foreground mt-2">
-                {Math.round(metrics.coverage * 100)}% de cobertura
+                {Math.round(metrics.coverage * 100)}% {t('dashboard.coverage').toLowerCase()}
               </div>
             </div>
 
             <div className="kpi-card">
-              <div className="kpi-label">Controles Ausentes</div>
+              <div className="kpi-label">{t('dashboard.missingControls', 'Missing Controls')}</div>
               <div className="kpi-value text-destructive">
                 {criticalGaps.filter(g => g.response === 'Não' || g.response === 'Não respondido').length}
               </div>
               <div className="text-sm text-muted-foreground mt-2">
-                Resposta "Não" ou sem resposta
+                {t('dashboard.noOrUnanswered', '"No" or unanswered')}
               </div>
             </div>
 
             <div className="kpi-card">
-              <div className="kpi-label">Controles Parciais</div>
+              <div className="kpi-label">{t('dashboard.partialControls', 'Partial Controls')}</div>
               <div className="kpi-value text-amber-600">
                 {Array.from(answers.values()).filter(a => a.response === 'Parcial').length}
               </div>
               <div className="text-sm text-muted-foreground mt-2">
-                Implementação incompleta
+                {t('dashboard.incompleteImplementation', 'Incomplete implementation')}
               </div>
             </div>
           </div>
 
           {/* Full Domain Breakdown */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Detalhamento por Domínio</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.domainBreakdown', 'Domain Breakdown')}</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={domainChartData} layout="vertical" margin={{ left: 20, right: 20 }}>
@@ -619,7 +629,7 @@ export default function Dashboard() {
                   <Tooltip 
                     formatter={(value: number, name: string) => [
                       `${value}%`, 
-                      name === 'score' ? 'Maturidade' : 'Cobertura'
+                      name === 'score' ? t('dashboard.maturity') : t('dashboard.coverage')
                     ]}
                     labelFormatter={(label) => domainChartData.find(d => d.name === label)?.fullName || label}
                   />
@@ -635,7 +645,7 @@ export default function Dashboard() {
 
           {/* Subcategory Heatmap */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Mapa de Calor por Subcategoria</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.subcategoryHeatmap', 'Subcategory Heatmap')}</h3>
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
               {metrics.domainMetrics.flatMap(dm => 
                 dm.subcategoryMetrics.map(sm => (
@@ -664,16 +674,16 @@ export default function Dashboard() {
           {/* Technical Gap List */}
           {criticalGaps.length > 0 && (
             <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Lista de Gaps Técnicos</h3>
+              <h3 className="font-semibold mb-4">{t('dashboard.technicalGapList', 'Technical Gap List')}</h3>
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>Subcategoria</th>
-                      <th>Pergunta</th>
-                      <th>Status</th>
-                      <th>Criticidade</th>
+                      <th>{t('dashboard.subcategory', 'Subcategory')}</th>
+                      <th>{t('dashboard.question', 'Question')}</th>
+                      <th>{t('dashboard.status')}</th>
+                      <th>{t('assessment.criticality')}</th>
                       <th>Score</th>
                     </tr>
                   </thead>
@@ -711,9 +721,9 @@ export default function Dashboard() {
 
           {/* Framework Category Cards - Specialist View */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.maturityByFrameworkCategory', 'Maturity by Framework Category')}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Alinhamento com frameworks de referência para instituições financeiras
+              {t('dashboard.frameworkAlignmentDesc', 'Alignment with reference frameworks for financial institutions')}
             </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {frameworkCategoryData.map(fc => (
@@ -737,8 +747,8 @@ export default function Dashboard() {
                     />
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{fc.answeredQuestions}/{fc.totalQuestions} perguntas</span>
-                    <span>{fc.coverage}% cobertura</span>
+                    <span>{fc.answeredQuestions}/{fc.totalQuestions} {t('assessment.questions').toLowerCase()}</span>
+                    <span>{fc.coverage}% {t('dashboard.coverage').toLowerCase()}</span>
                   </div>
                 </div>
               ))}
@@ -747,7 +757,7 @@ export default function Dashboard() {
 
           {/* Individual Framework Coverage */}
           <div className="card-elevated p-6">
-            <h3 className="font-semibold mb-4">Cobertura Detalhada por Framework</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.detailedFrameworkCoverage', 'Detailed Framework Coverage')}</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {frameworkCoverage.map(fw => (
                 <div key={fw.framework} className="p-4 bg-muted/50 rounded-lg">
@@ -756,7 +766,7 @@ export default function Dashboard() {
                   </div>
                   <div className="text-2xl font-bold mt-1">{Math.round(fw.averageScore * 100)}%</div>
                   <div className="text-xs text-muted-foreground">
-                    {fw.answeredQuestions}/{fw.totalQuestions} perguntas
+                    {fw.answeredQuestions}/{fw.totalQuestions} {t('assessment.questions').toLowerCase()}
                   </div>
                   <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
                     <div 

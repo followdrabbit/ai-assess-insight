@@ -2,7 +2,9 @@ import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { cn } from '@/lib/utils';
+import { Briefcase } from 'lucide-react';
 
 export default function DashboardExecutive() {
   const {
@@ -30,7 +32,15 @@ export default function DashboardExecutive() {
         isTransitioning && "opacity-50 scale-[0.99] blur-[1px]"
       )}
     >
-      <ExecutiveDashboard 
+      {/* Breadcrumb */}
+      <PageBreadcrumb 
+        items={[
+          { label: 'Dashboards', href: '/dashboard' },
+          { label: 'Executivo', icon: Briefcase }
+        ]} 
+      />
+
+      <ExecutiveDashboard
         metrics={metrics}
         criticalGaps={criticalGaps}
         roadmap={roadmap}

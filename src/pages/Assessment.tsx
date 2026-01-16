@@ -12,10 +12,12 @@ import { cn } from '@/lib/utils';
 import { FrameworkSelector } from '@/components/FrameworkSelector';
 import { SecurityDomainSelector } from '@/components/SecurityDomainSelector';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { questionBelongsToFrameworks, getFrameworkById } from '@/lib/frameworks';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { getSecurityDomainById, DEFAULT_SECURITY_DOMAINS, SecurityDomain } from '@/lib/securityDomains';
+import { ClipboardCheck } from 'lucide-react';
 
 type AssessmentStep = 'domain' | 'framework' | 'questions';
 
@@ -243,6 +245,14 @@ export default function Assessment() {
 
   return (
     <div className="max-w-5xl mx-auto">
+      {/* Breadcrumb */}
+      <PageBreadcrumb 
+        items={[
+          { label: 'Avaliação', icon: ClipboardCheck }
+        ]} 
+        className="mb-4"
+      />
+
       {/* Sticky Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b -mx-4 px-4 py-4 mb-6">
         <div className="max-w-5xl mx-auto">

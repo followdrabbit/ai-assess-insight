@@ -15,8 +15,10 @@ import {
   NistFunctionHelp 
 } from '@/components/HelpTooltip';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
 import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
+import { LayoutDashboard } from 'lucide-react';
 
 // NIST AI RMF function display names
 const nistFunctionLabels: Record<string, string> = {
@@ -260,6 +262,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb */}
+      <PageBreadcrumb 
+        items={[
+          { label: 'Dashboard', icon: LayoutDashboard }
+        ]} 
+      />
+
       {/* Header with Persona Selector */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>

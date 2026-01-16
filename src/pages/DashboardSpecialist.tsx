@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download } from 'lucide-react';
+import { Download, Wrench } from 'lucide-react';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { domains, maturityLevels, FrameworkCategoryId } from '@/lib/dataset';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
@@ -739,6 +740,14 @@ export default function DashboardSpecialist() {
         isTransitioning && "opacity-50 scale-[0.99] blur-[1px]"
       )}
     >
+      {/* Breadcrumb */}
+      <PageBreadcrumb 
+        items={[
+          { label: 'Dashboards', href: '/dashboard' },
+          { label: 'Especialista', icon: Wrench }
+        ]} 
+      />
+
       {/* Header with Domain Switcher and Framework Selector */}
       <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <div className="flex flex-col gap-4">

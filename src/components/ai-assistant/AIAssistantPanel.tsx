@@ -69,7 +69,7 @@ export function AIAssistantPanel({ variant = 'fab', className }: AIAssistantPane
       <Button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg z-50",
+          "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg z-50",
           "hover:scale-110 transition-transform active:scale-95",
           isOpen && "hidden",
           className

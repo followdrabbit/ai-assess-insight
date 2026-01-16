@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell } from 'lucide-react';
+import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell, Moon, Sun, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Profile {
   display_name: string | null;
@@ -27,6 +29,7 @@ interface NotificationPreferences {
 
 export default function Profile() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<Profile>({
     display_name: '',
     organization: '',
@@ -388,6 +391,59 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Appearance Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sun className="h-5 w-5" />
+            Aparência
+          </CardTitle>
+          <CardDescription>
+            Personalize a aparência da plataforma
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Tema</Label>
+                <p className="text-sm text-muted-foreground">
+                  Escolha entre modo claro, escuro ou automático
+                </p>
+              </div>
+              <ToggleGroup 
+                type="single" 
+                value={theme} 
+                onValueChange={(value) => value && setTheme(value)}
+                className="bg-muted rounded-lg p-1"
+              >
+                <ToggleGroupItem 
+                  value="light" 
+                  aria-label="Modo claro"
+                  className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                >
+                  <Sun className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem 
+                  value="dark" 
+                  aria-label="Modo escuro"
+                  className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                >
+                  <Moon className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem 
+                  value="system" 
+                  aria-label="Seguir sistema"
+                  className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                >
+                  <Monitor className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Notification Preferences */}
       <Card>

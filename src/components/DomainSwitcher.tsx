@@ -43,11 +43,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 export function DomainSwitcher({ className, showLabel = true, variant = 'default' }: DomainSwitcherProps) {
   const { selectedSecurityDomain, setSelectedSecurityDomain } = useAnswersStore();
   const [domains, setDomains] = useState<SecurityDomain[]>(DEFAULT_SECURITY_DOMAINS);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isChanging, setIsChanging] = useState(false);
 
   useEffect(() => {
     const loadDomains = async () => {
-      setIsLoading(true);
       try {
         const enabledDomains = await getEnabledSecurityDomains();
         setDomains(enabledDomains.length > 0 ? enabledDomains : DEFAULT_SECURITY_DOMAINS);
@@ -55,7 +55,7 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
         console.error('Error loading security domains:', error);
         setDomains(DEFAULT_SECURITY_DOMAINS);
       } finally {
-        setIsLoading(false);
+        setIsInitialLoading(false);
       }
     };
     loadDomains();
@@ -67,8 +67,7 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
 
   const handleSelectDomain = async (domain: SecurityDomain) => {
     if (domain.domainId !== selectedSecurityDomain) {
-      // Show loading state
-      setIsLoading(true);
+      setIsChanging(true);
       try {
         await setSelectedSecurityDomain(domain.domainId);
         toast.success(`Domínio alterado para ${domain.domainName}`, {
@@ -76,13 +75,13 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
           duration: 3000,
         });
       } finally {
-        // Small delay to allow data to reload
-        setTimeout(() => setIsLoading(false), 500);
+        setTimeout(() => setIsChanging(false), 500);
       }
     }
   };
 
-  if (isLoading) {
+  // Only show loading skeleton on initial load, not when changing domains
+  if (isInitialLoading) {
     return (
       <div className={cn("h-9 w-32 bg-muted animate-pulse rounded-md", className)} />
     );
@@ -99,15 +98,16 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
               displayInfo?.bgClass,
               displayInfo?.textClass,
               displayInfo?.borderClass,
+              isChanging && "opacity-70",
               className
             )}
           >
-            <IconComponent className="h-3.5 w-3.5" />
+            <IconComponent className={cn("h-3.5 w-3.5", isChanging && "animate-pulse")} />
             {currentDomain?.shortName}
             <ChevronDown className="h-3 w-3 ml-0.5 opacity-60" />
           </Badge>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuContent align="end" className="w-56 z-50">
           <DropdownMenuLabel>Domínio de Segurança</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {domains.map(domain => {

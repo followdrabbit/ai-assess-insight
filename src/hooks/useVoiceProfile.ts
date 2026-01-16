@@ -26,6 +26,7 @@ interface UseVoiceProfileReturn {
   isRecording: boolean;
   isProcessing: boolean;
   recordingDuration: number;
+  audioLevels: number[];
   currentPhraseIndex: number;
   enrollmentProgress: number;
   enrolledSamples: EnrollmentSample[];
@@ -67,6 +68,7 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
   const [enrolledSamples, setEnrolledSamples] = useState<EnrollmentSample[]>([]);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [audioLevels, setAudioLevels] = useState<number[]>(new Array(12).fill(0));
   
   const enrollmentLevelRef = useRef<EnrollmentLevel>('standard');
   const languageRef = useRef<string>('pt-BR');
@@ -77,6 +79,9 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Initialize feature extractor and verifier
   useEffect(() => {
@@ -85,7 +90,70 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
     
     return () => {
       featureExtractorRef.current?.destroy();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
+  }, []);
+
+  // Audio level analyzer function
+  const startAudioAnalysis = useCallback((stream: MediaStream) => {
+    try {
+      audioContextRef.current = new AudioContext();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 64;
+      analyserRef.current.smoothingTimeConstant = 0.5;
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+      
+      const bufferLength = analyserRef.current.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      const numBars = 12;
+      
+      const updateLevels = () => {
+        if (!analyserRef.current) return;
+        
+        analyserRef.current.getByteFrequencyData(dataArray);
+        
+        // Map frequency data to 12 bars
+        const levels: number[] = [];
+        const step = Math.floor(bufferLength / numBars);
+        
+        for (let i = 0; i < numBars; i++) {
+          let sum = 0;
+          for (let j = 0; j < step; j++) {
+            sum += dataArray[i * step + j] || 0;
+          }
+          // Normalize to 0-1 range with some boost for visibility
+          const avg = (sum / step) / 255;
+          levels.push(Math.min(1, avg * 1.5 + 0.1));
+        }
+        
+        setAudioLevels(levels);
+        animationFrameRef.current = requestAnimationFrame(updateLevels);
+      };
+      
+      updateLevels();
+    } catch (err) {
+      console.warn('Failed to start audio analysis:', err);
+    }
+  }, []);
+
+  const stopAudioAnalysis = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    analyserRef.current = null;
+    setAudioLevels(new Array(12).fill(0));
   }, []);
 
   // Fetch profile on mount
@@ -191,6 +259,7 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
         mediaRecorderRef.current!.onstop = async () => {
           const durationMs = Date.now() - startTime;
           stream.getTracks().forEach(track => track.stop());
+          stopAudioAnalysis();
           
           const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
           
@@ -222,9 +291,13 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
         
         mediaRecorderRef.current!.onerror = () => {
           stream.getTracks().forEach(track => track.stop());
+          stopAudioAnalysis();
           setIsRecording(false);
           reject(new Error('Erro na gravação'));
         };
+        
+        // Start audio level analysis
+        startAudioAnalysis(stream);
         
         mediaRecorderRef.current!.start();
         setIsRecording(true);
@@ -453,6 +526,7 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
     isRecording,
     isProcessing,
     recordingDuration,
+    audioLevels,
     currentPhraseIndex,
     enrollmentProgress,
     enrolledSamples,

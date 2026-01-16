@@ -66,6 +66,7 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
     isRecording,
     isProcessing,
     recordingDuration,
+    audioLevels,
     currentPhraseIndex,
     enrollmentProgress,
     enrolledSamples,
@@ -199,28 +200,19 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
           {/* Recording Status */}
           {isRecording && (
             <div className="flex flex-col items-center gap-4">
-              {/* Sound Wave Animation */}
-              <div className="flex items-center justify-center gap-1 h-16">
-                {[...Array(12)].map((_, i) => (
+              {/* Real-time Sound Wave Visualization */}
+              <div className="flex items-end justify-center gap-1 h-16 px-4">
+                {audioLevels.map((level, i) => (
                   <div
                     key={i}
-                    className="w-1 bg-destructive rounded-full"
+                    className="w-2 bg-destructive rounded-full transition-all duration-75"
                     style={{
-                      height: '100%',
-                      animation: `soundWave 0.8s ease-in-out infinite`,
-                      animationDelay: `${i * 0.05}s`,
+                      height: `${Math.max(8, level * 100)}%`,
+                      opacity: Math.max(0.4, level),
                     }}
                   />
                 ))}
               </div>
-              <style>
-                {`
-                  @keyframes soundWave {
-                    0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
-                    50% { transform: scaleY(1); opacity: 1; }
-                  }
-                `}
-              </style>
               
               <div className="flex items-center gap-2 text-destructive">
                 <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />

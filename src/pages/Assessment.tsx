@@ -11,9 +11,11 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { FrameworkSelector } from '@/components/FrameworkSelector';
 import { SecurityDomainSelector } from '@/components/SecurityDomainSelector';
+import { DomainSwitcher } from '@/components/DomainSwitcher';
 import { questionBelongsToFrameworks, getFrameworkById } from '@/lib/frameworks';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { getSecurityDomainById, DEFAULT_SECURITY_DOMAINS, SecurityDomain } from '@/lib/securityDomains';
 
 type AssessmentStep = 'domain' | 'framework' | 'questions';
 
@@ -33,6 +35,16 @@ export default function Assessment() {
   const [currentStep, setCurrentStep] = useState<AssessmentStep>(getInitialStep);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
+  const [currentDomainInfo, setCurrentDomainInfo] = useState<SecurityDomain | null>(null);
+
+  // Load domain info when security domain changes
+  useEffect(() => {
+    const loadDomainInfo = async () => {
+      const domainInfo = await getSecurityDomainById(selectedSecurityDomain);
+      setCurrentDomainInfo(domainInfo || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) || null);
+    };
+    loadDomainInfo();
+  }, [selectedSecurityDomain]);
 
   // Filter questions based on selected frameworks
   const filteredQuestions = useMemo(() => {
@@ -228,7 +240,12 @@ export default function Assessment() {
           {/* Top row: Title and Actions */}
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg font-semibold truncate">Avaliação de Segurança de IA</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-lg font-semibold truncate">
+                  Avaliação: {currentDomainInfo?.domainName || 'Segurança'}
+                </h1>
+                <DomainSwitcher variant="badge" />
+              </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {selectedFrameworkNames.map(name => (
                   <Badge key={name} variant="secondary" className="text-xs font-normal">
@@ -240,9 +257,6 @@ export default function Assessment() {
             <div className="flex items-center gap-2 flex-shrink-0">
               <Button onClick={() => setCurrentStep('framework')} variant="outline" size="sm">
                 Alterar Frameworks
-              </Button>
-              <Button onClick={() => setCurrentStep('domain')} variant="ghost" size="sm">
-                Trocar Domínio
               </Button>
               <Button onClick={handleExport} variant="outline" size="sm" className="hidden sm:inline-flex">
                 Exportar

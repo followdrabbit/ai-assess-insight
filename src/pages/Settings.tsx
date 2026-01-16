@@ -13,12 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
 import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
+import { Layers, BookOpen, Database, Settings2, Info, FileDown, Trash2, RefreshCw, Building2, Calendar, Shield, ExternalLink } from 'lucide-react';
 
 const categoryLabels: Record<string, { label: string; description: string }> = {
   core: { 
@@ -256,9 +258,12 @@ export default function Settings() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Configurações</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Settings2 className="h-6 w-6 text-muted-foreground" />
+            Configurações
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Gerencie frameworks, dados e preferências da avaliação
+            Gerencie a taxonomia, conteúdo e dados da plataforma de governança
           </p>
         </div>
         {hasChanges && (
@@ -273,237 +278,331 @@ export default function Settings() {
         )}
       </div>
 
-      <Tabs defaultValue="domains" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 max-w-5xl">
-          <TabsTrigger value="domains">Domínios</TabsTrigger>
-          <TabsTrigger value="frameworks">Habilitar</TabsTrigger>
-          <TabsTrigger value="manage-frameworks">Frameworks</TabsTrigger>
-          <TabsTrigger value="manage-questions">Perguntas</TabsTrigger>
-          <TabsTrigger value="data">Dados</TabsTrigger>
-          <TabsTrigger value="general">Geral</TabsTrigger>
-          <TabsTrigger value="about">Sobre</TabsTrigger>
+      <Tabs defaultValue="taxonomy" className="space-y-6">
+        <TabsList className="flex flex-wrap h-auto gap-1 p-1 bg-muted/50">
+          <TabsTrigger value="taxonomy" className="flex items-center gap-1.5 data-[state=active]:bg-background">
+            <Layers className="h-3.5 w-3.5" />
+            <span>Taxonomia</span>
+          </TabsTrigger>
+          <TabsTrigger value="content" className="flex items-center gap-1.5 data-[state=active]:bg-background">
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>Conteúdo</span>
+          </TabsTrigger>
+          <TabsTrigger value="data" className="flex items-center gap-1.5 data-[state=active]:bg-background">
+            <Database className="h-3.5 w-3.5" />
+            <span>Dados</span>
+          </TabsTrigger>
+          <TabsTrigger value="about" className="flex items-center gap-1.5 data-[state=active]:bg-background">
+            <Info className="h-3.5 w-3.5" />
+            <span>Sobre</span>
+          </TabsTrigger>
         </TabsList>
 
-        {/* DOMAINS TAB */}
-        <TabsContent value="domains" className="space-y-6">
-          <DomainManagement />
-        </TabsContent>
-
-        {/* FRAMEWORKS TAB */}
-        <TabsContent value="frameworks" className="space-y-6">
-          {/* Summary Card */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-6">
+        {/* ========== TAXONOMY TAB ========== */}
+        <TabsContent value="taxonomy" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-3 mb-4">
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <Layers className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <div className="text-2xl font-bold">{pendingFrameworks.length}</div>
-                    <div className="text-sm text-muted-foreground">Frameworks selecionados</div>
-                  </div>
-                  <div className="border-l border-border pl-6">
-                    <div className="text-2xl font-bold">{totalQuestions}</div>
-                    <div className="text-sm text-muted-foreground">Perguntas na avaliação</div>
+                    <p className="text-sm text-muted-foreground">Domínios de Segurança</p>
+                    <p className="text-xl font-bold">Estrutura Base</p>
                   </div>
                 </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={selectAll}>
-                    Selecionar Todos
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={selectDefaults}>
-                    Restaurar Padrão
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={selectNone}>
-                    Limpar Seleção
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-sm text-muted-foreground">Frameworks Ativos</p>
+                <p className="text-2xl font-bold text-primary">{pendingFrameworks.length}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-sm text-muted-foreground">Perguntas Totais</p>
+                <p className="text-2xl font-bold">{questions.length}</p>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Frameworks by Category */}
-          <Tabs defaultValue="all" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="core">
-                Core ({frameworksByCategory.core.length})
-              </TabsTrigger>
-              <TabsTrigger value="high-value">
-                Alto Valor ({frameworksByCategory['high-value'].length})
-              </TabsTrigger>
-              <TabsTrigger value="tech-focused">
-                Técnico ({frameworksByCategory['tech-focused'].length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="all" className="space-y-6">
-              {Object.entries(frameworksByCategory).map(([category, fws]) => (
-                <div key={category}>
-                  <div className="mb-3">
-                    <h3 className="font-semibold">{categoryLabels[category]?.label || category}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {categoryLabels[category]?.description}
-                    </p>
+          <Accordion type="single" collapsible defaultValue="domains" className="space-y-4">
+            <AccordionItem value="domains" className="border rounded-lg px-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+                    <Layers className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {fws.map(fw => (
-                      <FrameworkCard key={fw.frameworkId} fw={fw} />
-                    ))}
+                  <div className="text-left">
+                    <h3 className="font-semibold">Domínios de Segurança</h3>
+                    <p className="text-sm text-muted-foreground font-normal">AI Security, Cloud Security, DevSecOps e domínios personalizados</p>
                   </div>
                 </div>
-              ))}
-            </TabsContent>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <DomainManagement />
+              </AccordionContent>
+            </AccordionItem>
 
-            {Object.entries(frameworksByCategory).map(([category, fws]) => (
-              <TabsContent key={category} value={category}>
-                <div className="mb-3">
-                  <h3 className="font-semibold">{categoryLabels[category]?.label || category}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {categoryLabels[category]?.description}
-                  </p>
+            <AccordionItem value="frameworks-enable" className="border rounded-lg px-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-md bg-amber-500/10 flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Seleção de Frameworks</h3>
+                    <p className="text-sm text-muted-foreground font-normal">Ative ou desative frameworks na avaliação atual</p>
+                  </div>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {fws.map(fw => (
-                    <FrameworkCard key={fw.frameworkId} fw={fw} />
-                  ))}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-
-          {/* Info about framework selection */}
-          <Card className="bg-muted/50">
-            <CardContent className="pt-6">
-              <h4 className="font-medium mb-2">Sobre a seleção de frameworks</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• A seleção de frameworks afeta quais perguntas aparecem na avaliação</li>
-                <li>• Os dashboards mostrarão métricas apenas dos frameworks selecionados</li>
-                <li>• Algumas perguntas podem pertencer a múltiplos frameworks</li>
-                <li>• Frameworks "Core" são recomendados para avaliações iniciais</li>
-              </ul>
-            </CardContent>
-          </Card>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <FrameworkSelectionSection 
+                  pendingFrameworks={pendingFrameworks}
+                  totalQuestions={totalQuestions}
+                  selectAll={selectAll}
+                  selectDefaults={selectDefaults}
+                  selectNone={selectNone}
+                  frameworksByCategory={frameworksByCategory}
+                  FrameworkCard={FrameworkCard}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </TabsContent>
 
-        {/* MANAGE FRAMEWORKS TAB */}
-        <TabsContent value="manage-frameworks" className="space-y-6">
-          <FrameworkManagement />
+        {/* ========== CONTENT TAB ========== */}
+        <TabsContent value="content" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 mb-4">
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Frameworks Cadastrados</p>
+                    <p className="text-xl font-bold">{frameworks.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Perguntas Cadastradas</p>
+                    <p className="text-xl font-bold">{questions.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Accordion type="single" collapsible defaultValue="frameworks-manage" className="space-y-4">
+            <AccordionItem value="frameworks-manage" className="border rounded-lg px-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-md bg-blue-500/10 flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Gerenciar Frameworks</h3>
+                    <p className="text-sm text-muted-foreground font-normal">Criar, editar e excluir frameworks de avaliação</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <FrameworkManagement />
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="questions-manage" className="border rounded-lg px-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-md bg-green-500/10 flex items-center justify-center">
+                    <BookOpen className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Gerenciar Perguntas</h3>
+                    <p className="text-sm text-muted-foreground font-normal">Criar, editar, importar e versionar perguntas</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <QuestionManagement />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </TabsContent>
 
-        {/* MANAGE QUESTIONS TAB */}
-        <TabsContent value="manage-questions" className="space-y-6">
-          <QuestionManagement />
-        </TabsContent>
-
-        {/* DATA TAB */}
+        {/* ========== DATA TAB ========== */}
         <TabsContent value="data" className="space-y-6">
-          {/* Current Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Status da Avaliação</CardTitle>
+          {/* Status Summary */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                  <Database className="h-5 w-5 text-primary" />
+                </div>
+                <p className="text-2xl font-bold">{totalAnswered}</p>
+                <p className="text-xs text-muted-foreground">Respostas Salvas</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center mx-auto mb-2">
+                  <Shield className="h-5 w-5 text-amber-600" />
+                </div>
+                <p className="text-2xl font-bold">{enabledFrameworks.length}</p>
+                <p className="text-xs text-muted-foreground">Frameworks Ativos</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center mx-auto mb-2">
+                  <Calendar className="h-5 w-5 text-green-600" />
+                </div>
+                <p className="text-sm font-medium">
+                  {lastUpdated 
+                    ? lastUpdated.toLocaleDateString('pt-BR', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric'
+                      })
+                    : 'N/A'
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground">Última Atualização</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center mx-auto mb-2">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                </div>
+                <p className="text-sm font-medium truncate">{organizationName || 'Não definido'}</p>
+                <p className="text-xs text-muted-foreground">Organização</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Assessment Info */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Informações da Avaliação
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="assessmentName">Nome da Avaliação</Label>
+                  <Input
+                    id="assessmentName"
+                    value={assessmentName}
+                    onChange={(e) => setAssessmentName(e.target.value)}
+                    placeholder="Nome da avaliação"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="organizationName">Organização</Label>
+                  <Input
+                    id="organizationName"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    placeholder="Nome da organização (opcional)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reassessmentInterval">Cadência de Reavaliação</Label>
+                  <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
+                    <SelectTrigger id="reassessmentInterval">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="quarterly">Trimestral</SelectItem>
+                      <SelectItem value="semiannual">Semestral</SelectItem>
+                      <SelectItem value="annual">Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Export */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileDown className="h-4 w-4" />
+                  Exportar & Backup
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Exporte as respostas e configurações para um arquivo Excel.
+                </p>
+                <Button onClick={handleExportData} className="w-full">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Exportar para Excel (.xlsx)
+                </Button>
+                <Separator />
+                <div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Gere dados de exemplo para explorar os dashboards.
+                  </p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Gerar Dados de Demonstração
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Gerar dados de demonstração?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação substituirá todas as respostas existentes por dados simulados.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleGenerateDemo}>
+                          Gerar Dados
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Danger Zone */}
+          <Card className="border-destructive/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                <Trash2 className="h-4 w-4" />
+                Zona de Perigo
+              </CardTitle>
               <CardDescription>
-                Resumo dos dados da avaliação
+                Ações irreversíveis que afetam seus dados
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{totalAnswered}</div>
-                  <div className="text-sm text-muted-foreground">Respostas salvas</div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{enabledFrameworks.length}</div>
-                  <div className="text-sm text-muted-foreground">Frameworks ativos</div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm font-medium">
-                    {lastUpdated 
-                      ? lastUpdated.toLocaleDateString('pt-BR', { 
-                          day: '2-digit', 
-                          month: '2-digit', 
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : 'Nenhuma resposta'
-                    }
-                  </div>
-                  <div className="text-sm text-muted-foreground">Última atualização</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Export / Backup */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Exportar Dados</CardTitle>
-              <CardDescription>
-                Faça backup das respostas e configurações da avaliação
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Exporte todos os dados da avaliação para um arquivo Excel. O arquivo incluirá
-                respostas, notas, links de evidências e configurações de frameworks.
-              </p>
-              <Button onClick={handleExportData}>
-                Exportar para Excel (.xlsx)
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Demo Data */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Dados de Demonstração</CardTitle>
-              <CardDescription>
-                Gere dados de exemplo para explorar os dashboards
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Preencha a avaliação com respostas simuladas para visualizar como os 
-                dashboards e relatórios funcionam. Útil para demonstrações e testes.
-              </p>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline">Gerar Dados de Demo</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Gerar dados de demonstração?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação substituirá todas as respostas existentes por dados simulados.
-                      Você perderá qualquer resposta atual.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleGenerateDemo}>
-                      Gerar Dados
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardContent>
-          </Card>
-
-          {/* Reset Data */}
-          <Card className="border-destructive/50">
-            <CardHeader>
-              <CardTitle className="text-lg text-destructive">Limpar Dados</CardTitle>
-              <CardDescription>
-                Remova respostas ou restaure configurações padrão
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
                   <div>
                     <div className="font-medium text-sm">Limpar Respostas</div>
                     <div className="text-xs text-muted-foreground">
-                      Remove todas as respostas, mantém configurações de frameworks
+                      Remove todas as respostas
                     </div>
                   </div>
                   <AlertDialog>
@@ -533,11 +632,11 @@ export default function Settings() {
                   </AlertDialog>
                 </div>
 
-                <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
                   <div>
                     <div className="font-medium text-sm">Restaurar Padrões</div>
                     <div className="text-xs text-muted-foreground">
-                      Restaura frameworks padrão e limpa todas as respostas
+                      Reseta tudo para o padrão
                     </div>
                   </div>
                   <AlertDialog>
@@ -551,7 +650,6 @@ export default function Settings() {
                         <AlertDialogTitle>Restaurar configurações padrão?</AlertDialogTitle>
                         <AlertDialogDescription>
                           Esta ação restaurará os frameworks padrão e removerá todas as respostas.
-                          Esta operação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -578,129 +676,60 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* GENERAL TAB */}
-        <TabsContent value="general" className="space-y-6">
-          {/* Assessment Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informações da Avaliação</CardTitle>
-              <CardDescription>
-                Personalize os dados da avaliação
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="assessmentName">Nome da Avaliação</Label>
-                  <Input
-                    id="assessmentName"
-                    value={assessmentName}
-                    onChange={(e) => setAssessmentName(e.target.value)}
-                    placeholder="Nome da avaliação"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="organizationName">Organização</Label>
-                  <Input
-                    id="organizationName"
-                    value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
-                    placeholder="Nome da organização (opcional)"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Reassessment */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Cadência de Reavaliação</CardTitle>
-              <CardDescription>
-                Defina o intervalo recomendado para reassessment
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="max-w-xs space-y-2">
-                <Label htmlFor="reassessmentInterval">Intervalo de Reavaliação</Label>
-                <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
-                  <SelectTrigger id="reassessmentInterval">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Mensal</SelectItem>
-                    <SelectItem value="quarterly">Trimestral</SelectItem>
-                    <SelectItem value="semiannual">Semestral</SelectItem>
-                    <SelectItem value="annual">Anual</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Usado apenas como referência nos dashboards
-                </p>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Privacy Notice */}
           <Card className="bg-muted/50">
-            <CardHeader>
-              <CardTitle className="text-lg">Privacidade e Armazenamento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li>• <strong>Armazenamento Seguro:</strong> Todos os dados são armazenados de forma segura na nuvem</li>
-                <li>• <strong>Acesso Controlado:</strong> Apenas usuários autorizados podem acessar os dados</li>
-                <li>• <strong>Seu Controle:</strong> Você pode exportar ou limpar seus dados a qualquer momento</li>
-                <li>• <strong>Persistência:</strong> Os dados são mantidos de forma permanente e sincronizados automaticamente</li>
+            <CardContent className="pt-4 pb-4">
+              <h4 className="font-medium mb-2 text-sm">Privacidade e Armazenamento</h4>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• Dados armazenados de forma segura na nuvem</li>
+                <li>• Apenas usuários autorizados podem acessar</li>
+                <li>• Exporte ou limpe seus dados a qualquer momento</li>
               </ul>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* ABOUT TAB */}
+        {/* ========== ABOUT TAB ========== */}
         <TabsContent value="about" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Sobre a Plataforma</CardTitle>
-              <CardDescription>
-                Avaliação de Maturidade em Segurança de IA
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground">Versão da Plataforma</div>
-                  <div className="font-medium">2.0.0</div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground">Frameworks Disponíveis</div>
-                  <div className="font-medium">{frameworks.length}</div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground">Total de Perguntas</div>
-                  <div className="font-medium">{questions.length}</div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground">Última Atualização</div>
-                  <div className="font-medium">Janeiro 2025</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-sm text-muted-foreground">Versão</p>
+                <p className="text-xl font-bold">2.0.0</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-sm text-muted-foreground">Frameworks</p>
+                <p className="text-xl font-bold">{frameworks.length}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-sm text-muted-foreground">Perguntas</p>
+                <p className="text-xl font-bold">{questions.length}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-sm text-muted-foreground">Atualização</p>
+                <p className="text-xl font-bold">Jan/25</p>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Frameworks Suportados</CardTitle>
               <CardDescription>
-                Frameworks de segurança e compliance integrados
+                Frameworks de segurança e compliance integrados na plataforma
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {frameworks.map(fw => (
-                  <Badge key={fw.frameworkId} variant="outline">
+                  <Badge key={fw.frameworkId} variant="outline" className="text-xs">
                     {fw.shortName}
                   </Badge>
                 ))}
@@ -708,21 +737,145 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card className="bg-muted/50">
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
             <CardHeader>
-              <CardTitle className="text-lg">Metodologia</CardTitle>
+              <CardTitle className="text-lg">Metodologia de Avaliação</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="text-sm text-muted-foreground space-y-2">
-                <li>• Avaliação baseada em frameworks reconhecidos internacionalmente</li>
-                <li>• Scoring considera implementação de controles e prontidão de evidências</li>
-                <li>• Níveis de maturidade: Inexistente (0) → Inicial (1) → Definido (2) → Gerenciado (3)</li>
-                <li>• Dashboards segmentados por audiência: Executivo, GRC e Especialista</li>
+                <li className="flex items-start gap-2">
+                  <span className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">1</span>
+                  <span>Avaliação baseada em frameworks reconhecidos internacionalmente</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">2</span>
+                  <span>Scoring considera implementação de controles e prontidão de evidências</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">3</span>
+                  <span>Níveis: Inexistente (0) → Inicial (1) → Definido (2) → Gerenciado (3)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">4</span>
+                  <span>Dashboards segmentados: Executivo, GRC e Especialista</span>
+                </li>
               </ul>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// ========== Sub-component for Framework Selection ==========
+interface FrameworkSelectionSectionProps {
+  pendingFrameworks: string[];
+  totalQuestions: number;
+  selectAll: () => void;
+  selectDefaults: () => void;
+  selectNone: () => void;
+  frameworksByCategory: Record<string, Framework[]>;
+  FrameworkCard: React.ComponentType<{ fw: Framework }>;
+}
+
+function FrameworkSelectionSection({
+  pendingFrameworks,
+  totalQuestions,
+  selectAll,
+  selectDefaults,
+  selectNone,
+  frameworksByCategory,
+  FrameworkCard
+}: FrameworkSelectionSectionProps) {
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-6">
+          <div>
+            <div className="text-2xl font-bold text-primary">{pendingFrameworks.length}</div>
+            <div className="text-xs text-muted-foreground">Frameworks ativos</div>
+          </div>
+          <div className="border-l border-border pl-6">
+            <div className="text-2xl font-bold">{totalQuestions}</div>
+            <div className="text-xs text-muted-foreground">Perguntas</div>
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={selectAll}>
+            Todos
+          </Button>
+          <Button variant="outline" size="sm" onClick={selectDefaults}>
+            Padrão
+          </Button>
+          <Button variant="outline" size="sm" onClick={selectNone}>
+            Limpar
+          </Button>
+        </div>
+      </div>
+
+      {/* Frameworks by Category */}
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList className="h-auto flex-wrap">
+          <TabsTrigger value="all" className="text-xs">Todos</TabsTrigger>
+          <TabsTrigger value="core" className="text-xs">
+            Core ({frameworksByCategory.core?.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="high-value" className="text-xs">
+            Alto Valor ({frameworksByCategory['high-value']?.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="tech-focused" className="text-xs">
+            Técnico ({frameworksByCategory['tech-focused']?.length || 0})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-6">
+          {Object.entries(frameworksByCategory).map(([category, fws]) => (
+            <div key={category}>
+              <div className="mb-3">
+                <h4 className="font-semibold text-sm">{categoryLabels[category]?.label || category}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {categoryLabels[category]?.description}
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {fws.map(fw => (
+                  <FrameworkCard key={fw.frameworkId} fw={fw} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </TabsContent>
+
+        {Object.entries(frameworksByCategory).map(([category, fws]) => (
+          <TabsContent key={category} value={category}>
+            <div className="mb-3">
+              <h4 className="font-semibold text-sm">{categoryLabels[category]?.label || category}</h4>
+              <p className="text-xs text-muted-foreground">
+                {categoryLabels[category]?.description}
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {fws.map(fw => (
+                <FrameworkCard key={fw.frameworkId} fw={fw} />
+              ))}
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      {/* Info */}
+      <Card className="bg-muted/30">
+        <CardContent className="pt-4 pb-4">
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li>• A seleção afeta quais perguntas aparecem na avaliação</li>
+            <li>• Os dashboards mostram métricas apenas dos frameworks selecionados</li>
+            <li>• Frameworks "Core" são recomendados para avaliações iniciais</li>
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }

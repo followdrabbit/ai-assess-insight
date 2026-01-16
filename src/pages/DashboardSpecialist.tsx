@@ -1,11 +1,9 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAnswersStore } from '@/lib/stores';
+import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { domains, maturityLevels, FrameworkCategoryId } from '@/lib/dataset';
-import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, ActiveQuestion } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
-import { useMaturitySnapshots } from '@/hooks/useMaturitySnapshots';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { 
   CoverageHelp,
@@ -46,12 +44,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { questions as defaultQuestions } from '@/lib/dataset';
-import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks, getSelectedFrameworks, setSelectedFrameworks, getAllCustomFrameworks } from '@/lib/database';
-import { frameworks as defaultFrameworks, Framework, getQuestionFrameworkIds, getFrameworksBySecurityDomain } from '@/lib/frameworks';
+import { Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
-import { getSecurityDomainById, DEFAULT_SECURITY_DOMAINS, SecurityDomain } from '@/lib/securityDomains';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -85,21 +80,27 @@ const criticalityOrder: Record<string, number> = {
 };
 
 export default function DashboardSpecialist() {
-  const { answers, isLoading, selectedSecurityDomain } = useAnswersStore();
   const navigate = useNavigate();
 
-  // Initialize snapshot capturing
-  useMaturitySnapshots();
+  // Use centralized dashboard metrics hook
+  const {
+    isLoading,
+    questionsLoading,
+    currentDomainInfo,
+    answers,
+    enabledFrameworks,
+    enabledFrameworkIds,
+    selectedFrameworkIds,
+    questionsForDashboard,
+    metrics,
+    criticalGaps: allCriticalGaps,
+    frameworkCoverage,
+    handleFrameworkSelectionChange,
+    toggleFramework,
+    clearFrameworkSelection,
+  } = useDashboardMetrics();
 
-  // Framework states
-  const [allActiveQuestions, setAllActiveQuestions] = useState<ActiveQuestion[]>([]);
-  const [questionsLoading, setQuestionsLoading] = useState(true);
-  const [enabledFrameworks, setEnabledFrameworks] = useState<Framework[]>([]);
-  const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
-  const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
-  const [currentDomainInfo, setCurrentDomainInfo] = useState<SecurityDomain | null>(null);
-
-  // Filter and search states
+  // Filter and search states (local to this dashboard)
   const [searchTerm, setSearchTerm] = useState('');
   const [criticalityFilter, setCriticalityFilter] = useState<CriticalityFilter>('all');
   const [responseFilter, setResponseFilter] = useState<ResponseFilter>('all');
@@ -114,180 +115,6 @@ export default function DashboardSpecialist() {
   const [selectedFrameworkCategory, setSelectedFrameworkCategory] = useState<string | null>(null);
   const [selectedFramework, setSelectedFramework] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-
-  // Load active questions and frameworks - filtered by security domain
-  const loadData = useCallback(async () => {
-    setQuestionsLoading(true);
-    try {
-      // Load domain info
-      const domainInfo = await getSecurityDomainById(selectedSecurityDomain);
-      setCurrentDomainInfo(domainInfo || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) || null);
-
-      const [customQuestions, disabledQuestionIds, enabledIds, selectedIds, customFrameworks] = await Promise.all([
-        getAllCustomQuestions(),
-        getDisabledQuestions(),
-        getEnabledFrameworks(),
-        getSelectedFrameworks(),
-        getAllCustomFrameworks()
-      ]);
-
-      // Get frameworks for the current security domain
-      const domainFrameworkIds = new Set(
-        getFrameworksBySecurityDomain(selectedSecurityDomain).map(f => f.frameworkId)
-      );
-
-      // Filter enabled frameworks to only those in the current domain
-      const domainEnabledIds = enabledIds.filter(id => domainFrameworkIds.has(id));
-
-      // Combine default and custom questions, excluding disabled ones
-      const active: ActiveQuestion[] = [
-        ...defaultQuestions
-          .filter(q => !disabledQuestionIds.includes(q.questionId))
-          .map(q => ({
-            questionId: q.questionId,
-            questionText: q.questionText,
-            subcatId: q.subcatId,
-            domainId: q.domainId,
-            ownershipType: q.ownershipType,
-            frameworks: q.frameworks || []
-          })),
-        ...customQuestions
-          .filter(q => !q.isDisabled)
-          .map(q => ({
-            questionId: q.questionId,
-            questionText: q.questionText,
-            subcatId: q.subcatId || '',
-            domainId: q.domainId,
-            ownershipType: q.ownershipType,
-            frameworks: q.frameworks || []
-          }))
-      ];
-
-      setAllActiveQuestions(active);
-      setEnabledFrameworkIds(domainEnabledIds);
-
-      // Combine default and custom frameworks, filter by enabled AND domain
-      const allFrameworks: Framework[] = [
-        ...defaultFrameworks,
-        ...customFrameworks.map(cf => ({
-          frameworkId: cf.frameworkId,
-          frameworkName: cf.frameworkName,
-          shortName: cf.shortName,
-          description: cf.description,
-          targetAudience: cf.targetAudience,
-          assessmentScope: cf.assessmentScope,
-          defaultEnabled: cf.defaultEnabled,
-          version: cf.version,
-          category: cf.category as 'core' | 'high-value' | 'tech-focused',
-          references: cf.references
-        }))
-      ];
-
-      const enabledSet = new Set(domainEnabledIds);
-      const enabled = allFrameworks.filter(f => enabledSet.has(f.frameworkId));
-      setEnabledFrameworks(enabled);
-
-      // Sanitize selected frameworks - only keep those in current domain
-      const sanitizedSelected = (selectedIds || []).filter(id => enabledSet.has(id));
-      setSelectedFrameworkIds(sanitizedSelected);
-
-    } catch (error) {
-      console.error('Error loading data:', error);
-      const domainFrameworkIds = getFrameworksBySecurityDomain(selectedSecurityDomain).map(f => f.frameworkId);
-      const defaultEnabledIds = domainFrameworkIds.filter(id => 
-        ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD', 'CSA_CCM', 'NIST_SSDF'].includes(id)
-      );
-      setAllActiveQuestions(defaultQuestions.map(q => ({
-        questionId: q.questionId,
-        questionText: q.questionText,
-        subcatId: q.subcatId,
-        domainId: q.domainId,
-        ownershipType: q.ownershipType,
-        frameworks: q.frameworks || []
-      })));
-      setEnabledFrameworkIds(defaultEnabledIds);
-      setEnabledFrameworks(defaultFrameworks.filter(f => defaultEnabledIds.includes(f.frameworkId)));
-    } finally {
-      setQuestionsLoading(false);
-    }
-  }, [selectedSecurityDomain]);
-
-  // Reload when security domain changes
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Refresh on visibility (with rate limiting)
-  useEffect(() => {
-    let lastLoadTime = Date.now();
-    const MIN_RELOAD_INTERVAL = 30000; // 30 seconds minimum between reloads
-
-    const shouldReload = () => {
-      const now = Date.now();
-      if (now - lastLoadTime >= MIN_RELOAD_INTERVAL) {
-        lastLoadTime = now;
-        return true;
-      }
-      return false;
-    };
-
-    const onVisibility = () => {
-      if (!document.hidden && shouldReload()) {
-        loadData();
-      }
-    };
-
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [loadData]);
-
-  // Filter questions by enabled frameworks
-  const questionsFilteredByEnabledFrameworks = useMemo(() => {
-    if (enabledFrameworkIds.length === 0) return allActiveQuestions;
-
-    const enabledSet = new Set(enabledFrameworkIds);
-    return allActiveQuestions.filter(q => {
-      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
-      return questionFrameworkIds.some(id => enabledSet.has(id));
-    });
-  }, [allActiveQuestions, enabledFrameworkIds]);
-
-  // Apply user selection on top of enabled frameworks
-  const questionsForDashboard = useMemo(() => {
-    if (selectedFrameworkIds.length === 0) return questionsFilteredByEnabledFrameworks;
-
-    const selectedSet = new Set(selectedFrameworkIds);
-    return questionsFilteredByEnabledFrameworks.filter(q => {
-      const questionFrameworkIds = getQuestionFrameworkIds(q.frameworks);
-      return questionFrameworkIds.some(id => selectedSet.has(id));
-    });
-  }, [questionsFilteredByEnabledFrameworks, selectedFrameworkIds]);
-
-  // Handle framework selection change
-  const handleFrameworkSelectionChange = async (frameworkIds: string[]) => {
-    setSelectedFrameworkIds(frameworkIds);
-    try {
-      await setSelectedFrameworks(frameworkIds);
-    } catch (error) {
-      console.error('Error saving framework selection:', error);
-    }
-  };
-
-  // Toggle framework selection
-  const toggleFramework = (frameworkId: string) => {
-    const newSelection = selectedFrameworkIds.includes(frameworkId)
-      ? selectedFrameworkIds.filter(id => id !== frameworkId)
-      : [...selectedFrameworkIds, frameworkId];
-    handleFrameworkSelectionChange(newSelection);
-  };
-
-  // Clear framework selection
-  const clearFrameworkSelection = () => {
-    handleFrameworkSelectionChange([]);
-  };
 
   // Group frameworks by category
   const frameworksByCategory = useMemo(() => {
@@ -308,11 +135,6 @@ export default function DashboardSpecialist() {
     'high-value': 'Alto Valor',
     'tech-focused': 'Foco Técnico'
   };
-
-  // Calculate metrics using filtered questions
-  const metrics = useMemo(() => calculateOverallMetrics(answers, questionsForDashboard), [answers, questionsForDashboard]);
-  const allCriticalGaps = useMemo(() => getCriticalGaps(answers, 0.5, questionsForDashboard), [answers, questionsForDashboard]);
-  const frameworkCoverage = useMemo(() => getFrameworkCoverage(answers, questionsForDashboard), [answers, questionsForDashboard]);
 
   // Response distribution for pie chart
   const responseDistribution = useMemo(() => {

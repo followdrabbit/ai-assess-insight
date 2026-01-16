@@ -662,18 +662,18 @@ export default function Profile() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select 
-                    value={voiceSettings.voice_name || ''} 
-                    onValueChange={(v) => handleSaveVoiceSetting('voice_name', v || null)}
-                    disabled={savingVoice}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder={t('profile.selectVoice', 'Select voice')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">
-                        {t('profile.autoSelectVoice', 'Auto (System Default)')}
-                      </SelectItem>
+                <Select 
+                  value={voiceSettings.voice_name || 'auto'} 
+                  onValueChange={(v) => handleSaveVoiceSetting('voice_name', v === 'auto' ? null : v)}
+                  disabled={savingVoice}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder={t('profile.selectVoice', 'Select voice')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      {t('profile.autoSelectVoice', 'Auto (System Default)')}
+                    </SelectItem>
                       {filteredVoices.length > 0 ? (
                         filteredVoices.map((voice) => (
                           <SelectItem key={voice.name} value={voice.name}>

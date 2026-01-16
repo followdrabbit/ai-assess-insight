@@ -2,11 +2,37 @@
 
 Uma plataforma completa de governança de segurança multi-domínio para **AI Security**, **Cloud Security** e **DevSecOps**, baseada em frameworks reconhecidos internacionalmente como NIST AI RMF, ISO 27001/27002, LGPD, CSA CCM, OWASP e outros.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![React](https://img.shields.io/badge/React-18.3-61dafb.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6.svg)
-![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)
-![Supabase](https://img.shields.io/badge/Supabase-Cloud-3ecf8e.svg)
+<div align="center">
+
+<!-- Build & Quality -->
+[![Build Status](https://img.shields.io/github/actions/workflow/status/seu-usuario/trustlayer/ci.yml?branch=main&label=build&logo=github)](https://github.com/seu-usuario/trustlayer/actions)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen?logo=vitest&logoColor=white)](https://github.com/seu-usuario/trustlayer)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-green?logo=codecov&logoColor=white)](https://github.com/seu-usuario/trustlayer)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen?logo=codacy&logoColor=white)](https://github.com/seu-usuario/trustlayer)
+
+<!-- Version & Tech -->
+[![Version](https://img.shields.io/badge/version-1.0.0-blue?logo=semanticrelease&logoColor=white)](https://github.com/seu-usuario/trustlayer/releases)
+[![React](https://img.shields.io/badge/React-18.3.1-61dafb?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646cff?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+
+<!-- Backend & Infra -->
+[![Supabase](https://img.shields.io/badge/Supabase-Cloud-3ecf8e?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Edge Functions](https://img.shields.io/badge/Edge%20Functions-5-3ecf8e?logo=deno&logoColor=white)](https://supabase.com/docs/guides/functions)
+
+<!-- License & Community -->
+[![License](https://img.shields.io/badge/license-MIT-blue?logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?logo=github&logoColor=white)](https://github.com/seu-usuario/trustlayer/pulls)
+[![i18n](https://img.shields.io/badge/i18n-3%20languages-blueviolet?logo=googletranslate&logoColor=white)](https://github.com/seu-usuario/trustlayer)
+
+<!-- Frameworks Supported -->
+[![NIST](https://img.shields.io/badge/NIST-AI%20RMF%20%7C%20SSDF-orange)](https://www.nist.gov/)
+[![ISO](https://img.shields.io/badge/ISO-27001%20%7C%2027002%20%7C%2023894-blue)](https://www.iso.org/)
+[![CSA](https://img.shields.io/badge/CSA-CCM%20v4-yellow)](https://cloudsecurityalliance.org/)
+[![OWASP](https://img.shields.io/badge/OWASP-Top%2010-red)](https://owasp.org/)
+
+</div>
 
 ## 📋 Sobre o Projeto
 

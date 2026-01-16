@@ -861,14 +861,14 @@ export default function DashboardSpecialist() {
         {/* Technical Gaps Tab */}
         <TabsContent value="gaps" className="space-y-4">
           <DashboardSection
-            title="Gaps por Criticidade"
+            title={t('dashboard.gapsByCriticality')}
             helpTooltip={<CriticalityLevelsHelp />}
           />
           {/* Filter Bar */}
           <div className="filter-bar">
             <div className="flex-1 min-w-[200px]">
               <Input
-                placeholder="Buscar por ID, texto ou subcategoria..."
+                placeholder={t('dashboard.searchGaps')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full font-mono"
@@ -876,10 +876,10 @@ export default function DashboardSpecialist() {
             </div>
             <Select value={domainFilter} onValueChange={setDomainFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Domínio" />
+                <SelectValue placeholder={t('dashboard.filterByDomainPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                <SelectItem value="all">Todos Domínios</SelectItem>
+                <SelectItem value="all">{t('dashboard.allDomainsOption')}</SelectItem>
                 {domainOptions.map(d => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                 ))}
@@ -887,13 +887,13 @@ export default function DashboardSpecialist() {
             </Select>
             <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Ordenar por" />
+                <SelectValue placeholder={t('dashboard.sortByPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                <SelectItem value="criticality">Criticidade</SelectItem>
-                <SelectItem value="score">Score</SelectItem>
-                <SelectItem value="subcategory">Subcategoria</SelectItem>
-                <SelectItem value="domain">Domínio</SelectItem>
+                <SelectItem value="criticality">{t('dashboard.sortByCriticality')}</SelectItem>
+                <SelectItem value="score">{t('dashboard.sortByScore')}</SelectItem>
+                <SelectItem value="subcategory">{t('dashboard.sortBySubcategory')}</SelectItem>
+                <SelectItem value="domain">{t('dashboard.byDomain')}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -905,14 +905,14 @@ export default function DashboardSpecialist() {
             </Button>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Limpar
+                {t('dashboard.clear')}
               </Button>
             )}
           </div>
 
           {/* Results count */}
           <div className="text-sm text-muted-foreground">
-            Exibindo {filteredGaps.length} de {allCriticalGaps.length} gaps
+            {t('dashboard.showingGaps', { filtered: filteredGaps.length, total: allCriticalGaps.length })}
           </div>
 
           {/* Gaps Table */}
@@ -923,12 +923,12 @@ export default function DashboardSpecialist() {
                   <thead>
                     <tr>
                       <th className="w-[100px]">ID</th>
-                      <th>Subcategoria</th>
-                      <th className="max-w-md">Pergunta</th>
-                      <th className="w-[100px]">Status</th>
-                      <th className="w-[100px]">Criticidade</th>
+                      <th>{t('dashboard.subcategory')}</th>
+                      <th className="max-w-md">{t('dashboard.question')}</th>
+                      <th className="w-[100px]">{t('dashboard.status')}</th>
+                      <th className="w-[100px]">{t('assessment.criticality')}</th>
                       <th className="w-[80px]">Score</th>
-                      <th className="w-[80px]">Ação</th>
+                      <th className="w-[80px]">{t('common.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -968,7 +968,7 @@ export default function DashboardSpecialist() {
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => navigate(`/assessment?questionId=${gap.questionId}`)}
                           >
-                            Ir →
+                            {t('dashboard.goTo')}
                           </Button>
                         </td>
                       </tr>
@@ -978,15 +978,15 @@ export default function DashboardSpecialist() {
               </div>
               {filteredGaps.length > 50 && (
                 <div className="p-4 text-center text-sm text-muted-foreground border-t border-border">
-                  Mostrando 50 de {filteredGaps.length} gaps. Use os filtros para refinar a busca.
+                  {t('dashboard.showing')} 50 {t('dashboard.of')} {filteredGaps.length} gaps
                 </div>
               )}
             </div>
           ) : (
             <div className="card-elevated p-8 text-center text-muted-foreground">
               {hasActiveFilters 
-                ? 'Nenhum gap encontrado com os filtros aplicados.' 
-                : 'Nenhum gap técnico identificado ainda.'}
+                ? t('dashboard.noData')
+                : t('dashboard.noCriticalGaps')}
             </div>
           )}
         </TabsContent>
@@ -994,16 +994,16 @@ export default function DashboardSpecialist() {
         {/* Heatmap Tab */}
         <TabsContent value="heatmap" className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-sm font-medium">Mapa de Calor por Subcategoria</h3>
+            <h3 className="text-sm font-medium">{t('dashboard.heatmapTitle')}</h3>
             <HeatmapHelp />
           </div>
           <div className="flex items-center justify-between">
             <Select value={selectedHeatmapDomain} onValueChange={setSelectedHeatmapDomain}>
               <SelectTrigger className="w-[250px]">
-                <SelectValue placeholder="Filtrar por domínio" />
+                <SelectValue placeholder={t('dashboard.filterByDomainPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                <SelectItem value="all">Todos os Domínios</SelectItem>
+                <SelectItem value="all">{t('dashboard.allDomainsOption')}</SelectItem>
                 {domainOptions.map(d => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                 ))}
@@ -1021,10 +1021,10 @@ export default function DashboardSpecialist() {
 
           <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
             <h3 className="font-semibold mb-4">
-              Mapa de Calor por Subcategoria
+              {t('dashboard.heatmapTitle')}
               {selectedHeatmapDomain !== 'all' && (
                 <span className="font-normal text-muted-foreground ml-2">
-                  ({heatmapData.length} subcategorias)
+                  ({heatmapData.length} {t('dashboard.subcategories')})
                 </span>
               )}
             </h3>
@@ -1045,9 +1045,9 @@ export default function DashboardSpecialist() {
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 border border-border">
                     <div className="font-medium">{sm.subcatName}</div>
                     <div className="text-muted-foreground">
-                      {sm.criticality} · {sm.answeredQuestions}/{sm.totalQuestions} resp.
+                      {sm.criticality} · {sm.answeredQuestions}/{sm.totalQuestions} {t('dashboard.responding')}
                     </div>
-                    <div className="text-xs text-primary mt-1">Clique para detalhes</div>
+                    <div className="text-xs text-primary mt-1">{t('dashboard.clickForDetails')}</div>
                   </div>
                 </div>
               ))}
@@ -1058,10 +1058,10 @@ export default function DashboardSpecialist() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-semibold">Distribuição de Respostas</h3>
+                <h3 className="font-semibold">{t('dashboard.responseDistributionTitle')}</h3>
                 <DomainResponseDistributionHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
               </div>
-              <p className="text-xs text-muted-foreground mb-2">Clique em uma fatia para ver detalhes</p>
+              <p className="text-xs text-muted-foreground mb-2">{t('dashboard.clickForDetails')}</p>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -1099,10 +1099,10 @@ export default function DashboardSpecialist() {
 
             <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-right-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-semibold">Resumo por Criticidade</h3>
+                <h3 className="font-semibold">{t('dashboard.criticalitySummary')}</h3>
                 <CriticalityLevelsHelp />
               </div>
-              <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
+              <p className="text-xs text-muted-foreground mb-3">{t('dashboard.clickForDetails')}</p>
               <div className="space-y-4">
                 {['Critical', 'High', 'Medium', 'Low'].map((crit, idx) => {
                   const count = allCriticalGaps.filter(g => g.criticality === crit).length;
@@ -1144,10 +1144,10 @@ export default function DashboardSpecialist() {
         <TabsContent value="domains" className="space-y-4">
           <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
             <div className="flex items-center gap-2 mb-4">
-              <h3 className="font-semibold">Detalhamento por Domínio</h3>
+              <h3 className="font-semibold">{t('dashboard.domainDetails')}</h3>
               <DomainMetricsHelpAware securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Clique nas barras para ver detalhes</p>
+            <p className="text-xs text-muted-foreground mb-3">{t('dashboard.clickForDetails')}</p>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
@@ -1220,8 +1220,8 @@ export default function DashboardSpecialist() {
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                  <span>{dm.answeredQuestions}/{dm.totalQuestions} perguntas</span>
-                  <span>{Math.round(dm.coverage * 100)}% cobertura</span>
+                  <span>{dm.answeredQuestions}/{dm.totalQuestions} {t('dashboard.questions')}</span>
+                  <span>{Math.round(dm.coverage * 100)}% {t('dashboard.coverage').toLowerCase()}</span>
                 </div>
               </div>
             ))}
@@ -1232,8 +1232,8 @@ export default function DashboardSpecialist() {
         <TabsContent value="frameworks" className="space-y-4">
           {/* Framework Categories */}
           <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
-            <h3 className="font-semibold mb-4">Maturidade por Categoria de Framework</h3>
-            <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
+            <h3 className="font-semibold mb-4">{t('dashboard.maturityByCategory')}</h3>
+            <p className="text-xs text-muted-foreground mb-3">{t('dashboard.clickForDetails')}</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {frameworkCategoryData.map((fc, idx) => (
                 <div 
@@ -1261,8 +1261,8 @@ export default function DashboardSpecialist() {
                     />
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{fc.answeredQuestions}/{fc.totalQuestions} perguntas</span>
-                    <span>{fc.coverage}% cobertura</span>
+                    <span>{fc.answeredQuestions}/{fc.totalQuestions} {t('dashboard.questions')}</span>
+                    <span>{fc.coverage}% {t('dashboard.coverage').toLowerCase()}</span>
                   </div>
                 </div>
               ))}
@@ -1271,7 +1271,7 @@ export default function DashboardSpecialist() {
 
           {/* Grouped Framework Coverage */}
           <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
-            <h3 className="font-semibold mb-4">Cobertura Detalhada por Framework ({filteredFrameworkCoverage.length})</h3>
+            <h3 className="font-semibold mb-4">{t('dashboard.detailedFrameworkCoverage')} ({filteredFrameworkCoverage.length})</h3>
             <div className="space-y-2">
               {Object.entries(groupedFrameworks).map(([category, frameworks], catIdx) => (
                 <Collapsible
@@ -1292,7 +1292,7 @@ export default function DashboardSpecialist() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="font-mono text-sm">
-                          {Math.round(frameworks.reduce((acc, fw) => acc + fw.averageScore, 0) / frameworks.length * 100)}% média
+                          {Math.round(frameworks.reduce((acc, fw) => acc + fw.averageScore, 0) / frameworks.length * 100)}% {t('dashboard.averageScore')}
                         </span>
                         <span className="text-muted-foreground">
                           {expandedFrameworks.has(category) ? '−' : '+'}
@@ -1314,7 +1314,7 @@ export default function DashboardSpecialist() {
                           </div>
                           <div className="text-xl font-bold mt-1">{Math.round(fw.averageScore * 100)}%</div>
                           <div className="text-xs text-muted-foreground">
-                            {fw.answeredQuestions}/{fw.totalQuestions} perguntas
+                            {fw.answeredQuestions}/{fw.totalQuestions} {t('dashboard.questions')}
                           </div>
                           <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
                             <div 
@@ -1361,34 +1361,34 @@ export default function DashboardSpecialist() {
                   <div className="text-2xl font-bold" style={{ color: selectedSubcategoryDetails.maturityLevel.color }}>
                     {selectedSubcategoryDetails.maturityLevel.name}
                   </div>
-                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.maturity')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{Math.round(selectedSubcategoryDetails.coverage * 100)}%</div>
-                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.coverage')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedSubcategoryDetails.answeredQuestions}</div>
-                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.answeredCount')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold text-amber-600">{selectedSubcategoryDetails.totalQuestions - selectedSubcategoryDetails.answeredQuestions}</div>
-                  <div className="text-xs text-muted-foreground">Pendentes</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.pendingCount')}</div>
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
                 <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Progresso da Avaliação</span>
-                  <span className="font-medium">{selectedSubcategoryDetails.answeredQuestions} de {selectedSubcategoryDetails.totalQuestions}</span>
+                  <span className="text-muted-foreground">{t('dashboard.assessmentProgress')}</span>
+                  <span className="font-medium">{selectedSubcategoryDetails.answeredQuestions} {t('dashboard.of')} {selectedSubcategoryDetails.totalQuestions}</span>
                 </div>
                 <Progress value={selectedSubcategoryDetails.coverage * 100} className="h-2" />
               </div>
 
               {/* Response Breakdown */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
-                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <h4 className="font-medium text-sm mb-2">{t('dashboard.responseDistributionTitle')}</h4>
                 <div className="flex gap-2 flex-wrap">
                   {Object.entries(selectedSubcategoryDetails.responseBreakdown).map(([key, value]) => (
                     value > 0 && (
@@ -1414,7 +1414,7 @@ export default function DashboardSpecialist() {
               {selectedSubcategoryDetails.gaps.length > 0 && (
                 <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
                   <h4 className="font-medium text-sm mb-2">
-                    Gaps Identificados ({selectedSubcategoryDetails.gaps.length})
+                    {t('dashboard.gapsCount', { count: selectedSubcategoryDetails.gaps.length })}
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {selectedSubcategoryDetails.gaps.map((gap, idx) => (
@@ -1449,7 +1449,7 @@ export default function DashboardSpecialist() {
                             navigate(`/assessment?questionId=${gap.questionId}`);
                           }}
                         >
-                          Revisar
+                          {t('dashboard.review')}
                         </Button>
                       </div>
                     ))}
@@ -1460,7 +1460,7 @@ export default function DashboardSpecialist() {
               {/* All Questions List */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
                 <h4 className="font-medium text-sm mb-2">
-                  Todas as Perguntas ({selectedSubcategoryDetails.questions.length})
+                  {t('dashboard.allQuestions')} ({selectedSubcategoryDetails.questions.length})
                 </h4>
                 <div className="space-y-2 max-h-56 overflow-y-auto">
                   {selectedSubcategoryDetails.questions.map((q, idx) => (
@@ -1494,7 +1494,7 @@ export default function DashboardSpecialist() {
                           navigate(`/assessment?questionId=${q.questionId}`);
                         }}
                       >
-                        Ir →
+                        {t('dashboard.goTo')}
                       </Button>
                     </div>
                   ))}
@@ -1507,7 +1507,7 @@ export default function DashboardSpecialist() {
                   variant="outline" 
                   onClick={() => setSelectedSubcategory(null)}
                 >
-                  Fechar
+                  {t('common.close')}
                 </Button>
                 <Button 
                   onClick={() => {
@@ -1518,7 +1518,7 @@ export default function DashboardSpecialist() {
                     }
                   }}
                 >
-                  Avaliar Subcategoria
+                  {t('dashboard.evaluateSubcategory')}
                 </Button>
               </div>
             </>
@@ -1540,9 +1540,9 @@ export default function DashboardSpecialist() {
                     {selectedResponseDetails.count}
                   </div>
                   <div>
-                    <DialogTitle className="text-left">Respostas: {selectedResponseDetails.name}</DialogTitle>
+                    <DialogTitle className="text-left">{t('dashboard.responsesLabel', { type: selectedResponseDetails.name })}</DialogTitle>
                     <DialogDescription className="text-left">
-                      {selectedResponseDetails.count} perguntas ({selectedResponseDetails.percent.toFixed(1)}% do total)
+                      {t('dashboard.questionsWithCount', { count: selectedResponseDetails.count })} {t('dashboard.percentOfTotal', { percent: selectedResponseDetails.percent.toFixed(1) })}
                     </DialogDescription>
                   </div>
                 </div>
@@ -1552,17 +1552,17 @@ export default function DashboardSpecialist() {
               <div className="grid grid-cols-3 gap-3 mt-4">
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedResponseDetails.count}</div>
-                  <div className="text-xs text-muted-foreground">Total</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.total')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{Object.keys(selectedResponseDetails.byDomain).length}</div>
-                  <div className="text-xs text-muted-foreground">Domínios</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.domainsCount')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold" style={{ color: selectedResponseDetails.color }}>
                     {selectedResponseDetails.percent.toFixed(0)}%
                   </div>
-                  <div className="text-xs text-muted-foreground">do Total</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.ofTotal')}</div>
                 </div>
               </div>
 
@@ -1571,7 +1571,7 @@ export default function DashboardSpecialist() {
                 selectedResponseDetails.responseKey === 'Parcial' || 
                 selectedResponseDetails.responseKey === 'Não respondido') && (
                 <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
-                  <h4 className="font-medium text-sm mb-2">Por Criticidade</h4>
+                  <h4 className="font-medium text-sm mb-2">{t('dashboard.byCriticalityTitle')}</h4>
                   <div className="flex gap-2 flex-wrap">
                     {Object.entries(selectedResponseDetails.criticalityBreakdown).map(([key, value]) => (
                       value > 0 && (
@@ -1590,7 +1590,7 @@ export default function DashboardSpecialist() {
               {/* Questions by Domain */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
                 <h4 className="font-medium text-sm mb-2">
-                  Perguntas por Domínio ({selectedResponseDetails.questions.length})
+                  {t('dashboard.questionsByDomain')} ({selectedResponseDetails.questions.length})
                 </h4>
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {Object.entries(selectedResponseDetails.byDomain).map(([domainName, questions], domainIdx) => (
@@ -1602,7 +1602,7 @@ export default function DashboardSpecialist() {
                     >
                       <CollapsibleTrigger className="w-full p-3 bg-muted/30 rounded-lg flex items-center justify-between hover:bg-muted/50 transition-colors">
                         <span className="font-medium text-sm">{domainName}</span>
-                        <span className="text-xs text-muted-foreground">{questions.length} perguntas</span>
+                        <span className="text-xs text-muted-foreground">{questions.length} {t('dashboard.questions')}</span>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="space-y-2 mt-2 pl-2">
@@ -1631,7 +1631,7 @@ export default function DashboardSpecialist() {
                                   navigate(`/assessment?questionId=${q.questionId}`);
                                 }}
                               >
-                                {selectedResponseDetails.responseKey === 'Não respondido' ? 'Responder' : 'Revisar'}
+                                {selectedResponseDetails.responseKey === 'Não respondido' ? t('dashboard.respond') : t('dashboard.review')}
                               </Button>
                             </div>
                           ))}
@@ -1648,7 +1648,7 @@ export default function DashboardSpecialist() {
                   variant="outline" 
                   onClick={() => setSelectedResponseType(null)}
                 >
-                  Fechar
+                  {t('common.close')}
                 </Button>
                 {selectedResponseDetails.questions.length > 0 && (
                   <Button 
@@ -1657,7 +1657,7 @@ export default function DashboardSpecialist() {
                       navigate(`/assessment?questionId=${selectedResponseDetails.questions[0].questionId}`);
                     }}
                   >
-                    {selectedResponseDetails.responseKey === 'Não respondido' ? 'Iniciar Avaliação' : 'Revisar Primeira'}
+                    {selectedResponseDetails.responseKey === 'Não respondido' ? t('dashboard.startEvaluation') : t('dashboard.reviewFirst')}
                   </Button>
                 )}
               </div>
@@ -1681,10 +1681,10 @@ export default function DashboardSpecialist() {
                   </div>
                   <div>
                     <DialogTitle className="text-left">
-                      Gaps de Criticidade: {selectedCriticalityDetails.criticality}
+                      {t('dashboard.gapsByCriticality')}: {selectedCriticalityDetails.criticality}
                     </DialogTitle>
                     <DialogDescription className="text-left">
-                      {selectedCriticalityDetails.count} gaps ({selectedCriticalityDetails.percent.toFixed(1)}% do total)
+                      {selectedCriticalityDetails.count} gaps {t('dashboard.percentOfTotal', { percent: selectedCriticalityDetails.percent.toFixed(1) })}
                     </DialogDescription>
                   </div>
                 </div>
@@ -1696,21 +1696,21 @@ export default function DashboardSpecialist() {
                   <div className="text-2xl font-bold" style={{ color: selectedCriticalityDetails.color }}>
                     {selectedCriticalityDetails.count}
                   </div>
-                  <div className="text-xs text-muted-foreground">Total de Gaps</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.totalGaps')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedCriticalityDetails.domainsCount}</div>
-                  <div className="text-xs text-muted-foreground">Domínios Afetados</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.domainsAffected')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedCriticalityDetails.percent.toFixed(0)}%</div>
-                  <div className="text-xs text-muted-foreground">do Total</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.ofTotal')}</div>
                 </div>
               </div>
 
               {/* Response breakdown */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
-                <h4 className="font-medium text-sm mb-2">Por Status de Resposta</h4>
+                <h4 className="font-medium text-sm mb-2">{t('dashboard.byResponse')}</h4>
                 <div className="flex gap-2 flex-wrap">
                   {Object.entries(selectedCriticalityDetails.byResponse).map(([key, value]) => (
                     value > 0 && (
@@ -1733,7 +1733,7 @@ export default function DashboardSpecialist() {
               {/* Gaps by Domain */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
                 <h4 className="font-medium text-sm mb-2">
-                  Gaps por Domínio ({selectedCriticalityDetails.gaps.length})
+                  {t('dashboard.gapsBySubcategory')} ({selectedCriticalityDetails.gaps.length})
                 </h4>
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {Object.entries(selectedCriticalityDetails.byDomain).map(([domainName, gaps], domainIdx) => (
@@ -1778,7 +1778,7 @@ export default function DashboardSpecialist() {
                                   navigate(`/assessment?questionId=${gap.questionId}`);
                                 }}
                               >
-                                Revisar
+                                {t('dashboard.review')}
                               </Button>
                             </div>
                           ))}
@@ -1795,7 +1795,7 @@ export default function DashboardSpecialist() {
                   variant="outline" 
                   onClick={() => setSelectedCriticality(null)}
                 >
-                  Fechar
+                  {t('common.close')}
                 </Button>
                 <Button 
                   onClick={() => {
@@ -1803,7 +1803,7 @@ export default function DashboardSpecialist() {
                     setCriticalityFilter(selectedCriticalityDetails.criticality as CriticalityFilter);
                   }}
                 >
-                  Filtrar por Esta Criticidade
+                  {t('dashboard.filterByThisCriticality')}
                 </Button>
               </div>
             </>
@@ -1840,34 +1840,34 @@ export default function DashboardSpecialist() {
                   <div className="text-2xl font-bold" style={{ color: selectedDomainDetails.maturityLevel.color }}>
                     {Math.round(selectedDomainDetails.score * 100)}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.maturity')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{Math.round(selectedDomainDetails.coverage * 100)}%</div>
-                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.coverage')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedDomainDetails.answeredQuestions}/{selectedDomainDetails.totalQuestions}</div>
-                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.answeredCount')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold text-destructive">{selectedDomainDetails.gaps.length}</div>
-                  <div className="text-xs text-muted-foreground">Gaps</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.gaps')}</div>
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
                 <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Progresso da Avaliação</span>
-                  <span className="font-medium">{selectedDomainDetails.answeredQuestions} de {selectedDomainDetails.totalQuestions}</span>
+                  <span className="text-muted-foreground">{t('dashboard.assessmentProgress')}</span>
+                  <span className="font-medium">{selectedDomainDetails.answeredQuestions} {t('dashboard.of')} {selectedDomainDetails.totalQuestions}</span>
                 </div>
                 <Progress value={selectedDomainDetails.coverage * 100} className="h-2" />
               </div>
 
               {/* Response Breakdown */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
-                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <h4 className="font-medium text-sm mb-2">{t('dashboard.responseDistributionTitle')}</h4>
                 <div className="flex gap-2 flex-wrap">
                   {Object.entries(selectedDomainDetails.responseBreakdown).map(([key, value]) => (
                     value > 0 && (
@@ -1892,7 +1892,7 @@ export default function DashboardSpecialist() {
               {/* Gaps by Criticality */}
               {selectedDomainDetails.gaps.length > 0 && (
                 <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
-                  <h4 className="font-medium text-sm mb-2">Gaps por Criticidade</h4>
+                  <h4 className="font-medium text-sm mb-2">{t('dashboard.gapsByCriticality')}</h4>
                   <div className="flex gap-2 flex-wrap">
                     {Object.entries(selectedDomainDetails.gapsByCriticality).map(([key, value]) => (
                       value > 0 && (
@@ -1912,7 +1912,7 @@ export default function DashboardSpecialist() {
               {selectedDomainDetails.gaps.length > 0 && (
                 <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '450ms', animationFillMode: 'backwards' }}>
                   <h4 className="font-medium text-sm mb-2">
-                    Gaps por Subcategoria ({selectedDomainDetails.gaps.length})
+                    {t('dashboard.gapsBySubcategory')} ({selectedDomainDetails.gaps.length})
                   </h4>
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {Object.entries(selectedDomainDetails.bySubcategory).map(([subcatName, gaps], subcatIdx) => (
@@ -1959,7 +1959,7 @@ export default function DashboardSpecialist() {
                                     navigate(`/assessment?questionId=${gap.questionId}`);
                                   }}
                                 >
-                                  Revisar
+                                  {t('dashboard.review')}
                                 </Button>
                               </div>
                             ))}
@@ -1974,7 +1974,7 @@ export default function DashboardSpecialist() {
               {/* Subcategories Summary */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '550ms', animationFillMode: 'backwards' }}>
                 <h4 className="font-medium text-sm mb-2">
-                  Subcategorias ({selectedDomainDetails.subcategoryMetrics.length})
+                  {t('dashboard.subcategoriesCount', { count: selectedDomainDetails.subcategoryMetrics.length })}
                 </h4>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                   {selectedDomainDetails.subcategoryMetrics.map((sm, idx) => (
@@ -2015,7 +2015,7 @@ export default function DashboardSpecialist() {
                   variant="outline" 
                   onClick={() => setSelectedDomain(null)}
                 >
-                  Fechar
+                  {t('common.close')}
                 </Button>
                 <Button 
                   onClick={() => {
@@ -2023,7 +2023,7 @@ export default function DashboardSpecialist() {
                     setDomainFilter(selectedDomainDetails.domainId);
                   }}
                 >
-                  Filtrar por Este Domínio
+                  {t('dashboard.filterByThisDomain')}
                 </Button>
               </div>
             </>

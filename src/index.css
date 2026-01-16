@@ -162,6 +162,23 @@
     @apply bg-card rounded-lg border border-border;
   }
 
+  /* Interactive Card - Hover animations for settings cards */
+  .card-interactive {
+    @apply bg-card rounded-lg border border-border;
+    transition: all 0.2s ease-out;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-interactive:hover {
+    @apply border-primary/30;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .card-interactive:active {
+    transform: translateY(0);
+  }
+
   /* KPI Card - Enhanced with hover effects */
   .kpi-card {
     @apply card-elevated p-6 relative overflow-hidden;

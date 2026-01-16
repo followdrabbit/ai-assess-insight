@@ -560,7 +560,7 @@ export function DomainManagement() {
 
     return (
       <Card className={cn(
-        "transition-all h-full flex flex-col",
+        "card-interactive h-full flex flex-col",
         domain.isEnabled 
           ? "border-primary/50" 
           : "opacity-60 border-muted"

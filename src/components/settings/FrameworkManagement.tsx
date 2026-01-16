@@ -327,7 +327,7 @@ export function FrameworkManagement() {
             const colorStyles = domainInfo ? DOMAIN_COLORS[domainInfo.color] : null;
             
             return (
-              <Card key={fw.frameworkId} className={cn(!fw.isCustom && "opacity-90")}>
+              <Card key={fw.frameworkId} className={cn("card-interactive", !fw.isCustom && "opacity-90")}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>

@@ -1519,7 +1519,7 @@ export function QuestionManagement() {
                       <Card 
                         key={version.id} 
                         className={cn(
-                          "cursor-pointer transition-all hover:border-primary/50",
+                          "card-interactive cursor-pointer",
                           selectedVersion?.id === version.id && "border-primary bg-primary/5"
                         )}
                         onClick={() => setSelectedVersion(version)}
@@ -1758,7 +1758,7 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
           <Card 
             key={q.questionId} 
             className={cn(
-              "transition-opacity",
+              "card-interactive",
               q.isDisabled && "opacity-50"
             )}
           >

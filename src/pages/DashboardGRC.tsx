@@ -818,8 +818,12 @@ export default function DashboardGRC() {
                   <h4 className="font-medium text-sm mb-3">{config.label}</h4>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {items.length > 0 ? items.slice(0, 5).map((item, itemIdx) => (
-                      <div key={itemIdx} className="text-xs">
-                        <p className="font-medium line-clamp-2">{item.action}</p>
+                      <div 
+                        key={itemIdx} 
+                        className="text-xs cursor-pointer hover:bg-muted/50 p-1.5 rounded -mx-1.5 transition-colors group"
+                        onClick={() => navigate(`/assessment?questionId=${item.questionId}`)}
+                      >
+                        <p className="font-medium line-clamp-2 group-hover:text-primary transition-colors">{item.action}</p>
                         <p className="text-muted-foreground mt-0.5">{item.domain} · {item.ownershipType}</p>
                       </div>
                     )) : (

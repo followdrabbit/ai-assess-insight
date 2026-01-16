@@ -14,14 +14,10 @@ import {
   FrameworkCategoryHelp,
   OwnershipHelp,
   DomainMetricsHelpAware,
-  DomainFunctionHelp,
-  DomainRiskDistributionHelp,
-  DomainFrameworkCoverageHelp,
-  DomainResponseDistributionHelp,
   DomainCriticalGapsHelp,
   DomainRoadmapHelp,
 } from '@/components/HelpTooltip';
-import { FrameworkCategoryId } from '@/lib/dataset';
+import { domains, FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,12 +34,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import {
   Dialog,
   DialogContent,
@@ -52,13 +42,11 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { domains } from '@/lib/dataset';
 import { Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
 import {
   DashboardHeader,
   DashboardFrameworkSelector,
-  DashboardFilterBar,
   DashboardKPIGrid,
   DashboardKPICard,
   DashboardSection,
@@ -99,16 +87,13 @@ export default function DashboardGRC() {
     currentDomainInfo,
     answers,
     enabledFrameworks,
-    enabledFrameworkIds,
     selectedFrameworkIds,
     questionsForDashboard,
     metrics,
     criticalGaps,
     frameworkCoverage,
     roadmap,
-    handleFrameworkSelectionChange,
     toggleFramework,
-    clearFrameworkSelection,
   } = useDashboardMetrics();
 
   // Filter and search states (local to this dashboard)
@@ -122,26 +107,6 @@ export default function DashboardGRC() {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedFrameworkCategory, setSelectedFrameworkCategory] = useState<string | null>(null);
   const [selectedFramework, setSelectedFramework] = useState<string | null>(null);
-
-  // Group frameworks by category
-  const frameworksByCategory = useMemo(() => {
-    const groups: Record<string, Framework[]> = {
-      'core': [],
-      'high-value': [],
-      'tech-focused': []
-    };
-    enabledFrameworks.forEach(fw => {
-      const cat = fw.category || 'core';
-      if (groups[cat]) groups[cat].push(fw);
-    });
-    return groups;
-  }, [enabledFrameworks]);
-
-  const categoryLabels: Record<string, string> = {
-    'core': 'Frameworks Principais',
-    'high-value': 'Alto Valor',
-    'tech-focused': 'Foco Técnico'
-  };
 
   // Unique ownership types for filter
   const ownershipTypes = useMemo(() => {

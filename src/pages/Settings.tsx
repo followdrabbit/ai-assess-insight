@@ -21,7 +21,6 @@ import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib
 import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
-import { CascadeHierarchy } from '@/components/settings/CascadeHierarchy';
 import { SettingsSearch } from '@/components/settings/SettingsSearch';
 import { 
   FolderTree, 
@@ -376,69 +375,11 @@ export default function Settings() {
               <FolderTree className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-semibold">Estrutura do Sistema</h2>
+              <h2 className="font-semibold">Domínios de Segurança</h2>
               <p className="text-sm text-muted-foreground">
-                Configure os domínios de segurança e visualize a hierarquia completa
+                Gerencie os domínios disponíveis na plataforma
               </p>
             </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-200/50">
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Domínios</p>
-                    <p className="text-2xl font-bold text-purple-700">3</p>
-                  </div>
-                  <div className="text-xs text-right">
-                    <p className="text-muted-foreground">AI Security</p>
-                    <p className="text-muted-foreground">Cloud Security</p>
-                    <p className="text-muted-foreground">DevSecOps</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Frameworks</p>
-                <p className="text-2xl font-bold">{frameworks.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {pendingFrameworks.length} ativos
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Perguntas</p>
-                <p className="text-2xl font-bold">{questions.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {totalQuestions} na avaliação
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Hierarchy View */}
-          <div ref={setSectionRef('hierarchy')}>
-            <Card className={cn(
-              "transition-all duration-500",
-              highlightedSection === 'hierarchy' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ArrowRight className="h-4 w-4 rotate-90" />
-                  Hierarquia: Domínios → Frameworks → Perguntas
-                </CardTitle>
-                <CardDescription>
-                  Visualize como os elementos se relacionam e gerencie a disponibilidade
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CascadeHierarchy />
-              </CardContent>
-            </Card>
           </div>
 
           {/* Domain Management */}

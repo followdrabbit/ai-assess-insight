@@ -28,15 +28,6 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
     section: 'Gerenciar Domínios de Segurança',
     icon: FolderTree,
   },
-  {
-    id: 'hierarchy',
-    title: 'Hierarquia do Sistema',
-    description: 'Visualizar relação entre Domínios, Frameworks e Perguntas',
-    keywords: ['hierarquia', 'cascata', 'estrutura', 'relacionamento', 'árvore'],
-    tab: 'structure',
-    section: 'Hierarquia: Domínios → Frameworks → Perguntas',
-    icon: FolderTree,
-  },
   
   // Library Tab
   {

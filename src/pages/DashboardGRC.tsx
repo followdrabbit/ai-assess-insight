@@ -782,11 +782,11 @@ export default function DashboardGRC() {
       </div>
 
 
-      {/* Quick Status Pills */}
-      <div className="flex flex-wrap gap-2">
+      {/* Quick Status Pills - Enhanced with animations */}
+      <div className="flex flex-wrap gap-2 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
         <Badge 
           variant={statusFilter === 'all' ? 'default' : 'outline'}
-          className="cursor-pointer"
+          className="cursor-pointer transition-all duration-200 hover:scale-105"
           onClick={() => setStatusFilter('all')}
         >
           Todos ({quickStats.totalDomains})
@@ -794,7 +794,7 @@ export default function DashboardGRC() {
         <Badge 
           variant={statusFilter === 'incomplete' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             statusFilter !== 'incomplete' && "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300"
           )}
           onClick={() => setStatusFilter('incomplete')}
@@ -804,7 +804,7 @@ export default function DashboardGRC() {
         <Badge 
           variant={statusFilter === 'at-risk' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             statusFilter !== 'at-risk' && "bg-red-50 text-red-700 hover:bg-red-100 border-red-300"
           )}
           onClick={() => setStatusFilter('at-risk')}
@@ -814,7 +814,7 @@ export default function DashboardGRC() {
         <Badge 
           variant={statusFilter === 'on-track' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             statusFilter !== 'on-track' && "bg-green-50 text-green-700 hover:bg-green-100 border-green-300"
           )}
           onClick={() => setStatusFilter('on-track')}
@@ -823,31 +823,59 @@ export default function DashboardGRC() {
         </Badge>
       </div>
 
-      {/* GRC KPI Cards */}
-      <div className="stats-grid">
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+      {/* GRC KPI Cards - Enhanced with decorative elements */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Cobertura Geral</div>
             <CoverageHelp />
           </div>
           <div className="kpi-value">{Math.round(metrics.coverage * 100)}%</div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-700 ease-out" 
+                style={{ width: `${metrics.coverage * 100}%` }}
+              />
+            </div>
+          </div>
           <div className="text-sm text-muted-foreground mt-2">
             {metrics.answeredQuestions} de {metrics.totalQuestions}
           </div>
         </div>
 
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-success/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Prontidão de Evidências</div>
             <EvidenceReadinessHelp />
           </div>
           <div className="kpi-value">{Math.round(metrics.evidenceReadiness * 100)}%</div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-green-500 transition-all duration-700 ease-out" 
+                style={{ width: `${metrics.evidenceReadiness * 100}%` }}
+              />
+            </div>
+          </div>
           <div className="text-sm text-muted-foreground mt-2">
             Para auditoria
           </div>
         </div>
 
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-warning/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Score Geral</div>
             <MaturityScoreHelp />
@@ -858,15 +886,25 @@ export default function DashboardGRC() {
           <div className={cn("maturity-badge mt-2", `maturity-${metrics.maturityLevel.level}`)}>
             {metrics.maturityLevel.name}
           </div>
+          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+            Meta recomendada: 70%+
+          </div>
         </div>
 
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
           <div className="kpi-label">Gaps Críticos</div>
           <div className="kpi-value text-destructive">
             {quickStats.criticalGapsCount}
           </div>
           <div className="text-sm text-muted-foreground mt-2">
             Requerem ação imediata
+          </div>
+          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+            {quickStats.criticalGapsCount > 0 ? 'Ação prioritária necessária' : 'Nenhum gap crítico'}
           </div>
         </div>
       </div>

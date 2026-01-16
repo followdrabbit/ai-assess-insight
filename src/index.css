@@ -162,17 +162,36 @@
     @apply bg-card rounded-lg border border-border;
   }
 
-  /* KPI Card */
+  /* KPI Card - Enhanced with hover effects */
   .kpi-card {
-    @apply card-elevated p-6;
+    @apply card-elevated p-6 relative overflow-hidden;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-2px);
   }
 
   .kpi-value {
     @apply text-3xl font-bold tracking-tight;
+    transition: transform 0.2s ease;
+  }
+
+  .kpi-card:hover .kpi-value {
+    transform: scale(1.02);
   }
 
   .kpi-label {
     @apply text-sm text-muted-foreground font-medium uppercase tracking-wide;
+  }
+
+  /* Animated progress bars */
+  .progress-bar-animated {
+    @apply h-2 bg-muted rounded-full overflow-hidden;
+  }
+
+  .progress-bar-animated > div {
+    @apply h-full transition-all duration-700 ease-out;
   }
 
   /* Maturity Level Badges */

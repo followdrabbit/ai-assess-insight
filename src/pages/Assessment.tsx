@@ -402,13 +402,16 @@ export default function Assessment() {
                       variant="outline" 
                       className={cn(
                         "text-[10px] uppercase",
-                        subcat.criticality === 'Critical' && "border-red-300 text-red-700 bg-red-50",
-                        subcat.criticality === 'High' && "border-orange-300 text-orange-700 bg-orange-50",
-                        subcat.criticality === 'Medium' && "border-blue-300 text-blue-700 bg-blue-50",
-                        subcat.criticality === 'Low' && "border-gray-300 text-gray-600 bg-gray-50"
+                        subcat.criticality === 'Critical' && "border-red-300 text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-300",
+                        subcat.criticality === 'High' && "border-orange-300 text-orange-700 bg-orange-50 dark:bg-orange-950 dark:text-orange-300",
+                        subcat.criticality === 'Medium' && "border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-300",
+                        subcat.criticality === 'Low' && "border-gray-300 text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"
                       )}
                     >
-                      {subcat.criticality}
+                      {subcat.criticality === 'Critical' ? t('assessment.critical') :
+                       subcat.criticality === 'High' ? t('assessment.high') :
+                       subcat.criticality === 'Medium' ? t('assessment.medium') :
+                       subcat.criticality === 'Low' ? t('assessment.low') : subcat.criticality}
                     </Badge>
                     <span className="text-xs text-muted-foreground ml-auto">
                       {subcatAnswered}/{subcatQuestions.length} {t('common.answered')}
@@ -472,25 +475,33 @@ export default function Assessment() {
                             {/* Response selector */}
                             <div className="mb-4">
                               <div className="grid grid-cols-4 gap-2">
-                                {responseOptions.map(opt => (
-                                  <button
-                                    key={opt.value}
-                                    data-value={opt.value}
-                                    onClick={() => setAnswer(q.questionId, { response: opt.value as any })}
-                                    className={cn(
-                                      "py-2.5 px-3 text-sm font-medium rounded-lg border-2 transition-all duration-150",
-                                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
-                                      answer?.response === opt.value 
-                                        ? opt.value === 'Sim' ? "border-green-500 bg-green-50 text-green-700" :
-                                          opt.value === 'Parcial' ? "border-yellow-500 bg-yellow-50 text-yellow-700" :
-                                          opt.value === 'Não' ? "border-red-500 bg-red-50 text-red-700" :
-                                          "border-gray-400 bg-gray-100 text-gray-600"
-                                        : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-                                    )}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                ))}
+                                {responseOptions.map(opt => {
+                                  const labelMap: Record<string, string> = {
+                                    'Sim': t('assessment.responseYes'),
+                                    'Parcial': t('assessment.responsePartial'),
+                                    'Não': t('assessment.responseNo'),
+                                    'NA': t('assessment.responseNA')
+                                  };
+                                  return (
+                                    <button
+                                      key={opt.value}
+                                      data-value={opt.value}
+                                      onClick={() => setAnswer(q.questionId, { response: opt.value as any })}
+                                      className={cn(
+                                        "py-2.5 px-3 text-sm font-medium rounded-lg border-2 transition-all duration-150",
+                                        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                                        answer?.response === opt.value 
+                                          ? opt.value === 'Sim' ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" :
+                                            opt.value === 'Parcial' ? "border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300" :
+                                            opt.value === 'Não' ? "border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300" :
+                                            "border-gray-400 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                                          : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                                      )}
+                                    >
+                                      {labelMap[opt.value] || opt.label}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
 
@@ -501,24 +512,31 @@ export default function Assessment() {
                                   {t('assessment.evidenceAvailable')}
                                 </label>
                                 <div className="flex gap-2">
-                                  {evidenceOptions.map(opt => (
-                                    <button
-                                      key={opt.value}
-                                      data-value={opt.value}
-                                      onClick={() => setAnswer(q.questionId, { evidenceOk: opt.value as any })}
-                                      className={cn(
-                                        "flex-1 py-2 px-3 text-sm font-medium rounded-lg border-2 transition-all",
-                                        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
-                                        answer?.evidenceOk === opt.value 
-                                          ? opt.value === 'Sim' ? "border-green-500 bg-green-50 text-green-700" :
-                                            opt.value === 'Parcial' ? "border-yellow-500 bg-yellow-50 text-yellow-700" :
-                                            "border-red-500 bg-red-50 text-red-700"
-                                          : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-                                      )}
-                                    >
-                                      {opt.label}
-                                    </button>
-                                  ))}
+                                  {evidenceOptions.filter(opt => opt.value !== 'NA').map(opt => {
+                                    const labelMap: Record<string, string> = {
+                                      'Sim': t('assessment.responseYes'),
+                                      'Parcial': t('assessment.responsePartial'),
+                                      'Não': t('assessment.responseNo')
+                                    };
+                                    return (
+                                      <button
+                                        key={opt.value}
+                                        data-value={opt.value}
+                                        onClick={() => setAnswer(q.questionId, { evidenceOk: opt.value as any })}
+                                        className={cn(
+                                          "flex-1 py-2 px-3 text-sm font-medium rounded-lg border-2 transition-all",
+                                          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                                          answer?.evidenceOk === opt.value 
+                                            ? opt.value === 'Sim' ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" :
+                                              opt.value === 'Parcial' ? "border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300" :
+                                              "border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
+                                            : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                                        )}
+                                      >
+                                        {labelMap[opt.value] || opt.label}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}

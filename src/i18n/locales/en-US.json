@@ -208,7 +208,16 @@
     "notesPlaceholder": "Add notes, links or additional context...",
     "noQuestionsFound": "No questions found",
     "selectFrameworksHint": "Select frameworks to load assessment questions.",
-    "backToTop": "Back to top"
+    "backToTop": "Back to top",
+    "responseYes": "Yes",
+    "responsePartial": "Partial",
+    "responseNo": "No",
+    "responseNA": "N/A",
+    "domainProgress": "Domain Progress",
+    "subcategoryProgress": "Subcategory Progress",
+    "questionNumber": "Question {{number}}",
+    "selectResponse": "Select your response",
+    "selectEvidence": "Select evidence status"
   },
   "settings": {
     "title": "Settings",

@@ -208,7 +208,16 @@
     "notesPlaceholder": "Añade observaciones, enlaces o contexto adicional...",
     "noQuestionsFound": "No se encontraron preguntas",
     "selectFrameworksHint": "Selecciona frameworks para cargar las preguntas de la evaluación.",
-    "backToTop": "Volver arriba"
+    "backToTop": "Volver arriba",
+    "responseYes": "Sí",
+    "responsePartial": "Parcial",
+    "responseNo": "No",
+    "responseNA": "N/A",
+    "domainProgress": "Progreso del Dominio",
+    "subcategoryProgress": "Progreso de la Subcategoría",
+    "questionNumber": "Pregunta {{number}}",
+    "selectResponse": "Selecciona tu respuesta",
+    "selectEvidence": "Selecciona el estado de la evidencia"
   },
   "settings": {
     "title": "Configuración",

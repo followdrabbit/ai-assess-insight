@@ -33,6 +33,14 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Progress } from '@/components/ui/progress';
 import { LanguageSelector } from '@/components/LanguageSelector';
 
+// Import screenshots
+import screenshotExecutive from '@/assets/screenshots/dashboard-executive.png';
+import screenshotGRC from '@/assets/screenshots/dashboard-grc.png';
+import screenshotSpecialist from '@/assets/screenshots/dashboard-specialist.png';
+import screenshotAssessment from '@/assets/screenshots/assessment.png';
+import screenshotAIAssistant from '@/assets/screenshots/ai-assistant.png';
+import screenshotFrameworks from '@/assets/screenshots/frameworks.png';
+
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -153,6 +161,7 @@ interface Screenshot {
   category: 'dashboard' | 'assessment' | 'settings' | 'ai';
   icon: React.ReactNode;
   features: string[];
+  image: string;
 }
 
 const screenshots: Screenshot[] = [
@@ -162,6 +171,7 @@ const screenshots: Screenshot[] = [
     description: 'Visão estratégica consolidada para CISO e liderança com KPIs de maturidade, cobertura e gaps críticos.',
     category: 'dashboard',
     icon: <BarChart3 className="h-6 w-6" />,
+    image: screenshotExecutive,
     features: [
       'Score de maturidade geral',
       'Gráfico de evolução temporal',
@@ -176,6 +186,7 @@ const screenshots: Screenshot[] = [
     description: 'Governança, Riscos e Compliance com foco em cobertura de frameworks e conformidade regulatória.',
     category: 'dashboard',
     icon: <FileCheck className="h-6 w-6" />,
+    image: screenshotGRC,
     features: [
       'Cobertura por framework',
       'Distribuição de respostas',
@@ -190,6 +201,7 @@ const screenshots: Screenshot[] = [
     description: 'Detalhes técnicos para arquitetos e engenheiros de segurança com métricas granulares.',
     category: 'dashboard',
     icon: <Settings className="h-6 w-6" />,
+    image: screenshotSpecialist,
     features: [
       'Métricas por categoria',
       'Análise de ownership',
@@ -204,6 +216,7 @@ const screenshots: Screenshot[] = [
     description: 'Questionário estruturado por taxonomia L1/L2 com campos de evidência e notas contextuais.',
     category: 'assessment',
     icon: <Shield className="h-6 w-6" />,
+    image: screenshotAssessment,
     features: [
       'Questões categorizadas',
       'Respostas Sim/Parcial/Não/NA',
@@ -218,6 +231,7 @@ const screenshots: Screenshot[] = [
     description: 'Chat interativo com análise contextual do assessment e suporte a comandos de voz.',
     category: 'ai',
     icon: <Bot className="h-6 w-6" />,
+    image: screenshotAIAssistant,
     features: [
       'Análise de gaps',
       'Recomendações priorizadas',
@@ -232,6 +246,7 @@ const screenshots: Screenshot[] = [
     description: 'Configure e customize frameworks de segurança conforme as necessidades da organização.',
     category: 'settings',
     icon: <Globe className="h-6 w-6" />,
+    image: screenshotFrameworks,
     features: [
       'NIST AI RMF',
       'ISO 27001/27002',
@@ -530,107 +545,22 @@ export default function Demo() {
             >
               <Card className="overflow-hidden shadow-2xl">
                 <div className="grid md:grid-cols-2 min-h-[500px]">
-                  {/* Visual Preview */}
+                  {/* Screenshot Image */}
                   <motion.div 
-                    className="bg-gradient-to-br from-primary/10 to-primary/5 p-12 flex items-center justify-center"
+                    className="relative overflow-hidden bg-muted/30"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.15, duration: 0.4 }}
                   >
-                    <div className="text-center">
-                      <motion.div 
-                        className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 text-primary"
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
-                      >
-                        <motion.div 
-                          className="scale-150"
-                          animate={{ rotate: [0, 5, -5, 0] }}
-                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                        >
-                          {filteredScreenshots[activeScreenshot]?.icon}
-                        </motion.div>
-                      </motion.div>
-                      <div className="w-full max-w-md mx-auto">
-                        <motion.div 
-                          className="bg-background rounded-lg shadow-xl p-6 space-y-4"
-                          initial={{ y: 30, opacity: 0, scale: 0.95 }}
-                          animate={{ y: 0, opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5, delay: 0.25 }}
-                        >
-                          <motion.div 
-                            className="flex items-center gap-2"
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
-                            <motion.div 
-                              className="w-3 h-3 rounded-full bg-red-400"
-                              animate={{ scale: [1, 1.2, 1] }}
-                              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                            />
-                            <motion.div 
-                              className="w-3 h-3 rounded-full bg-yellow-400"
-                              animate={{ scale: [1, 1.2, 1] }}
-                              transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
-                            />
-                            <motion.div 
-                              className="w-3 h-3 rounded-full bg-green-400"
-                              animate={{ scale: [1, 1.2, 1] }}
-                              transition={{ duration: 2, repeat: Infinity, delay: 0.9 }}
-                            />
-                            <motion.div 
-                              className="flex-1 h-5 bg-muted rounded ml-2"
-                              initial={{ scaleX: 0 }}
-                              animate={{ scaleX: 1 }}
-                              transition={{ delay: 0.4, duration: 0.3 }}
-                              style={{ originX: 0 }}
-                            />
-                          </motion.div>
-                          <motion.div 
-                            className="h-4 bg-muted rounded w-3/4"
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ delay: 0.45, duration: 0.3 }}
-                            style={{ originX: 0 }}
-                          />
-                          <motion.div 
-                            className="h-4 bg-muted rounded w-1/2"
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ delay: 0.5, duration: 0.3 }}
-                            style={{ originX: 0 }}
-                          />
-                          <motion.div 
-                            className="grid grid-cols-3 gap-3 mt-6"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.55 }}
-                          >
-                            {[0.1, 0.2, 0.1].map((opacity, i) => (
-                              <motion.div 
-                                key={i}
-                                className="h-20 rounded"
-                                style={{ backgroundColor: `hsl(var(--primary) / ${opacity})` }}
-                                whileHover={{ scale: 1.05 }}
-                                animate={{ 
-                                  boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 2px hsl(var(--primary) / 0.2)', '0 0 0 0 hsl(var(--primary) / 0)']
-                                }}
-                                transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                              />
-                            ))}
-                          </motion.div>
-                          <motion.div 
-                            className="h-28 bg-muted/50 rounded mt-3"
-                            initial={{ scaleY: 0 }}
-                            animate={{ scaleY: 1 }}
-                            transition={{ delay: 0.65, duration: 0.3 }}
-                            style={{ originY: 0 }}
-                          />
-                        </motion.div>
-                      </div>
-                    </div>
+                    <motion.img 
+                      src={filteredScreenshots[activeScreenshot]?.image}
+                      alt={filteredScreenshots[activeScreenshot]?.title}
+                      className="w-full h-full object-cover"
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.6 }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
                   </motion.div>
 
                   {/* Description */}
@@ -1072,100 +1002,31 @@ export default function Demo() {
                 >
                   <Card className="overflow-hidden">
                     <div className="grid md:grid-cols-2">
-                      {/* Visual Preview */}
+                      {/* Screenshot Image */}
                       <motion.div 
-                        className="bg-gradient-to-br from-primary/10 to-primary/5 p-8 flex items-center justify-center min-h-[400px]"
+                        className="relative overflow-hidden min-h-[400px] bg-muted/30"
                         variants={slideInLeft}
                         initial="hidden"
                         animate="visible"
                         transition={{ duration: 0.5 }}
                       >
-                        <div className="text-center">
-                          <motion.div 
-                            className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 text-primary"
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ duration: 0.5, type: "spring" }}
-                          >
-                            {filteredScreenshots[activeScreenshot]?.icon}
-                          </motion.div>
-                          <div className="w-full max-w-sm mx-auto">
-                            {/* Simulated UI Preview */}
-                            <motion.div 
-                              className="bg-background rounded-lg shadow-xl p-4 space-y-3"
-                              initial={{ y: 20, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              transition={{ duration: 0.5, delay: 0.2 }}
-                            >
-                              <div className="flex items-center gap-2">
-                                <motion.div 
-                                  className="w-3 h-3 rounded-full bg-red-400"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ delay: 0.3 }}
-                                />
-                                <motion.div 
-                                  className="w-3 h-3 rounded-full bg-yellow-400"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ delay: 0.35 }}
-                                />
-                                <motion.div 
-                                  className="w-3 h-3 rounded-full bg-green-400"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ delay: 0.4 }}
-                                />
-                                <motion.div 
-                                  className="flex-1 h-4 bg-muted rounded ml-2"
-                                  initial={{ scaleX: 0 }}
-                                  animate={{ scaleX: 1 }}
-                                  transition={{ delay: 0.45 }}
-                                />
-                              </div>
-                              <motion.div 
-                                className="h-3 bg-muted rounded w-3/4"
-                                initial={{ scaleX: 0 }}
-                                animate={{ scaleX: 1 }}
-                                transition={{ delay: 0.5 }}
-                                style={{ originX: 0 }}
-                              />
-                              <motion.div 
-                                className="h-3 bg-muted rounded w-1/2"
-                                initial={{ scaleX: 0 }}
-                                animate={{ scaleX: 1 }}
-                                transition={{ delay: 0.55 }}
-                                style={{ originX: 0 }}
-                              />
-                              <motion.div 
-                                className="grid grid-cols-3 gap-2 mt-4"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.6 }}
-                              >
-                                <motion.div 
-                                  className="h-16 bg-primary/10 rounded"
-                                  whileHover={{ scale: 1.05 }}
-                                />
-                                <motion.div 
-                                  className="h-16 bg-primary/20 rounded"
-                                  whileHover={{ scale: 1.05 }}
-                                />
-                                <motion.div 
-                                  className="h-16 bg-primary/10 rounded"
-                                  whileHover={{ scale: 1.05 }}
-                                />
-                              </motion.div>
-                              <motion.div 
-                                className="h-24 bg-muted/50 rounded mt-2"
-                                initial={{ scaleY: 0 }}
-                                animate={{ scaleY: 1 }}
-                                transition={{ delay: 0.7 }}
-                                style={{ originY: 0 }}
-                              />
-                            </motion.div>
-                          </div>
-                        </div>
+                        <motion.img 
+                          src={filteredScreenshots[activeScreenshot]?.image}
+                          alt={filteredScreenshots[activeScreenshot]?.title}
+                          className="w-full h-full object-cover"
+                          initial={{ scale: 1.1 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.6 }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/10" />
+                        <motion.div 
+                          className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-background/90 backdrop-blur flex items-center justify-center text-primary shadow-lg"
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ duration: 0.5, type: "spring", delay: 0.2 }}
+                        >
+                          {filteredScreenshots[activeScreenshot]?.icon}
+                        </motion.div>
                       </motion.div>
 
                       {/* Description */}

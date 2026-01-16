@@ -500,6 +500,66 @@ export type Database = {
         }
         Relationships: []
       }
+      question_versions: {
+        Row: {
+          change_summary: string | null
+          change_type: string
+          changed_by: string | null
+          created_at: string
+          criticality: string | null
+          domain_id: string
+          expected_evidence: string | null
+          frameworks: string[] | null
+          id: string
+          imperative_checks: string | null
+          ownership_type: string | null
+          question_id: string
+          question_text: string
+          risk_summary: string | null
+          security_domain_id: string | null
+          subcat_id: string | null
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          change_type?: string
+          changed_by?: string | null
+          created_at?: string
+          criticality?: string | null
+          domain_id: string
+          expected_evidence?: string | null
+          frameworks?: string[] | null
+          id?: string
+          imperative_checks?: string | null
+          ownership_type?: string | null
+          question_id: string
+          question_text: string
+          risk_summary?: string | null
+          security_domain_id?: string | null
+          subcat_id?: string | null
+          version_number?: number
+        }
+        Update: {
+          change_summary?: string | null
+          change_type?: string
+          changed_by?: string | null
+          created_at?: string
+          criticality?: string | null
+          domain_id?: string
+          expected_evidence?: string | null
+          frameworks?: string[] | null
+          id?: string
+          imperative_checks?: string | null
+          ownership_type?: string | null
+          question_id?: string
+          question_text?: string
+          risk_summary?: string | null
+          security_domain_id?: string | null
+          subcat_id?: string | null
+          version_number?: number
+        }
+        Relationships: []
+      }
       security_domains: {
         Row: {
           color: string | null

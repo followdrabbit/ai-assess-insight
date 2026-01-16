@@ -707,15 +707,15 @@ export function QuestionManagement() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowExportDialog(true)}>
+          <Button variant="ghost" size="sm" onClick={() => setShowExportDialog(true)}>
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
-          <Button variant="outline" onClick={() => setShowBulkImportDialog(true)}>
+          <Button variant="ghost" size="sm" onClick={() => setShowBulkImportDialog(true)}>
             <Upload className="h-4 w-4 mr-2" />
-            Importar em Lote
+            Importar
           </Button>
-          <Button onClick={openNewDialog}>
+          <Button variant="outline" onClick={openNewDialog}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Pergunta
           </Button>
@@ -1099,7 +1099,7 @@ export function QuestionManagement() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
               Cancelar
             </Button>
             <Button onClick={handleConfirmSave}>
@@ -1314,7 +1314,7 @@ export function QuestionManagement() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={resetBulkImportDialog}>
+            <Button variant="ghost" onClick={resetBulkImportDialog}>
               Cancelar
             </Button>
             <Button 
@@ -1437,7 +1437,7 @@ export function QuestionManagement() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+            <Button variant="ghost" onClick={() => setShowExportDialog(false)}>
               Fechar
             </Button>
           </DialogFooter>
@@ -1681,7 +1681,7 @@ export function QuestionManagement() {
             {versions.length > 0 && (
               <div className="flex gap-2 mr-auto">
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   size="sm"
                   onClick={() => downloadVersionHistoryHtml({
                     questionId: versioningQuestionId,
@@ -1693,7 +1693,7 @@ export function QuestionManagement() {
                   Exportar HTML
                 </Button>
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   size="sm"
                   onClick={() => openVersionHistoryPrintView({
                     questionId: versioningQuestionId,
@@ -1706,7 +1706,7 @@ export function QuestionManagement() {
                 </Button>
               </div>
             )}
-            <Button variant="outline" onClick={() => setShowVersionDialog(false)}>
+            <Button variant="ghost" onClick={() => setShowVersionDialog(false)}>
               Fechar
             </Button>
           </DialogFooter>
@@ -1824,7 +1824,7 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-destructive">
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                         Excluir
                       </Button>
                     </AlertDialogTrigger>

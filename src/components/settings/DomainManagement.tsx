@@ -688,11 +688,11 @@ export function DomainManagement() {
                 onChange={handleImportFileSelect}
                 className="hidden"
               />
-              <Button variant="outline" onClick={() => importFileRef.current?.click()}>
+              <Button variant="ghost" size="sm" onClick={() => importFileRef.current?.click()}>
                 <Upload className="h-4 w-4 mr-2" />
                 Importar
               </Button>
-              <Button onClick={openCreateDialog}>
+              <Button variant="outline" onClick={openCreateDialog}>
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Domínio
               </Button>

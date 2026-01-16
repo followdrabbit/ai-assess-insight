@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -46,48 +47,50 @@ export function HelpTooltip({ title, modalTitle, children, className }: HelpTool
 
 // Pre-defined help content for common metrics
 export function MaturityScoreHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="Como é calculado?" modalTitle="Score de Maturidade">
+    <HelpTooltip title={t('help.howCalculated')} modalTitle={t('help.maturityScoreTitle')}>
       <div className="space-y-3">
-        <p><strong>Score de Maturidade</strong> indica o nível de implementação dos controles de segurança de IA.</p>
+        <p><strong>{t('help.maturityScoreTitle')}</strong> {t('help.maturityScoreDesc')}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-1">Fórmula:</p>
-          <p className="font-mono text-sm">Score = Resposta × Fator de Evidência</p>
+          <p className="font-medium mb-1">{t('help.formula')}:</p>
+          <p className="font-mono text-sm">{t('help.scoreFormula')}</p>
         </div>
         <div>
-          <p className="font-medium mb-2">Valores de Resposta:</p>
+          <p className="font-medium mb-2">{t('help.responseValues')}:</p>
           <ul className="list-disc list-inside space-y-1 ml-2">
-            <li><strong>Sim:</strong> 100%</li>
-            <li><strong>Parcial:</strong> 50%</li>
-            <li><strong>Não:</strong> 0%</li>
+            <li><strong>{t('help.responseYes')}:</strong> 100%</li>
+            <li><strong>{t('help.responsePartial')}:</strong> 50%</li>
+            <li><strong>{t('help.responseNo')}:</strong> 0%</li>
           </ul>
         </div>
         <div>
-          <p className="font-medium mb-2">Multiplicador de Evidência:</p>
+          <p className="font-medium mb-2">{t('help.evidenceMultiplier')}:</p>
           <ul className="list-disc list-inside space-y-1 ml-2">
-            <li><strong>Sim:</strong> 1.0× (sem penalidade)</li>
-            <li><strong>Parcial:</strong> 0.9× (−10%)</li>
-            <li><strong>Não:</strong> 0.7× (−30%)</li>
+            <li><strong>{t('help.responseYes')}:</strong> 1.0× ({t('help.noPenalty')})</li>
+            <li><strong>{t('help.responsePartial')}:</strong> 0.9× (−10%)</li>
+            <li><strong>{t('help.responseNo')}:</strong> 0.7× (−30%)</li>
           </ul>
         </div>
         <div className="border-t pt-3">
-          <p className="font-medium mb-2">Níveis de Maturidade:</p>
+          <p className="font-medium mb-2">{t('help.maturityLevels')}:</p>
           <div className="grid gap-2">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-red-500" />
-              <span><strong>Nível 0 (0-24%):</strong> Inexistente - Sem práticas estabelecidas</span>
+              <span>{t('help.level0')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-orange-500" />
-              <span><strong>Nível 1 (25-49%):</strong> Inicial - Práticas ad-hoc</span>
+              <span>{t('help.level1')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-yellow-500" />
-              <span><strong>Nível 2 (50-79%):</strong> Definido - Processos documentados</span>
+              <span>{t('help.level2')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-green-500" />
-              <span><strong>Nível 3 (80-100%):</strong> Gerenciado - Melhoria contínua</span>
+              <span>{t('help.level3')}</span>
             </div>
           </div>
         </div>
@@ -97,19 +100,20 @@ export function MaturityScoreHelp() {
 }
 
 export function CoverageHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="O que significa?" modalTitle="Cobertura da Avaliação">
+    <HelpTooltip title={t('help.whatMeans')} modalTitle={t('help.coverageTitle')}>
       <div className="space-y-3">
-        <p><strong>Cobertura</strong> indica o percentual de perguntas respondidas em relação ao total de perguntas aplicáveis.</p>
+        <p><strong>{t('help.coverageTitle')}</strong> {t('help.coverageDesc')}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-1">Fórmula:</p>
-          <p className="font-mono text-sm">Cobertura = Perguntas Respondidas ÷ Total Aplicáveis</p>
+          <p className="font-medium mb-1">{t('help.formula')}:</p>
+          <p className="font-mono text-sm">{t('help.coverageFormula')}</p>
         </div>
         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">Importante:</p>
+          <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">{t('help.important')}:</p>
           <p className="text-amber-700 dark:text-amber-300">
-            Cobertura ≠ Maturidade. Alta cobertura com baixo score indica que você conhece seus gaps. 
-            Baixa cobertura significa que há áreas não avaliadas que podem esconder riscos.
+            {t('help.coverageNote')}
           </p>
         </div>
       </div>
@@ -118,19 +122,20 @@ export function CoverageHelp() {
 }
 
 export function EvidenceReadinessHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="O que significa?" modalTitle="Prontidão de Evidências">
+    <HelpTooltip title={t('help.whatMeans')} modalTitle={t('help.evidenceTitle')}>
       <div className="space-y-3">
-        <p><strong>Prontidão de Evidências</strong> indica a disponibilidade de documentação comprobatória para os controles implementados.</p>
+        <p><strong>{t('help.evidenceTitle')}</strong> {t('help.evidenceDesc')}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-1">Impacto no Score:</p>
-          <p>Controles sem evidência recebem penalidade de <strong>10% a 30%</strong> no score efetivo.</p>
+          <p className="font-medium mb-1">{t('help.scoreImpact')}</p>
+          <p>{t('help.evidenceImpact')}</p>
         </div>
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Para Auditorias:</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">{t('help.forAudits')}:</p>
           <p className="text-blue-700 dark:text-blue-300">
-            Prontidão de evidências é crítica para demonstrar conformidade. 
-            Controles implementados mas sem evidência documental podem não ser aceitos por auditores externos.
+            {t('help.evidenceAudit')}
           </p>
         </div>
       </div>
@@ -139,72 +144,55 @@ export function EvidenceReadinessHelp() {
 }
 
 // Domain-aware Critical Gaps help
-const criticalGapsConfig: Record<string, {
-  title: string;
-  description: string;
-  risks: string[];
-  frameworkRef: string;
-}> = {
-  AI_SECURITY: {
-    title: 'Gaps Críticos de IA',
-    description: 'Controles de segurança de IA com score baixo (<50%) em subcategorias de alta criticidade.',
-    risks: [
-      'Viés e discriminação em modelos de IA',
-      'Vazamento de dados de treinamento',
-      'Ataques adversariais não mitigados',
-      'Não conformidade com regulações de IA',
-    ],
-    frameworkRef: 'Priorização baseada no NIST AI RMF e impacto nos trustworthy AI principles.',
-  },
-  CLOUD_SECURITY: {
-    title: 'Gaps Críticos de Cloud',
-    description: 'Controles de segurança cloud com score baixo (<50%) em subcategorias de alta criticidade.',
-    risks: [
-      'Exposição de dados sensíveis na nuvem',
-      'Configurações inseguras de IAM',
-      'Falta de visibilidade em multi-cloud',
-      'Violação do modelo de responsabilidade compartilhada',
-    ],
-    frameworkRef: 'Priorização baseada no CSA CCM e modelo de responsabilidade compartilhada.',
-  },
-  DEVSECOPS: {
-    title: 'Gaps Críticos de Pipeline',
-    description: 'Práticas de desenvolvimento seguro com score baixo (<50%) em subcategorias de alta criticidade.',
-    risks: [
-      'Vulnerabilidades em dependências',
-      'Secrets expostos no código',
-      'Pipeline de CI/CD comprometido',
-      'Supply chain attacks',
-    ],
-    frameworkRef: 'Priorização baseada no NIST SSDF e SLSA framework.',
-  },
-};
-
 interface DomainCriticalGapsHelpProps {
   securityDomainId?: string;
 }
 
 export function DomainCriticalGapsHelp({ securityDomainId = 'AI_SECURITY' }: DomainCriticalGapsHelpProps) {
-  const config = criticalGapsConfig[securityDomainId] || criticalGapsConfig.AI_SECURITY;
+  const { t } = useTranslation();
+  
+  const getTitleKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.criticalGapsCloud';
+      case 'DEVSECOPS': return 'help.criticalGapsDevSecOps';
+      default: return 'help.criticalGapsAI';
+    }
+  };
+  
+  const getDescKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.criticalGapsDescCloud';
+      case 'DEVSECOPS': return 'help.criticalGapsDescDevsecops';
+      default: return 'help.criticalGapsDescAI';
+    }
+  };
+  
+  const getRisks = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY':
+        return ['help.riskCloud1', 'help.riskCloud2', 'help.riskCloud3', 'help.riskCloud4'];
+      case 'DEVSECOPS':
+        return ['help.riskDevsecops1', 'help.riskDevsecops2', 'help.riskDevsecops3', 'help.riskDevsecops4'];
+      default:
+        return ['help.riskAI1', 'help.riskAI2', 'help.riskAI3', 'help.riskAI4'];
+    }
+  };
   
   return (
-    <HelpTooltip title="O que são?" modalTitle={config.title}>
+    <HelpTooltip title={t('help.whatAre')} modalTitle={t(getTitleKey())}>
       <div className="space-y-3">
-        <p><strong>{config.title}:</strong> {config.description}</p>
+        <p><strong>{t(getTitleKey())}:</strong> {t(getDescKey())}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-1">Metodologia de Priorização:</p>
-          <p className="text-sm">Gaps são ordenados por criticidade (Crítico → Alto → Médio) e impacto no domínio.</p>
+          <p className="font-medium mb-1">{t('help.prioritizationMethodology')}:</p>
+          <p className="text-sm">{t('help.gapsOrderedBy')}</p>
         </div>
         <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="font-medium text-red-700 dark:text-red-400 mb-2">Riscos específicos:</p>
+          <p className="font-medium text-red-700 dark:text-red-400 mb-2">{t('help.specificRisks')}:</p>
           <ul className="list-disc list-inside space-y-1 text-red-700 dark:text-red-300 text-sm">
-            {config.risks.map((risk) => (
-              <li key={risk}>{risk}</li>
+            {getRisks().map((riskKey) => (
+              <li key={riskKey}>{t(riskKey)}</li>
             ))}
           </ul>
-        </div>
-        <div className="pt-2 border-t text-xs text-muted-foreground">
-          {config.frameworkRef}
         </div>
       </div>
     </HelpTooltip>
@@ -217,153 +205,139 @@ export function CriticalGapsHelp() {
 }
 
 // Domain-aware Strategic Roadmap help
-const roadmapConfig: Record<string, {
-  title: string;
-  description: string;
-  prioritization: { period: string; criteria: string }[];
-  frameworkRef: string;
-}> = {
-  AI_SECURITY: {
-    title: 'Roadmap de Segurança de IA',
-    description: 'Plano de ações priorizadas para mitigar riscos de IA nos próximos 90 dias.',
-    prioritization: [
-      { period: '0-30 dias', criteria: 'Gaps críticos em GOVERN e MAP do NIST AI RMF. Foco em governança e inventário.' },
-      { period: '30-60 dias', criteria: 'Gaps em MEASURE. Implementar métricas e monitoramento de modelos.' },
-      { period: '60-90 dias', criteria: 'Gaps em MANAGE. Estabelecer processos de resposta e melhoria contínua.' },
-    ],
-    frameworkRef: 'Metodologia alinhada ao ciclo de vida do NIST AI RMF.',
-  },
-  CLOUD_SECURITY: {
-    title: 'Roadmap de Segurança Cloud',
-    description: 'Plano de ações priorizadas para mitigar riscos cloud nos próximos 90 dias.',
-    prioritization: [
-      { period: '0-30 dias', criteria: 'Gaps críticos em IAM e configuração. Hardening imediato.' },
-      { period: '30-60 dias', criteria: 'Gaps em proteção de dados e rede. Criptografia e segmentação.' },
-      { period: '60-90 dias', criteria: 'Gaps em logging e compliance. Visibilidade e auditoria.' },
-    ],
-    frameworkRef: 'Metodologia alinhada aos domínios do CSA CCM.',
-  },
-  DEVSECOPS: {
-    title: 'Roadmap DevSecOps',
-    description: 'Plano de ações priorizadas para fortalecer o pipeline nos próximos 90 dias.',
-    prioritization: [
-      { period: '0-30 dias', criteria: 'Gaps em secrets management e SAST. Proteção de credenciais.' },
-      { period: '30-60 dias', criteria: 'Gaps em SCA e container security. Gestão de dependências.' },
-      { period: '60-90 dias', criteria: 'Gaps em DAST e runtime. Testes dinâmicos e observabilidade.' },
-    ],
-    frameworkRef: 'Metodologia alinhada ao NIST SSDF e OWASP DevSecOps Guidelines.',
-  },
-};
-
 interface DomainRoadmapHelpProps {
   securityDomainId?: string;
 }
 
 export function DomainRoadmapHelp({ securityDomainId = 'AI_SECURITY' }: DomainRoadmapHelpProps) {
-  const config = roadmapConfig[securityDomainId] || roadmapConfig.AI_SECURITY;
+  const { t } = useTranslation();
+  
+  const getTitleKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.roadmapCloud';
+      case 'DEVSECOPS': return 'help.roadmapDevSecOps';
+      default: return 'help.roadmapAI';
+    }
+  };
+  
+  const getCriteriaKeys = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY':
+        return [
+          { period: 'help.days0to30', criteria: 'help.roadmapCriteriaCloud0to30' },
+          { period: 'help.days30to60', criteria: 'help.roadmapCriteriaCloud30to60' },
+          { period: 'help.days60to90', criteria: 'help.roadmapCriteriaCloud60to90' },
+        ];
+      case 'DEVSECOPS':
+        return [
+          { period: 'help.days0to30', criteria: 'help.roadmapCriteriaDevsecops0to30' },
+          { period: 'help.days30to60', criteria: 'help.roadmapCriteriaDevsecops30to60' },
+          { period: 'help.days60to90', criteria: 'help.roadmapCriteriaDevsecops60to90' },
+        ];
+      default:
+        return [
+          { period: 'help.days0to30', criteria: 'help.roadmapCriteriaAI0to30' },
+          { period: 'help.days30to60', criteria: 'help.roadmapCriteriaAI30to60' },
+          { period: 'help.days60to90', criteria: 'help.roadmapCriteriaAI60to90' },
+        ];
+    }
+  };
   
   return (
-    <HelpTooltip title="Como priorizar?" modalTitle={config.title}>
+    <HelpTooltip title={t('help.howToPrioritize')} modalTitle={t(getTitleKey())}>
       <div className="space-y-3">
-        <p><strong>{config.title}:</strong> {config.description}</p>
+        <p><strong>{t(getTitleKey())}:</strong> {t('help.roadmapDesc')}</p>
         <div className="space-y-2">
-          {config.prioritization.map((p) => (
+          {getCriteriaKeys().map((p) => (
             <div key={p.period} className="p-3 bg-muted rounded-lg">
-              <p className="font-medium text-primary mb-1">{p.period}</p>
-              <p className="text-sm">{p.criteria}</p>
+              <p className="font-medium text-primary mb-1">{t(p.period)}</p>
+              <p className="text-sm">{t(p.criteria)}</p>
             </div>
           ))}
         </div>
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">{t('help.tip')}:</p>
           <p className="text-blue-700 dark:text-blue-300 text-sm">
-            Clique nas ações para navegar diretamente para a pergunta correspondente na avaliação.
+            {t('help.roadmapTip')}
           </p>
-        </div>
-        <div className="pt-2 border-t text-xs text-muted-foreground">
-          {config.frameworkRef}
         </div>
       </div>
     </HelpTooltip>
   );
 }
 
-// Domain-aware help content configuration
-const domainHelpConfig: Record<string, {
-  title: string;
-  modalTitle: string;
-  frameworkName: string;
-  frameworkDescription: string;
-  functions: { name: string; label: string; description: string }[];
-  sourceUrl: string;
-  sourceName: string;
-}> = {
-  AI_SECURITY: {
-    title: 'Sobre NIST AI RMF',
-    modalTitle: 'NIST AI Risk Management Framework',
-    frameworkName: 'NIST AI Risk Management Framework',
-    frameworkDescription: 'organiza a gestão de riscos de IA em 4 funções principais:',
-    functions: [
-      { name: 'GOVERN', label: 'Governar', description: 'Cultura, políticas, papéis e accountability para IA responsável. Define a estrutura organizacional e as responsabilidades.' },
-      { name: 'MAP', label: 'Mapear', description: 'Identificação e categorização de riscos no contexto de uso. Entende onde e como a IA é utilizada.' },
-      { name: 'MEASURE', label: 'Medir', description: 'Análise, avaliação e monitoramento de riscos identificados. Quantifica e acompanha os riscos ao longo do tempo.' },
-      { name: 'MANAGE', label: 'Gerenciar', description: 'Priorização, resposta e tratamento de riscos. Implementa controles e mitiga as vulnerabilidades.' },
-    ],
-    sourceUrl: 'https://www.nist.gov/itl/ai-risk-management-framework',
-    sourceName: 'NIST AI RMF',
-  },
-  CLOUD_SECURITY: {
-    title: 'Sobre CSA CCM',
-    modalTitle: 'Cloud Security Alliance - Cloud Controls Matrix',
-    frameworkName: 'CSA Cloud Controls Matrix (CCM)',
-    frameworkDescription: 'organiza os controles de segurança cloud em 4 pilares principais:',
-    functions: [
-      { name: 'GOVERN', label: 'Governança', description: 'Políticas, procedimentos e estrutura de governança para segurança cloud. Define responsabilidades compartilhadas entre provedor e cliente.' },
-      { name: 'MANAGE', label: 'Gerenciamento', description: 'Gestão de identidades, acessos, configurações e recursos cloud. Controla permissões e configurações de segurança.' },
-      { name: 'MEASURE', label: 'Monitoramento', description: 'Logging, auditoria e detecção de ameaças em ambientes cloud. Visibilidade contínua de eventos de segurança.' },
-      { name: 'MAP', label: 'Mapeamento', description: 'Inventário de ativos, classificação de dados e mapeamento de riscos cloud. Conhecimento do ambiente e exposições.' },
-    ],
-    sourceUrl: 'https://cloudsecurityalliance.org/research/cloud-controls-matrix',
-    sourceName: 'CSA CCM',
-  },
-  DEVSECOPS: {
-    title: 'Sobre NIST SSDF',
-    modalTitle: 'NIST Secure Software Development Framework',
-    frameworkName: 'NIST Secure Software Development Framework (SSDF)',
-    frameworkDescription: 'organiza as práticas de desenvolvimento seguro em 4 grupos principais:',
-    functions: [
-      { name: 'GOVERN', label: 'Políticas (PO)', description: 'Preparar a Organização: Definir requisitos de segurança, políticas e papéis. Estabelece a fundação para desenvolvimento seguro.' },
-      { name: 'MAP', label: 'Preparação (PS)', description: 'Proteger o Software: Proteger código, builds e artefatos contra acesso não autorizado e adulteração.' },
-      { name: 'MEASURE', label: 'Detecção (PW)', description: 'Produzir Software Bem Protegido: Práticas de código seguro, análise de vulnerabilidades e testes de segurança.' },
-      { name: 'MANAGE', label: 'Resposta (RV)', description: 'Responder a Vulnerabilidades: Identificar, analisar e remediar vulnerabilidades descobertas em produção.' },
-    ],
-    sourceUrl: 'https://csrc.nist.gov/Projects/ssdf',
-    sourceName: 'NIST SSDF',
-  },
-};
-
+// Domain-aware framework help
 interface DomainFunctionHelpProps {
   securityDomainId?: string;
 }
 
 export function DomainFunctionHelp({ securityDomainId = 'AI_SECURITY' }: DomainFunctionHelpProps) {
-  const config = domainHelpConfig[securityDomainId] || domainHelpConfig.AI_SECURITY;
+  const { t } = useTranslation();
+  
+  const getConfig = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY':
+        return {
+          titleKey: 'help.aboutCsa',
+          modalTitleKey: 'help.csaCCMTitle',
+          frameworkDescKey: 'help.csaCCMDesc',
+          functions: [
+            { name: 'help.govern', label: 'help.governLabel', desc: 'help.governDescCloud' },
+            { name: 'help.manage', label: 'help.manageLabel', desc: 'help.manageDescCloud' },
+            { name: 'help.measure', label: 'help.measureLabel', desc: 'help.measureDescCloud' },
+            { name: 'help.map', label: 'help.mapLabel', desc: 'help.mapDescCloud' },
+          ],
+          sourceUrl: 'https://cloudsecurityalliance.org/research/cloud-controls-matrix',
+          sourceName: 'CSA CCM',
+        };
+      case 'DEVSECOPS':
+        return {
+          titleKey: 'help.aboutSsdf',
+          modalTitleKey: 'help.nistSSDFTitle',
+          frameworkDescKey: 'help.nistSSDFDesc',
+          functions: [
+            { name: 'help.govern', label: 'help.governLabel', desc: 'help.governDescDevsecops' },
+            { name: 'help.map', label: 'help.mapLabel', desc: 'help.mapDescDevsecops' },
+            { name: 'help.measure', label: 'help.measureLabel', desc: 'help.measureDescDevsecops' },
+            { name: 'help.manage', label: 'help.manageLabel', desc: 'help.manageDescDevsecops' },
+          ],
+          sourceUrl: 'https://csrc.nist.gov/Projects/ssdf',
+          sourceName: 'NIST SSDF',
+        };
+      default:
+        return {
+          titleKey: 'help.aboutNist',
+          modalTitleKey: 'help.nistAIRMFTitle',
+          frameworkDescKey: 'help.nistAIRMFDesc',
+          functions: [
+            { name: 'help.govern', label: 'help.governLabel', desc: 'help.governDescAI' },
+            { name: 'help.map', label: 'help.mapLabel', desc: 'help.mapDescAI' },
+            { name: 'help.measure', label: 'help.measureLabel', desc: 'help.measureDescAI' },
+            { name: 'help.manage', label: 'help.manageLabel', desc: 'help.manageDescAI' },
+          ],
+          sourceUrl: 'https://www.nist.gov/itl/ai-risk-management-framework',
+          sourceName: 'NIST AI RMF',
+        };
+    }
+  };
+  
+  const config = getConfig();
   
   return (
-    <HelpTooltip title={config.title} modalTitle={config.modalTitle}>
+    <HelpTooltip title={t(config.titleKey)} modalTitle={t(config.modalTitleKey)}>
       <div className="space-y-3">
-        <p><strong>{config.frameworkName}</strong> {config.frameworkDescription}</p>
+        <p><strong>{t(config.modalTitleKey)}</strong> {t(config.frameworkDescKey)}</p>
         <div className="space-y-3">
           {config.functions.map((func) => (
             <div key={func.name} className="p-3 bg-muted rounded-lg">
-              <p className="font-medium text-primary mb-1">{func.name} ({func.label})</p>
-              <p>{func.description}</p>
+              <p className="font-medium text-primary mb-1">{t(func.name)} ({t(func.label)})</p>
+              <p>{t(func.desc)}</p>
             </div>
           ))}
         </div>
         <div className="pt-2 border-t">
           <p className="text-sm">
-            Fonte: <a href={config.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">{config.sourceName}</a>
+            {t('help.source')}: <a href={config.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">{config.sourceName}</a>
           </p>
         </div>
       </div>
@@ -377,28 +351,30 @@ export function NistFunctionHelp() {
 }
 
 export function FrameworkCategoryHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="O que são?" modalTitle="Categorias de Frameworks">
+    <HelpTooltip title={t('help.whatAre')} modalTitle={t('help.frameworkCategoriesTitle')}>
       <div className="space-y-3">
-        <p><strong>Categorias de Frameworks</strong> agrupam frameworks relacionados para facilitar a análise e priorização.</p>
+        <p><strong>{t('help.frameworkCategoriesTitle')}</strong> {t('help.frameworkCategoriesDesc')}</p>
         <div className="space-y-2">
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium mb-1">🏛️ Frameworks Principais (Core)</p>
-            <p className="text-sm">Frameworks fundamentais como NIST AI RMF e ISO 27001 que formam a base da governança de segurança.</p>
+            <p className="font-medium mb-1">🏛️ {t('help.coreFrameworks')}</p>
+            <p className="text-sm">{t('help.coreFrameworksDesc')}</p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium mb-1">⭐ Alto Valor</p>
-            <p className="text-sm">Frameworks de gestão de riscos e privacidade como ISO 23894 e LGPD que agregam valor estratégico.</p>
+            <p className="font-medium mb-1">⭐ {t('help.highValue')}</p>
+            <p className="text-sm">{t('help.highValueDesc')}</p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium mb-1">🔧 Foco Técnico</p>
-            <p className="text-sm">Frameworks técnicos como OWASP e NIST SSDF focados em implementação e desenvolvimento seguro.</p>
+            <p className="font-medium mb-1">🔧 {t('help.technicalFocus')}</p>
+            <p className="text-sm">{t('help.technicalFocusDesc')}</p>
           </div>
         </div>
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">{t('help.tip')}:</p>
           <p className="text-blue-700 dark:text-blue-300">
-            Clique nos badges de framework para filtrar a visualização por frameworks específicos.
+            {t('help.frameworkBadgeTip')}
           </p>
         </div>
       </div>
@@ -407,37 +383,39 @@ export function FrameworkCategoryHelp() {
 }
 
 export function CriticalityLevelsHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="Níveis de criticidade" modalTitle="Níveis de Criticidade">
+    <HelpTooltip title={t('help.criticalityLevels')} modalTitle={t('help.criticalityTitle')}>
       <div className="space-y-3">
-        <p><strong>Criticidade</strong> indica a severidade do impacto caso um controle não seja implementado.</p>
+        <p><strong>{t('help.criticalityTitle')}</strong> {t('help.criticalityDesc')}</p>
         <div className="space-y-2">
           <div className="flex items-center gap-3 p-2 rounded bg-red-50 dark:bg-red-950/30">
             <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Crítico:</span>
-              <span className="text-sm ml-1">Impacto severo na segurança, conformidade ou operação. Ação imediata necessária.</span>
+              <span className="font-medium">{t('help.criticalLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.criticalLevelDesc')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-orange-50 dark:bg-orange-950/30">
             <span className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Alto:</span>
-              <span className="text-sm ml-1">Risco significativo que pode afetar a organização. Prioridade alta.</span>
+              <span className="font-medium">{t('help.highLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.highLevelDesc')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-blue-50 dark:bg-blue-950/30">
             <span className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Médio:</span>
-              <span className="text-sm ml-1">Impacto moderado. Deve ser tratado no médio prazo.</span>
+              <span className="font-medium">{t('help.mediumLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.mediumLevelDesc')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
             <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
             <div>
-              <span className="font-medium">Baixo:</span>
-              <span className="text-sm ml-1">Impacto limitado. Pode ser endereçado conforme recursos disponíveis.</span>
+              <span className="font-medium">{t('help.lowLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.lowLevelDesc')}</span>
             </div>
           </div>
         </div>
@@ -447,35 +425,37 @@ export function CriticalityLevelsHelp() {
 }
 
 export function HeatmapHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="Como ler?" modalTitle="Mapa de Calor">
+    <HelpTooltip title={t('help.howToRead')} modalTitle={t('help.heatmapTitle')}>
       <div className="space-y-3">
-        <p><strong>Mapa de Calor</strong> visualiza o score de maturidade por subcategoria dentro de cada domínio.</p>
+        <p><strong>{t('help.heatmapTitle')}</strong> {t('help.heatmapDesc')}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-2">Interpretação das cores:</p>
+          <p className="font-medium mb-2">{t('help.colorInterpretation')}:</p>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-8 h-4 rounded bg-red-500" />
-              <span className="text-sm">0-24% - Controle inexistente</span>
+              <span className="text-sm">{t('help.controlNonExistent')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-8 h-4 rounded bg-orange-500" />
-              <span className="text-sm">25-49% - Controle inicial</span>
+              <span className="text-sm">{t('help.controlInitial')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-8 h-4 rounded bg-yellow-500" />
-              <span className="text-sm">50-79% - Controle definido</span>
+              <span className="text-sm">{t('help.controlDefined')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-8 h-4 rounded bg-green-500" />
-              <span className="text-sm">80-100% - Controle gerenciado</span>
+              <span className="text-sm">{t('help.controlManaged')}</span>
             </div>
           </div>
         </div>
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">{t('help.tip')}:</p>
           <p className="text-blue-700 dark:text-blue-300">
-            Clique em qualquer célula para ver detalhes da subcategoria e navegar para as perguntas relacionadas.
+            {t('help.heatmapTip')}
           </p>
         </div>
       </div>
@@ -484,32 +464,34 @@ export function HeatmapHelp() {
 }
 
 export function OwnershipHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="O que significa?" modalTitle="Responsabilidade (Ownership)">
+    <HelpTooltip title={t('help.whatMeans')} modalTitle={t('help.ownershipTitle')}>
       <div className="space-y-3">
-        <p><strong>Ownership</strong> indica qual área ou função organizacional é responsável por implementar e manter o controle.</p>
+        <p><strong>{t('help.ownershipTitle')}</strong> {t('help.ownershipDesc')}</p>
         <div className="space-y-2">
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium mb-1">🔐 Segurança da Informação</p>
-            <p className="text-sm">Políticas, governança e controles de segurança</p>
+            <p className="font-medium mb-1">🔐 {t('help.ownerSecurity')}</p>
+            <p className="text-sm">{t('help.ownerSecurityDesc')}</p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium mb-1">💻 Desenvolvimento / Engenharia</p>
-            <p className="text-sm">Implementação técnica e ciclo de vida do software</p>
+            <p className="font-medium mb-1">💻 {t('help.ownerDevelopment')}</p>
+            <p className="text-sm">{t('help.ownerDevelopmentDesc')}</p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium mb-1">📊 Data Science / ML</p>
-            <p className="text-sm">Modelos, treinamento e validação de IA</p>
+            <p className="font-medium mb-1">📊 {t('help.ownerDataScience')}</p>
+            <p className="text-sm">{t('help.ownerDataScienceDesc')}</p>
           </div>
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium mb-1">⚖️ Jurídico / Compliance</p>
-            <p className="text-sm">Conformidade regulatória e aspectos legais</p>
+            <p className="font-medium mb-1">⚖️ {t('help.ownerLegal')}</p>
+            <p className="text-sm">{t('help.ownerLegalDesc')}</p>
           </div>
         </div>
         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">Importante:</p>
+          <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">{t('help.important')}:</p>
           <p className="text-amber-700 dark:text-amber-300">
-            Filtrar por responsável ajuda a delegar tarefas e acompanhar o progresso de cada área.
+            {t('help.ownershipTip')}
           </p>
         </div>
       </div>
@@ -518,78 +500,64 @@ export function OwnershipHelp() {
 }
 
 // Domain-aware Response Distribution help
-const responseDistributionConfig: Record<string, {
-  title: string;
-  description: string;
-  context: string;
-}> = {
-  AI_SECURITY: {
-    title: 'Distribuição de Respostas',
-    description: 'mostra como os controles de segurança de IA estão classificados em termos de implementação.',
-    context: 'A distribuição reflete o estado atual dos controles mapeados pelo NIST AI RMF e frameworks correlatos.',
-  },
-  CLOUD_SECURITY: {
-    title: 'Distribuição de Respostas',
-    description: 'mostra como os controles de segurança cloud estão classificados em termos de implementação.',
-    context: 'A distribuição reflete o estado atual dos controles mapeados pelo CSA CCM e boas práticas de cloud security.',
-  },
-  DEVSECOPS: {
-    title: 'Distribuição de Respostas',
-    description: 'mostra como as práticas de desenvolvimento seguro estão classificadas em termos de implementação.',
-    context: 'A distribuição reflete o estado atual das práticas mapeadas pelo NIST SSDF e frameworks de DevSecOps.',
-  },
-};
-
 interface DomainResponseDistributionHelpProps {
   securityDomainId?: string;
 }
 
 export function DomainResponseDistributionHelp({ securityDomainId = 'AI_SECURITY' }: DomainResponseDistributionHelpProps) {
-  const config = responseDistributionConfig[securityDomainId] || responseDistributionConfig.AI_SECURITY;
+  const { t } = useTranslation();
+  
+  const getContextKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.responseDistContextCloud';
+      case 'DEVSECOPS': return 'help.responseDistContextDevsecops';
+      default: return 'help.responseDistContextAI';
+    }
+  };
   
   return (
-    <HelpTooltip title="O que significa?" modalTitle={config.title}>
+    <HelpTooltip title={t('help.whatMeans')} modalTitle={t('help.responseDistributionTitle')}>
       <div className="space-y-3">
-        <p><strong>{config.title}</strong> {config.description}</p>
+        <p><strong>{t('help.responseDistributionTitle')}</strong> {t('help.responseDistributionDesc')}</p>
         <div className="space-y-2">
           <div className="flex items-center gap-3 p-2 rounded bg-green-50 dark:bg-green-950/30">
             <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Sim:</span>
-              <span className="text-sm ml-1">Controle totalmente implementado e operacional.</span>
+              <span className="font-medium">{t('help.responseYes')}:</span>
+              <span className="text-sm ml-1">{t('help.responseYesDesc')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-yellow-50 dark:bg-yellow-950/30">
             <span className="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Parcial:</span>
-              <span className="text-sm ml-1">Controle parcialmente implementado ou com limitações.</span>
+              <span className="font-medium">{t('help.responsePartial')}:</span>
+              <span className="text-sm ml-1">{t('help.responsePartialDesc')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-red-50 dark:bg-red-950/30">
             <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Não:</span>
-              <span className="text-sm ml-1">Controle não implementado. Gap identificado.</span>
+              <span className="font-medium">{t('help.responseNo')}:</span>
+              <span className="text-sm ml-1">{t('help.responseNoDesc')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
             <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
             <div>
-              <span className="font-medium">N/A:</span>
-              <span className="text-sm ml-1">Não aplicável ao contexto da organização.</span>
+              <span className="font-medium">{t('help.responseNA')}:</span>
+              <span className="text-sm ml-1">{t('help.responseNADesc')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
             <span className="w-3 h-3 rounded-full bg-gray-300 flex-shrink-0" />
             <div>
-              <span className="font-medium">Pendente:</span>
-              <span className="text-sm ml-1">Pergunta ainda não respondida.</span>
+              <span className="font-medium">{t('help.responsePending')}:</span>
+              <span className="text-sm ml-1">{t('help.responsePendingDesc')}</span>
             </div>
           </div>
         </div>
         <div className="pt-2 border-t text-xs text-muted-foreground">
-          {config.context}
+          {t(getContextKey())}
         </div>
       </div>
     </HelpTooltip>
@@ -602,71 +570,73 @@ export function ResponseDistributionHelp() {
 }
 
 // Domain-aware Risk Distribution / Criticality help
-const riskDistributionConfig: Record<string, {
-  title: string;
-  description: string;
-  frameworkRef: string;
-}> = {
-  AI_SECURITY: {
-    title: 'Distribuição de Riscos de IA',
-    description: 'Categorização dos gaps identificados por nível de criticidade em controles de segurança de IA.',
-    frameworkRef: 'A criticidade é determinada com base no impacto potencial conforme NIST AI RMF e requisitos regulatórios.',
-  },
-  CLOUD_SECURITY: {
-    title: 'Distribuição de Riscos Cloud',
-    description: 'Categorização dos gaps identificados por nível de criticidade em controles de segurança cloud.',
-    frameworkRef: 'A criticidade é determinada com base no modelo de responsabilidade compartilhada e controles CSA CCM.',
-  },
-  DEVSECOPS: {
-    title: 'Distribuição de Riscos de Pipeline',
-    description: 'Categorização dos gaps identificados por nível de criticidade nas práticas de desenvolvimento seguro.',
-    frameworkRef: 'A criticidade é determinada com base no impacto na cadeia de supply chain de software (NIST SSDF).',
-  },
-};
-
 interface DomainRiskDistributionHelpProps {
   securityDomainId?: string;
 }
 
 export function DomainRiskDistributionHelp({ securityDomainId = 'AI_SECURITY' }: DomainRiskDistributionHelpProps) {
-  const config = riskDistributionConfig[securityDomainId] || riskDistributionConfig.AI_SECURITY;
+  const { t } = useTranslation();
+  
+  const getTitleKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.criticalGapsCloud';
+      case 'DEVSECOPS': return 'help.criticalGapsDevSecOps';
+      default: return 'help.criticalGapsAI';
+    }
+  };
+  
+  const getDescKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.riskDistDescCloud';
+      case 'DEVSECOPS': return 'help.riskDistDescDevsecops';
+      default: return 'help.riskDistDescAI';
+    }
+  };
+  
+  const getRefKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.riskDistRefCloud';
+      case 'DEVSECOPS': return 'help.riskDistRefDevsecops';
+      default: return 'help.riskDistRefAI';
+    }
+  };
   
   return (
-    <HelpTooltip title="Níveis de risco" modalTitle={config.title}>
+    <HelpTooltip title={t('help.riskLevels')} modalTitle={t(getTitleKey())}>
       <div className="space-y-3">
-        <p><strong>{config.title}:</strong> {config.description}</p>
+        <p><strong>{t(getTitleKey())}:</strong> {t(getDescKey())}</p>
         <div className="space-y-2">
           <div className="flex items-center gap-3 p-2 rounded bg-red-50 dark:bg-red-950/30">
             <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Crítico:</span>
-              <span className="text-sm ml-1">Impacto severo. Ação imediata necessária.</span>
+              <span className="font-medium">{t('help.criticalLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.severeImpact')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-orange-50 dark:bg-orange-950/30">
             <span className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Alto:</span>
-              <span className="text-sm ml-1">Risco significativo. Prioridade alta.</span>
+              <span className="font-medium">{t('help.highLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.significantRisk')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-blue-50 dark:bg-blue-950/30">
             <span className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
             <div>
-              <span className="font-medium">Médio:</span>
-              <span className="text-sm ml-1">Impacto moderado. Médio prazo.</span>
+              <span className="font-medium">{t('help.mediumLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.moderateImpact')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
             <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
             <div>
-              <span className="font-medium">Baixo:</span>
-              <span className="text-sm ml-1">Impacto limitado. Conforme recursos.</span>
+              <span className="font-medium">{t('help.lowLevel')}:</span>
+              <span className="text-sm ml-1">{t('help.limitedImpact')}</span>
             </div>
           </div>
         </div>
         <div className="pt-2 border-t text-xs text-muted-foreground">
-          {config.frameworkRef}
+          {t(getRefKey())}
         </div>
       </div>
     </HelpTooltip>
@@ -674,58 +644,55 @@ export function DomainRiskDistributionHelp({ securityDomainId = 'AI_SECURITY' }:
 }
 
 // Domain-aware Framework Coverage help
-const frameworkCoverageConfig: Record<string, {
-  title: string;
-  description: string;
-  frameworks: string[];
-}> = {
-  AI_SECURITY: {
-    title: 'Cobertura de Frameworks de IA',
-    description: 'Progresso da avaliação nos frameworks de segurança e governança de IA selecionados.',
-    frameworks: ['NIST AI RMF', 'ISO 42001', 'EU AI Act', 'OWASP ML Top 10'],
-  },
-  CLOUD_SECURITY: {
-    title: 'Cobertura de Frameworks Cloud',
-    description: 'Progresso da avaliação nos frameworks de segurança cloud selecionados.',
-    frameworks: ['CSA CCM', 'CIS Benchmarks', 'SOC 2', 'ISO 27017'],
-  },
-  DEVSECOPS: {
-    title: 'Cobertura de Frameworks DevSecOps',
-    description: 'Progresso da avaliação nos frameworks de desenvolvimento seguro selecionados.',
-    frameworks: ['NIST SSDF', 'OWASP SAMM', 'SLSA', 'BSIMM'],
-  },
-};
-
 interface DomainFrameworkCoverageHelpProps {
   securityDomainId?: string;
 }
 
 export function DomainFrameworkCoverageHelp({ securityDomainId = 'AI_SECURITY' }: DomainFrameworkCoverageHelpProps) {
-  const config = frameworkCoverageConfig[securityDomainId] || frameworkCoverageConfig.AI_SECURITY;
+  const { t } = useTranslation();
+  
+  const getTitleKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.frameworkCoverageDescCloud';
+      case 'DEVSECOPS': return 'help.frameworkCoverageDescDevsecops';
+      default: return 'help.frameworkCoverageDescAI';
+    }
+  };
+  
+  const getFrameworks = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY':
+        return ['CSA CCM', 'CIS Benchmarks', 'SOC 2', 'ISO 27017'];
+      case 'DEVSECOPS':
+        return ['NIST SSDF', 'OWASP SAMM', 'SLSA', 'BSIMM'];
+      default:
+        return ['NIST AI RMF', 'ISO 42001', 'EU AI Act', 'OWASP ML Top 10'];
+    }
+  };
   
   return (
-    <HelpTooltip title="Sobre frameworks" modalTitle={config.title}>
+    <HelpTooltip title={t('help.aboutFrameworks')} modalTitle={t('help.frameworkCoverageTitle')}>
       <div className="space-y-3">
-        <p><strong>{config.title}:</strong> {config.description}</p>
+        <p><strong>{t('help.frameworkCoverageTitle')}:</strong> {t(getTitleKey())}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-2">Frameworks de referência:</p>
+          <p className="font-medium mb-2">{t('help.referenceFrameworks')}:</p>
           <ul className="list-disc list-inside space-y-1 text-sm">
-            {config.frameworks.map((fw) => (
+            {getFrameworks().map((fw) => (
               <li key={fw}>{fw}</li>
             ))}
           </ul>
         </div>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-1">Métricas exibidas:</p>
+          <p className="font-medium mb-1">{t('help.metricsDisplayed')}:</p>
           <ul className="list-disc list-inside space-y-1 text-sm">
-            <li><strong>Score:</strong> Média ponderada das respostas</li>
-            <li><strong>Cobertura:</strong> % de perguntas respondidas</li>
+            <li><strong>{t('help.scoreMetric')}:</strong> {t('help.scoreMetricDesc')}</li>
+            <li><strong>{t('help.coverageMetric')}:</strong> {t('help.coverageMetricDesc')}</li>
           </ul>
         </div>
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">{t('help.tip')}:</p>
           <p className="text-blue-700 dark:text-blue-300">
-            Clique nos badges de framework no header para filtrar a visualização.
+            {t('help.frameworkBadgeHeaderTip')}
           </p>
         </div>
       </div>
@@ -734,59 +701,49 @@ export function DomainFrameworkCoverageHelp({ securityDomainId = 'AI_SECURITY' }
 }
 
 // Domain-aware Domain Metrics help
-const domainMetricsConfig: Record<string, {
-  title: string;
-  description: string;
-  examples: string[];
-}> = {
-  AI_SECURITY: {
-    title: 'Domínios de Segurança de IA',
-    description: 'Áreas temáticas que agrupam controles de segurança de IA conforme NIST AI RMF.',
-    examples: ['Governança de IA', 'Privacidade de Dados', 'Robustez de Modelos', 'Transparência'],
-  },
-  CLOUD_SECURITY: {
-    title: 'Domínios de Segurança Cloud',
-    description: 'Áreas temáticas que agrupam controles de segurança cloud conforme CSA CCM.',
-    examples: ['Identidade e Acesso', 'Proteção de Dados', 'Segurança de Rede', 'Compliance'],
-  },
-  DEVSECOPS: {
-    title: 'Domínios DevSecOps',
-    description: 'Áreas temáticas que agrupam práticas de desenvolvimento seguro conforme NIST SSDF.',
-    examples: ['Segurança de Pipeline', 'Análise de Código', 'Gestão de Dependências', 'Deploy Seguro'],
-  },
-};
-
 interface DomainMetricsHelpProps {
   securityDomainId?: string;
 }
 
 export function DomainMetricsHelpAware({ securityDomainId = 'AI_SECURITY' }: DomainMetricsHelpProps) {
-  const config = domainMetricsConfig[securityDomainId] || domainMetricsConfig.AI_SECURITY;
+  const { t } = useTranslation();
+  
+  const getTitleKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.domainMetricsDescCloud';
+      case 'DEVSECOPS': return 'help.domainMetricsDescDevsecops';
+      default: return 'help.domainMetricsDescAI';
+    }
+  };
+  
+  const getExamplesKey = () => {
+    switch (securityDomainId) {
+      case 'CLOUD_SECURITY': return 'help.domainExamplesCloud';
+      case 'DEVSECOPS': return 'help.domainExamplesDevsecops';
+      default: return 'help.domainExamplesAI';
+    }
+  };
   
   return (
-    <HelpTooltip title="O que são?" modalTitle={config.title}>
+    <HelpTooltip title={t('help.whatAre')} modalTitle={t('help.domainMetricsTitle')}>
       <div className="space-y-3">
-        <p><strong>{config.title}:</strong> {config.description}</p>
+        <p><strong>{t('help.domainMetricsTitle')}:</strong> {t(getTitleKey())}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-2">Exemplos de domínios:</p>
-          <ul className="list-disc list-inside space-y-1 text-sm">
-            {config.examples.map((ex) => (
-              <li key={ex}>{ex}</li>
-            ))}
-          </ul>
+          <p className="font-medium mb-2">{t('help.exampleDomains')}:</p>
+          <p className="text-sm">{t(getExamplesKey())}</p>
         </div>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-2">Métricas exibidas:</p>
+          <p className="font-medium mb-2">{t('help.metricsDisplayed')}:</p>
           <ul className="list-disc list-inside space-y-1 text-sm">
-            <li><strong>Cobertura:</strong> % de perguntas respondidas no domínio</li>
-            <li><strong>Maturidade:</strong> Score ponderado dos controles</li>
-            <li><strong>Gaps:</strong> Número de controles com score {"<"}50%</li>
+            <li><strong>{t('help.coverageMetric')}:</strong> {t('help.coverageMetricDesc')}</li>
+            <li><strong>{t('help.maturityMetric')}:</strong> {t('help.maturityMetricDesc')}</li>
+            <li><strong>{t('help.domainGaps')}:</strong> {t('help.gapsWithLowScore')}</li>
           </ul>
         </div>
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">{t('help.tip')}:</p>
           <p className="text-blue-700 dark:text-blue-300">
-            Clique em um domínio para expandir e ver as subcategorias com suas métricas individuais.
+            {t('help.domainClickTip')}
           </p>
         </div>
       </div>
@@ -795,22 +752,24 @@ export function DomainMetricsHelpAware({ securityDomainId = 'AI_SECURITY' }: Dom
 }
 
 export function DomainMetricsHelp() {
+  const { t } = useTranslation();
+  
   return (
-    <HelpTooltip title="O que são?" modalTitle="Métricas por Domínio">
+    <HelpTooltip title={t('help.whatAre')} modalTitle={t('help.domainMetricsTitle')}>
       <div className="space-y-3">
-        <p><strong>Domínios</strong> são áreas temáticas que agrupam controles de segurança relacionados.</p>
+        <p><strong>{t('help.domainMetricsTitle')}</strong> {t('help.domainMetricsGeneralDesc')}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-2">Métricas exibidas:</p>
+          <p className="font-medium mb-2">{t('help.metricsDisplayed')}:</p>
           <ul className="list-disc list-inside space-y-1 text-sm">
-            <li><strong>Cobertura:</strong> % de perguntas respondidas no domínio</li>
-            <li><strong>Maturidade:</strong> Score ponderado dos controles</li>
-            <li><strong>Gaps:</strong> Número de controles com score {"<"}50%</li>
+            <li><strong>{t('help.coverageMetric')}:</strong> {t('help.coverageMetricDesc')}</li>
+            <li><strong>{t('help.maturityMetric')}:</strong> {t('help.maturityMetricDesc')}</li>
+            <li><strong>{t('help.domainGaps')}:</strong> {t('help.gapsWithLowScore')}</li>
           </ul>
         </div>
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">{t('help.tip')}:</p>
           <p className="text-blue-700 dark:text-blue-300">
-            Clique em um domínio para expandir e ver as subcategorias com suas métricas individuais.
+            {t('help.domainClickTip')}
           </p>
         </div>
       </div>
@@ -827,23 +786,21 @@ interface PersonaBadgeProps {
   onClick?: () => void;
 }
 
-const personaConfig: Record<PersonaType, { label: string; description: string }> = {
-  executive: {
-    label: 'Executivo',
-    description: 'CISO / Head de Segurança - Visão estratégica e priorização de riscos'
-  },
-  grc: {
-    label: 'GRC',
-    description: 'Security Manager - Cobertura, evidências e auditabilidade'
-  },
-  specialist: {
-    label: 'Especialista',
-    description: 'Arquiteto / Engenheiro - Detalhes técnicos e implementação'
-  }
-};
-
 export function PersonaBadge({ persona, selected, onClick }: PersonaBadgeProps) {
-  const config = personaConfig[persona];
+  const { t } = useTranslation();
+  
+  const getConfig = (p: PersonaType) => {
+    switch (p) {
+      case 'executive':
+        return { label: t('help.personaExecutive'), description: t('help.personaExecutiveDesc') };
+      case 'grc':
+        return { label: t('help.personaGRC'), description: t('help.personaGRCDesc') };
+      case 'specialist':
+        return { label: t('help.personaSpecialist'), description: t('help.personaSpecialistDesc') };
+    }
+  };
+  
+  const config = getConfig(persona);
   
   return (
     <button
@@ -870,9 +827,11 @@ export function PersonaSelector({
   value: PersonaType; 
   onChange: (persona: PersonaType) => void;
 }) {
+  const personas: PersonaType[] = ['executive', 'grc', 'specialist'];
+  
   return (
     <div className="flex flex-wrap gap-2">
-      {(Object.keys(personaConfig) as PersonaType[]).map(persona => (
+      {personas.map(persona => (
         <PersonaBadge
           key={persona}
           persona={persona}

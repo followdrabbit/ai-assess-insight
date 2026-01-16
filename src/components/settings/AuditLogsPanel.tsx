@@ -183,13 +183,15 @@ export function AuditLogsPanel() {
 
   const exportLogs = () => {
     const csvContent = [
-      ['Date', 'Action', 'Entity Type', 'Entity ID', 'IP Address', 'Device', 'Browser', 'OS'].join(','),
+      ['Date', 'Action', 'Entity Type', 'Entity ID', 'IP Address', 'Country', 'City', 'Device', 'Browser', 'OS'].join(','),
       ...filteredLogs.map(log => [
         log.createdAt ? format(new Date(log.createdAt), 'yyyy-MM-dd HH:mm:ss') : '',
         log.action,
         log.entityType,
-        log.entityId,
+        `"${log.entityId}"`, // Quote to handle commas in IDs
         log.ipAddress || '',
+        log.geoCountry || '',
+        log.geoCity || '',
         log.deviceType || '',
         log.browserName || '',
         log.osName || '',
@@ -463,18 +465,19 @@ export function AuditLogsPanel() {
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
-                  <TableHead className="w-[160px]">{t('auditLogs.dateTime')}</TableHead>
-                  <TableHead className="w-[100px]">{t('auditLogs.actionColumn')}</TableHead>
-                  <TableHead className="w-[100px]">{t('auditLogs.entityColumn')}</TableHead>
-                  <TableHead>{t('auditLogs.entityId')}</TableHead>
-                  <TableHead className="w-[120px]">{t('auditLogs.ipAddress')}</TableHead>
-                  <TableHead className="w-[150px]">{t('auditLogs.deviceInfo')}</TableHead>
+                  <TableHead className="w-[140px]">{t('auditLogs.dateTime')}</TableHead>
+                  <TableHead className="w-[90px]">{t('auditLogs.actionColumn')}</TableHead>
+                  <TableHead className="w-[90px]">{t('auditLogs.entityColumn')}</TableHead>
+                  <TableHead className="max-w-[150px]">{t('auditLogs.entityId')}</TableHead>
+                  <TableHead className="w-[100px]">{t('auditLogs.ipAddress')}</TableHead>
+                  <TableHead className="w-[130px]">{t('auditLogs.location')}</TableHead>
+                  <TableHead className="w-[140px]">{t('auditLogs.deviceInfo')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLogs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {t('auditLogs.noEvents')}
                     </TableCell>
                   </TableRow>
@@ -482,28 +485,40 @@ export function AuditLogsPanel() {
                   filteredLogs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="font-mono text-xs">
-                        {log.createdAt ? format(new Date(log.createdAt), 'dd/MM/yy HH:mm:ss', { locale }) : '-'}
+                        {log.createdAt ? format(new Date(log.createdAt), 'dd/MM/yy HH:mm', { locale }) : '-'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getActionBadgeVariant(log.action)} className="gap-1">
+                        <Badge variant={getActionBadgeVariant(log.action)} className="gap-1 text-xs">
                           {getActionIcon(log.action)}
                           {t(`auditLogs.action.${log.action}`, log.action)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1.5 text-sm">
+                        <div className="flex items-center gap-1 text-xs">
                           {getEntityIcon(log.entityType)}
                           <span className="capitalize">{t(`auditLogs.entity.${log.entityType}`, log.entityType)}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono text-xs max-w-[200px] truncate" title={log.entityId}>
+                      <TableCell className="font-mono text-xs max-w-[150px] truncate" title={log.entityId}>
                         {log.entityId}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
                         {log.ipAddress || '-'}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {log.geoCountry ? (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="truncate" title={`${log.geoCity || ''}, ${log.geoCountry}`}>
+                              {log.geoCity ? `${log.geoCity}, ` : ''}{log.geoCountry}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           {getDeviceIcon(log.deviceType)}
                           <span>{log.browserName || '-'}</span>
                           <span className="text-muted-foreground/50">•</span>

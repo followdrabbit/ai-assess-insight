@@ -289,6 +289,12 @@ export function QuestionManagement() {
 
   // Filtered questions
   const filteredQuestions = useMemo(() => {
+    // Normalize selected framework value in case it is a display string
+    const normalizedFrameworkFilter =
+      filterFramework === 'all'
+        ? 'all'
+        : (mapQuestionFrameworkToId(filterFramework) || filterFramework);
+
     return allQuestions.filter(q => {
       const matchesSearch = searchQuery === '' || 
         q.questionText.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -297,14 +303,15 @@ export function QuestionManagement() {
       const matchesSecurityDomain = filterSecurityDomain === 'all' || 
         (q as any).securityDomainId === filterSecurityDomain ||
         taxonomyDomains.find(d => d.domainId === q.domainId)?.securityDomainId === filterSecurityDomain;
-      const matchesFramework = filterFramework === 'all' || q.frameworks.some(fwString => {
+      const matchesFramework = normalizedFrameworkFilter === 'all' || q.frameworks.some(fwString => {
         const mappedId = mapQuestionFrameworkToId(fwString);
         return (
-          mappedId === filterFramework ||
-          fwString === filterFramework ||
-          fwString.toUpperCase() === filterFramework.toUpperCase()
+          mappedId === normalizedFrameworkFilter ||
+          fwString === normalizedFrameworkFilter ||
+          fwString.toUpperCase() === normalizedFrameworkFilter.toUpperCase()
         );
       });
+      return matchesSearch && matchesDomain && matchesSecurityDomain && matchesFramework;
     });
   }, [allQuestions, searchQuery, filterDomain, filterSecurityDomain, filterFramework, taxonomyDomains]);
 

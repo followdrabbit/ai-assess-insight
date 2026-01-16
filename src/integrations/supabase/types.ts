@@ -95,29 +95,56 @@ export type Database = {
       change_logs: {
         Row: {
           action: string
+          browser_name: string | null
           changes: Json | null
           created_at: string | null
+          device_type: string | null
           entity_id: string
           entity_type: string
+          geo_city: string | null
+          geo_country: string | null
           id: number
+          ip_address: unknown
+          os_name: string | null
+          request_id: string | null
+          session_id: string | null
+          user_agent: string | null
           user_id: string | null
         }
         Insert: {
           action: string
+          browser_name?: string | null
           changes?: Json | null
           created_at?: string | null
+          device_type?: string | null
           entity_id: string
           entity_type: string
+          geo_city?: string | null
+          geo_country?: string | null
           id?: number
+          ip_address?: unknown
+          os_name?: string | null
+          request_id?: string | null
+          session_id?: string | null
+          user_agent?: string | null
           user_id?: string | null
         }
         Update: {
           action?: string
+          browser_name?: string | null
           changes?: Json | null
           created_at?: string | null
+          device_type?: string | null
           entity_id?: string
           entity_type?: string
+          geo_city?: string | null
+          geo_country?: string | null
           id?: number
+          ip_address?: unknown
+          os_name?: string | null
+          request_id?: string | null
+          session_id?: string | null
+          user_agent?: string | null
           user_id?: string | null
         }
         Relationships: []

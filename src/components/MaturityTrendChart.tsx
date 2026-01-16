@@ -12,7 +12,7 @@ import {
   Bar,
   Cell
 } from 'recharts';
-import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval, startOfQuarter, endOfQuarter, subQuarters, subWeeks, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -53,11 +53,14 @@ const frameworkColors = [
   'hsl(160, 60%, 45%)',
 ];
 
+type ComparisonType = 'month' | 'quarter' | 'week' | '30days' | '90days';
+
 export default function MaturityTrendChart({ className }: MaturityTrendChartProps) {
   const [snapshots, setSnapshots] = useState<MaturitySnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [daysBack, setDaysBack] = useState<string>('90');
   const [activeTab, setActiveTab] = useState('overall');
+  const [comparisonType, setComparisonType] = useState<ComparisonType>('month');
 
   useEffect(() => {
     const loadSnapshots = async () => {
@@ -160,27 +163,69 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
     return Array.from(frameworks.entries());
   }, [snapshots]);
 
-  // Period comparison data (current month vs previous month)
+  // Period comparison data based on selected comparison type
   const periodComparison = useMemo(() => {
     if (snapshots.length === 0) return null;
 
     const now = new Date();
-    const currentMonthStart = startOfMonth(now);
-    const currentMonthEnd = endOfMonth(now);
-    const previousMonthStart = startOfMonth(subMonths(now, 1));
-    const previousMonthEnd = endOfMonth(subMonths(now, 1));
+    let currentStart: Date, currentEnd: Date, previousStart: Date, previousEnd: Date;
+    let currentLabel: string, previousLabel: string;
 
-    const currentMonthSnapshots = snapshots.filter(s => {
+    switch (comparisonType) {
+      case 'week':
+        currentStart = startOfWeek(now, { weekStartsOn: 1 });
+        currentEnd = endOfWeek(now, { weekStartsOn: 1 });
+        previousStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+        previousEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+        currentLabel = `Semana ${format(currentStart, 'dd/MM')} - ${format(currentEnd, 'dd/MM')}`;
+        previousLabel = `Semana ${format(previousStart, 'dd/MM')} - ${format(previousEnd, 'dd/MM')}`;
+        break;
+      case 'quarter':
+        currentStart = startOfQuarter(now);
+        currentEnd = endOfQuarter(now);
+        previousStart = startOfQuarter(subQuarters(now, 1));
+        previousEnd = endOfQuarter(subQuarters(now, 1));
+        currentLabel = `${format(currentStart, 'QQQ yyyy', { locale: ptBR })}`;
+        previousLabel = `${format(previousStart, 'QQQ yyyy', { locale: ptBR })}`;
+        break;
+      case '30days':
+        currentEnd = now;
+        currentStart = subDays(now, 30);
+        previousEnd = subDays(now, 31);
+        previousStart = subDays(now, 60);
+        currentLabel = `Últimos 30 dias`;
+        previousLabel = `30 dias anteriores`;
+        break;
+      case '90days':
+        currentEnd = now;
+        currentStart = subDays(now, 90);
+        previousEnd = subDays(now, 91);
+        previousStart = subDays(now, 180);
+        currentLabel = `Últimos 90 dias`;
+        previousLabel = `90 dias anteriores`;
+        break;
+      case 'month':
+      default:
+        currentStart = startOfMonth(now);
+        currentEnd = endOfMonth(now);
+        previousStart = startOfMonth(subMonths(now, 1));
+        previousEnd = endOfMonth(subMonths(now, 1));
+        currentLabel = format(currentStart, 'MMMM yyyy', { locale: ptBR });
+        previousLabel = format(previousStart, 'MMMM yyyy', { locale: ptBR });
+        break;
+    }
+
+    const currentPeriodSnapshots = snapshots.filter(s => {
       const date = parseISO(s.snapshotDate);
-      return isWithinInterval(date, { start: currentMonthStart, end: currentMonthEnd });
+      return isWithinInterval(date, { start: currentStart, end: currentEnd });
     });
 
-    const previousMonthSnapshots = snapshots.filter(s => {
+    const previousPeriodSnapshots = snapshots.filter(s => {
       const date = parseISO(s.snapshotDate);
-      return isWithinInterval(date, { start: previousMonthStart, end: previousMonthEnd });
+      return isWithinInterval(date, { start: previousStart, end: previousEnd });
     });
 
-    if (currentMonthSnapshots.length === 0 && previousMonthSnapshots.length === 0) {
+    if (currentPeriodSnapshots.length === 0 && previousPeriodSnapshots.length === 0) {
       return null;
     }
 
@@ -189,40 +234,40 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
       return snaps.reduce((sum, s) => sum + (key === 'criticalGaps' ? s[key] : s[key] * 100), 0) / snaps.length;
     };
 
-    const currentMonth = {
-      label: format(currentMonthStart, 'MMMM yyyy', { locale: ptBR }),
-      score: Math.round(avgMetric(currentMonthSnapshots, 'overallScore')),
-      coverage: Math.round(avgMetric(currentMonthSnapshots, 'overallCoverage')),
-      evidence: Math.round(avgMetric(currentMonthSnapshots, 'evidenceReadiness')),
-      gaps: Math.round(avgMetric(currentMonthSnapshots, 'criticalGaps')),
-      dataPoints: currentMonthSnapshots.length
+    const currentPeriod = {
+      label: currentLabel,
+      score: Math.round(avgMetric(currentPeriodSnapshots, 'overallScore')),
+      coverage: Math.round(avgMetric(currentPeriodSnapshots, 'overallCoverage')),
+      evidence: Math.round(avgMetric(currentPeriodSnapshots, 'evidenceReadiness')),
+      gaps: Math.round(avgMetric(currentPeriodSnapshots, 'criticalGaps')),
+      dataPoints: currentPeriodSnapshots.length
     };
 
-    const previousMonth = {
-      label: format(previousMonthStart, 'MMMM yyyy', { locale: ptBR }),
-      score: Math.round(avgMetric(previousMonthSnapshots, 'overallScore')),
-      coverage: Math.round(avgMetric(previousMonthSnapshots, 'overallCoverage')),
-      evidence: Math.round(avgMetric(previousMonthSnapshots, 'evidenceReadiness')),
-      gaps: Math.round(avgMetric(previousMonthSnapshots, 'criticalGaps')),
-      dataPoints: previousMonthSnapshots.length
+    const previousPeriod = {
+      label: previousLabel,
+      score: Math.round(avgMetric(previousPeriodSnapshots, 'overallScore')),
+      coverage: Math.round(avgMetric(previousPeriodSnapshots, 'overallCoverage')),
+      evidence: Math.round(avgMetric(previousPeriodSnapshots, 'evidenceReadiness')),
+      gaps: Math.round(avgMetric(previousPeriodSnapshots, 'criticalGaps')),
+      dataPoints: previousPeriodSnapshots.length
     };
 
     const variation = {
-      score: currentMonth.score - previousMonth.score,
-      coverage: currentMonth.coverage - previousMonth.coverage,
-      evidence: currentMonth.evidence - previousMonth.evidence,
-      gaps: currentMonth.gaps - previousMonth.gaps
+      score: currentPeriod.score - previousPeriod.score,
+      coverage: currentPeriod.coverage - previousPeriod.coverage,
+      evidence: currentPeriod.evidence - previousPeriod.evidence,
+      gaps: currentPeriod.gaps - previousPeriod.gaps
     };
 
     // Chart data for bar comparison
     const barChartData = [
-      { metric: 'Maturidade', current: currentMonth.score, previous: previousMonth.score },
-      { metric: 'Cobertura', current: currentMonth.coverage, previous: previousMonth.coverage },
-      { metric: 'Evidências', current: currentMonth.evidence, previous: previousMonth.evidence },
+      { metric: 'Maturidade', current: currentPeriod.score, previous: previousPeriod.score },
+      { metric: 'Cobertura', current: currentPeriod.coverage, previous: previousPeriod.coverage },
+      { metric: 'Evidências', current: currentPeriod.evidence, previous: previousPeriod.evidence },
     ];
 
-    return { currentMonth, previousMonth, variation, barChartData };
-  }, [snapshots]);
+    return { currentPeriod, previousPeriod, variation, barChartData };
+  }, [snapshots, comparisonType]);
 
   // Render trend indicator
   const TrendIndicator = ({ value, inverted = false }: { value: number; inverted?: boolean }) => {
@@ -402,18 +447,33 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         <TabsContent value="comparison">
           {periodComparison ? (
             <div className="space-y-6">
-              {/* Period Labels */}
-              <div className="flex items-center justify-center gap-8 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  <span className="capitalize">{periodComparison.currentMonth.label}</span>
-                  <span className="text-muted-foreground">({periodComparison.currentMonth.dataPoints} pontos)</span>
+              {/* Period Selector */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-primary" />
+                    <span className="capitalize">{periodComparison.currentPeriod.label}</span>
+                    <span className="text-muted-foreground">({periodComparison.currentPeriod.dataPoints} pontos)</span>
+                  </div>
+                  <span className="text-muted-foreground">vs</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-muted-foreground/50" />
+                    <span className="capitalize">{periodComparison.previousPeriod.label}</span>
+                    <span className="text-muted-foreground">({periodComparison.previousPeriod.dataPoints} pontos)</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-muted-foreground/50" />
-                  <span className="capitalize">{periodComparison.previousMonth.label}</span>
-                  <span className="text-muted-foreground">({periodComparison.previousMonth.dataPoints} pontos)</span>
-                </div>
+                <Select value={comparisonType} onValueChange={(v) => setComparisonType(v as ComparisonType)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Tipo de comparação" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="week">Semana atual vs anterior</SelectItem>
+                    <SelectItem value="month">Mês atual vs anterior</SelectItem>
+                    <SelectItem value="quarter">Trimestre vs anterior</SelectItem>
+                    <SelectItem value="30days">Últimos 30 vs 30 anteriores</SelectItem>
+                    <SelectItem value="90days">Últimos 90 vs 90 anteriores</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Bar Chart Comparison */}
@@ -441,8 +501,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                       }}
                       formatter={(value: number) => [`${value}%`]}
                     />
-                    <Bar dataKey="previous" name={periodComparison.previousMonth.label} fill="hsl(var(--muted-foreground))" opacity={0.4} radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="current" name={periodComparison.currentMonth.label} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="previous" name={periodComparison.previousPeriod.label} fill="hsl(var(--muted-foreground))" opacity={0.4} radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="current" name={periodComparison.currentPeriod.label} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -456,8 +516,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     <TrendIndicator value={periodComparison.variation.score} />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{periodComparison.currentMonth.score}%</span>
-                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.score}%</span>
+                    <span className="text-2xl font-bold">{periodComparison.currentPeriod.score}%</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousPeriod.score}%</span>
                   </div>
                   <div className={cn(
                     "text-sm font-medium mt-1",
@@ -475,8 +535,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     <TrendIndicator value={periodComparison.variation.coverage} />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{periodComparison.currentMonth.coverage}%</span>
-                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.coverage}%</span>
+                    <span className="text-2xl font-bold">{periodComparison.currentPeriod.coverage}%</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousPeriod.coverage}%</span>
                   </div>
                   <div className={cn(
                     "text-sm font-medium mt-1",
@@ -494,8 +554,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     <TrendIndicator value={periodComparison.variation.evidence} />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{periodComparison.currentMonth.evidence}%</span>
-                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.evidence}%</span>
+                    <span className="text-2xl font-bold">{periodComparison.currentPeriod.evidence}%</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousPeriod.evidence}%</span>
                   </div>
                   <div className={cn(
                     "text-sm font-medium mt-1",
@@ -513,8 +573,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     <TrendIndicator value={periodComparison.variation.gaps} inverted />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{periodComparison.currentMonth.gaps}</span>
-                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.gaps}</span>
+                    <span className="text-2xl font-bold">{periodComparison.currentPeriod.gaps}</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousPeriod.gaps}</span>
                   </div>
                   <div className={cn(
                     "text-sm font-medium mt-1",
@@ -530,7 +590,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <p className="text-muted-foreground mb-2">Dados insuficientes para comparação.</p>
               <p className="text-sm text-muted-foreground">
-                É necessário ter dados em pelo menos dois meses para visualizar a comparação.
+                É necessário ter dados em pelo menos dois períodos para visualizar a comparação.
               </p>
             </div>
           )}

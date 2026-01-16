@@ -8,6 +8,7 @@ import { domains, maturityLevels, FrameworkCategoryId } from '@/lib/dataset';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
+import { DomainSpecificIndicators } from '@/components/DomainSpecificIndicators';
 import { 
   CoverageHelp,
   CriticalGapsHelp,
@@ -956,6 +957,13 @@ export default function DashboardSpecialist() {
           </div>
         </div>
       </div>
+
+      {/* Domain-Specific Indicators */}
+      <DomainSpecificIndicators 
+        securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'}
+        questions={questionsForDashboard}
+        answers={answers}
+      />
 
       {/* Tabs for different views */}
       <Tabs defaultValue="gaps" className="space-y-4">

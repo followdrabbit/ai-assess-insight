@@ -810,6 +810,141 @@ O Assistente de IA suporta comandos de voz para navegação e consulta de dados.
 
 ---
 
+## 🎤 Voice Profile API
+
+### Visão Geral
+
+O sistema de perfil de voz permite cadastrar a identidade vocal do usuário para comandos de voz personalizados.
+
+### Hook: useVoiceProfile
+
+```typescript
+import { useVoiceProfile } from '@/hooks/useVoiceProfile';
+
+const {
+  // State
+  profile,           // VoiceProfile | null
+  isLoading,         // boolean
+  isEnrolling,       // boolean
+  isRecording,       // boolean
+  isProcessing,      // boolean
+  recordingDuration, // number (segundos)
+  audioLevels,       // number[] (12 valores 0-1 para visualização)
+  currentPhraseIndex,// number
+  enrollmentProgress,// number (0-1)
+  enrolledSamples,   // EnrollmentSample[]
+  error,             // string | null
+  
+  // Enrollment Actions
+  startEnrollment,   // (level: 'standard' | 'advanced', language?: string) => void
+  recordPhrase,      // () => Promise<EnrollmentSample | null>
+  stopRecording,     // () => void
+  skipPhrase,        // () => void
+  retryPhrase,       // () => void
+  completeEnrollment,// () => Promise<boolean>
+  cancelEnrollment,  // () => void
+  
+  // Profile Actions
+  deleteProfile,     // () => Promise<void>
+  toggleProfileEnabled, // () => Promise<void>
+  updateNoiseThreshold, // (threshold: number) => Promise<void>
+  
+  // Verification
+  verifyVoice,       // (audioBlob: Blob) => Promise<VerificationResult | null>
+} = useVoiceProfile();
+```
+
+### Tipos
+
+```typescript
+interface VoiceProfile {
+  id: string;
+  userId: string;
+  profileName: string;
+  enrollmentLevel: 'standard' | 'advanced';
+  enrollmentPhrasesCount: number;
+  voiceFeatures: VoiceFeatures | null;
+  noiseThreshold: number;
+  isEnabled: boolean;
+  enrolledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface VoiceFeatures {
+  mfcc: number[];           // 13 coeficientes MFCC
+  spectralCentroid: number; // Centro espectral
+  spectralRolloff: number;  // Rolloff espectral
+  zeroCrossingRate: number; // Taxa de cruzamento por zero
+  rmsEnergy: number;        // Energia RMS
+  pitchMean: number;        // Pitch médio (Hz)
+  pitchStd: number;         // Desvio padrão do pitch
+  speakingRate: number;     // Taxa de fala (sílabas/s)
+}
+
+interface EnrollmentSample {
+  phraseIndex: number;
+  phraseText: string;
+  audioFeatures: VoiceFeatures;
+  durationMs: number;
+  sampleRate: number;
+  qualityScore: number;
+}
+
+interface VerificationResult {
+  isMatch: boolean;
+  confidence: number;
+  scores: {
+    mfcc: number;
+    pitch: number;
+    energy: number;
+    speaking: number;
+  };
+}
+```
+
+### Níveis de Enrollment
+
+| Nível | Frases | Duração | Precisão |
+|-------|--------|---------|----------|
+| `standard` | 6 | 1-2 min | Boa |
+| `advanced` | 12 | 3-5 min | Excelente |
+
+### Visualização de Áudio em Tempo Real
+
+O hook expõe `audioLevels`, um array de 12 valores (0-1) que representam os níveis de frequência do microfone em tempo real durante a gravação:
+
+```tsx
+// Exemplo de uso no componente
+{isRecording && (
+  <div className="flex items-end justify-center gap-1 h-16">
+    {audioLevels.map((level, i) => (
+      <div
+        key={i}
+        className="w-2 bg-destructive rounded-full transition-all duration-75"
+        style={{
+          height: `${Math.max(8, level * 100)}%`,
+          opacity: Math.max(0.4, level),
+        }}
+      />
+    ))}
+  </div>
+)}
+```
+
+### Web Worker Processing
+
+O processamento de áudio é feito em background usando Web Worker para não bloquear a UI:
+
+```typescript
+// AudioFeatureExtractor usa worker inline
+const extractor = new AudioFeatureExtractor();
+const features = await extractor.extractFeaturesFromBlob(audioBlob);
+const quality = extractor.calculateQualityScore(features, durationMs);
+```
+
+---
+
 ## 📚 Referências
 
 - [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
@@ -820,3 +955,5 @@ O Assistente de IA suporta comandos de voz para navegação e consulta de dados.
 - [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API)
 - [SpeechRecognition](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition)
 - [SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis)
+- [Web Audio API - AnalyserNode](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode)
+- [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)

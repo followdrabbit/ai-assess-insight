@@ -379,6 +379,7 @@ graph LR
         useSpeechRecognition
         useSpeechSynthesis
         useVoiceCommands
+        useVoiceProfile
     end
     
     subgraph "Utility Hooks"
@@ -392,6 +393,106 @@ graph LR
     useAIAssistant --> useSpeechRecognition
     useAIAssistant --> useSpeechSynthesis
     useVoiceCommands --> useSpeechRecognition
+    useVoiceProfile --> AudioFeatureExtractor
+    useVoiceProfile --> SpeakerVerifier
+```
+
+### Voice Profile System
+
+O sistema de perfil de voz permite cadastrar e verificar a identidade do usuário através de características vocais.
+
+```mermaid
+graph TD
+    subgraph "Voice Enrollment Flow"
+        Start[Iniciar Cadastro] --> Record[Gravar Frase]
+        Record --> Analyze[Analisar Áudio]
+        Analyze --> Extract[Extrair Features]
+        Extract --> Quality{Qualidade OK?}
+        Quality --> |Sim| Next[Próxima Frase]
+        Quality --> |Não| Retry[Regravar]
+        Retry --> Record
+        Next --> |Mais frases| Record
+        Next --> |Completo| Save[Salvar Perfil]
+    end
+    
+    subgraph "Audio Processing"
+        Blob[Audio Blob] --> Decoder[AudioContext.decodeAudioData]
+        Decoder --> Worker[Web Worker]
+        Worker --> MFCC[Calcular MFCC]
+        Worker --> Pitch[Detectar Pitch]
+        Worker --> Energy[Calcular RMS Energy]
+        Worker --> ZCR[Zero Crossing Rate]
+        MFCC --> Features[VoiceFeatures]
+        Pitch --> Features
+        Energy --> Features
+        ZCR --> Features
+    end
+```
+
+#### Componentes do Sistema de Voz
+
+| Componente | Arquivo | Descrição |
+|------------|---------|-----------|
+| `useVoiceProfile` | `src/hooks/useVoiceProfile.ts` | Hook principal para enrollment e verificação |
+| `AudioFeatureExtractor` | `src/lib/voiceProfile/audioFeatureExtractor.ts` | Extração de features com Web Worker |
+| `SpeakerVerifier` | `src/lib/voiceProfile/speakerVerifier.ts` | Verificação de identidade vocal |
+| `VoiceProfileCard` | `src/components/settings/VoiceProfileCard.tsx` | UI de cadastro e gerenciamento |
+
+#### Features Extraídas
+
+| Feature | Descrição | Uso |
+|---------|-----------|-----|
+| MFCC (13 coeficientes) | Mel-Frequency Cepstral Coefficients | Timbre vocal |
+| Pitch Mean/Std | Frequência fundamental média e variação | Tom de voz |
+| RMS Energy | Energia média do sinal | Volume/intensidade |
+| Zero Crossing Rate | Taxa de cruzamento por zero | Características espectrais |
+| Spectral Centroid | Centro de massa espectral | Brilho do som |
+| Speaking Rate | Taxa de fala estimada | Ritmo da fala |
+
+#### Web Worker para Processamento
+
+O processamento de áudio é feito em um Web Worker para não bloquear a UI:
+
+```typescript
+// Worker inline criado via Blob
+const workerCode = `
+  function extractFeatures(samples, sampleRate) {
+    return {
+      mfcc: calculateSimplifiedMFCC(samples),
+      spectralCentroid: estimateSpectralCentroid(samples, sampleRate),
+      // ... outras features
+    };
+  }
+  
+  self.onmessage = function(event) {
+    const { type, id, data } = event.data;
+    const features = extractFeatures(data.samples, data.sampleRate);
+    self.postMessage({ type: 'result', id, data: features });
+  };
+`;
+```
+
+#### Visualização de Áudio em Tempo Real
+
+Durante a gravação, o hook expõe `audioLevels` (array de 12 valores 0-1) que representam os níveis de frequência em tempo real:
+
+```typescript
+// No hook useVoiceProfile
+const startAudioAnalysis = (stream: MediaStream) => {
+  const audioContext = new AudioContext();
+  const analyser = audioContext.createAnalyser();
+  analyser.fftSize = 64;
+  
+  const source = audioContext.createMediaStreamSource(stream);
+  source.connect(analyser);
+  
+  const updateLevels = () => {
+    analyser.getByteFrequencyData(dataArray);
+    // Mapear para 12 barras
+    setAudioLevels(levels);
+    requestAnimationFrame(updateLevels);
+  };
+};
 ```
 
 ### State Management

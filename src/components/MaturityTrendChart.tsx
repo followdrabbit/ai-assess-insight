@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval, startOfQuarter, endOfQuarter, subQuarters, subWeeks, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, CalendarIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -24,6 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { getMaturitySnapshots, MaturitySnapshot } from '@/lib/database';
 import { cn } from '@/lib/utils';
 
@@ -53,7 +60,14 @@ const frameworkColors = [
   'hsl(160, 60%, 45%)',
 ];
 
-type ComparisonType = 'month' | 'quarter' | 'week' | '30days' | '90days';
+type ComparisonType = 'month' | 'quarter' | 'week' | '30days' | '90days' | 'custom';
+
+interface CustomDateRange {
+  currentStart: Date | undefined;
+  currentEnd: Date | undefined;
+  previousStart: Date | undefined;
+  previousEnd: Date | undefined;
+}
 
 export default function MaturityTrendChart({ className }: MaturityTrendChartProps) {
   const [snapshots, setSnapshots] = useState<MaturitySnapshot[]>([]);
@@ -61,6 +75,12 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
   const [daysBack, setDaysBack] = useState<string>('90');
   const [activeTab, setActiveTab] = useState('overall');
   const [comparisonType, setComparisonType] = useState<ComparisonType>('month');
+  const [customRange, setCustomRange] = useState<CustomDateRange>({
+    currentStart: subDays(new Date(), 30),
+    currentEnd: new Date(),
+    previousStart: subDays(new Date(), 60),
+    previousEnd: subDays(new Date(), 31),
+  });
 
   useEffect(() => {
     const loadSnapshots = async () => {
@@ -204,6 +224,17 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         currentLabel = `Últimos 90 dias`;
         previousLabel = `90 dias anteriores`;
         break;
+      case 'custom':
+        if (!customRange.currentStart || !customRange.currentEnd || !customRange.previousStart || !customRange.previousEnd) {
+          return null;
+        }
+        currentStart = customRange.currentStart;
+        currentEnd = customRange.currentEnd;
+        previousStart = customRange.previousStart;
+        previousEnd = customRange.previousEnd;
+        currentLabel = `${format(currentStart, 'dd/MM/yy')} - ${format(currentEnd, 'dd/MM/yy')}`;
+        previousLabel = `${format(previousStart, 'dd/MM/yy')} - ${format(previousEnd, 'dd/MM/yy')}`;
+        break;
       case 'month':
       default:
         currentStart = startOfMonth(now);
@@ -267,7 +298,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
     ];
 
     return { currentPeriod, previousPeriod, variation, barChartData };
-  }, [snapshots, comparisonType]);
+  }, [snapshots, comparisonType, customRange]);
 
   // Render trend indicator
   const TrendIndicator = ({ value, inverted = false }: { value: number; inverted?: boolean }) => {
@@ -445,25 +476,28 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         </TabsContent>
 
         <TabsContent value="comparison">
-          {periodComparison ? (
-            <div className="space-y-6">
-              {/* Period Selector */}
+          <div className="space-y-6">
+            {/* Period Selector */}
+            <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                    <span className="capitalize">{periodComparison.currentPeriod.label}</span>
-                    <span className="text-muted-foreground">({periodComparison.currentPeriod.dataPoints} pontos)</span>
+                {periodComparison && (
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-primary" />
+                      <span className="capitalize">{periodComparison.currentPeriod.label}</span>
+                      <span className="text-muted-foreground">({periodComparison.currentPeriod.dataPoints} pontos)</span>
+                    </div>
+                    <span className="text-muted-foreground">vs</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-muted-foreground/50" />
+                      <span className="capitalize">{periodComparison.previousPeriod.label}</span>
+                      <span className="text-muted-foreground">({periodComparison.previousPeriod.dataPoints} pontos)</span>
+                    </div>
                   </div>
-                  <span className="text-muted-foreground">vs</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-muted-foreground/50" />
-                    <span className="capitalize">{periodComparison.previousPeriod.label}</span>
-                    <span className="text-muted-foreground">({periodComparison.previousPeriod.dataPoints} pontos)</span>
-                  </div>
-                </div>
+                )}
+                {!periodComparison && <div />}
                 <Select value={comparisonType} onValueChange={(v) => setComparisonType(v as ComparisonType)}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Tipo de comparação" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
@@ -472,12 +506,133 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     <SelectItem value="quarter">Trimestre vs anterior</SelectItem>
                     <SelectItem value="30days">Últimos 30 vs 30 anteriores</SelectItem>
                     <SelectItem value="90days">Últimos 90 vs 90 anteriores</SelectItem>
+                    <SelectItem value="custom">Período customizado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Bar Chart Comparison */}
-              <div className="h-[200px]">
+              {/* Custom Date Pickers */}
+              {comparisonType === 'custom' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg border bg-muted/30">
+                  {/* Current Period */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      Período Atual
+                    </label>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "flex-1 justify-start text-left font-normal",
+                              !customRange.currentStart && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {customRange.currentStart ? format(customRange.currentStart, 'dd/MM/yyyy') : 'Início'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={customRange.currentStart}
+                            onSelect={(date) => setCustomRange(prev => ({ ...prev, currentStart: date }))}
+                            initialFocus
+                            locale={ptBR}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "flex-1 justify-start text-left font-normal",
+                              !customRange.currentEnd && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {customRange.currentEnd ? format(customRange.currentEnd, 'dd/MM/yyyy') : 'Fim'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={customRange.currentEnd}
+                            onSelect={(date) => setCustomRange(prev => ({ ...prev, currentEnd: date }))}
+                            initialFocus
+                            locale={ptBR}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  {/* Previous Period */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                      Período Anterior (Comparação)
+                    </label>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "flex-1 justify-start text-left font-normal",
+                              !customRange.previousStart && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {customRange.previousStart ? format(customRange.previousStart, 'dd/MM/yyyy') : 'Início'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={customRange.previousStart}
+                            onSelect={(date) => setCustomRange(prev => ({ ...prev, previousStart: date }))}
+                            initialFocus
+                            locale={ptBR}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "flex-1 justify-start text-left font-normal",
+                              !customRange.previousEnd && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {customRange.previousEnd ? format(customRange.previousEnd, 'dd/MM/yyyy') : 'Fim'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={customRange.previousEnd}
+                            onSelect={(date) => setCustomRange(prev => ({ ...prev, previousEnd: date }))}
+                            initialFocus
+                            locale={ptBR}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {periodComparison ? (
+              <>
+                {/* Bar Chart Comparison */}
+                <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={periodComparison.barChartData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={true} vertical={false} />
@@ -585,15 +740,19 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                   </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <p className="text-muted-foreground mb-2">Dados insuficientes para comparação.</p>
-              <p className="text-sm text-muted-foreground">
-                É necessário ter dados em pelo menos dois períodos para visualizar a comparação.
-              </p>
-            </div>
-          )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <p className="text-muted-foreground mb-2">Dados insuficientes para comparação.</p>
+                <p className="text-sm text-muted-foreground">
+                  {comparisonType === 'custom' 
+                    ? 'Selecione as datas de início e fim para ambos os períodos.'
+                    : 'É necessário ter dados em pelo menos dois períodos para visualizar a comparação.'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="domains">

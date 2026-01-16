@@ -23,7 +23,9 @@ import {
   Presentation,
   X,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -340,6 +342,11 @@ export default function Demo() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [transitionType, setTransitionType] = useState<TransitionType>('slideLeft');
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
+  
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string } | null>(null);
+  const [lightboxZoom, setLightboxZoom] = useState(1);
 
   const filteredScreenshots = activeCategory === 'all' 
     ? screenshots 
@@ -436,6 +443,245 @@ export default function Demo() {
       document.exitFullscreen();
     }
     setIsFullscreen(false);
+  };
+
+  // Lightbox functions
+  const openLightbox = (src: string, title: string) => {
+    setLightboxImage({ src, title });
+    setLightboxZoom(1);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setLightboxImage(null);
+    setLightboxZoom(1);
+  };
+
+  const zoomIn = () => setLightboxZoom((prev) => Math.min(prev + 0.25, 3));
+  const zoomOut = () => setLightboxZoom((prev) => Math.max(prev - 0.25, 0.5));
+
+  // Lightbox keyboard navigation
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Escape':
+          closeLightbox();
+          break;
+        case '+':
+        case '=':
+          zoomIn();
+          break;
+        case '-':
+          zoomOut();
+          break;
+        case 'ArrowRight':
+          setSlideDirection('next');
+          setActiveScreenshot((prev) => (prev + 1) % filteredScreenshots.length);
+          setLightboxImage({
+            src: filteredScreenshots[(activeScreenshot + 1) % filteredScreenshots.length]?.image,
+            title: filteredScreenshots[(activeScreenshot + 1) % filteredScreenshots.length]?.title,
+          });
+          setLightboxZoom(1);
+          break;
+        case 'ArrowLeft':
+          setSlideDirection('prev');
+          setActiveScreenshot((prev) => (prev - 1 + filteredScreenshots.length) % filteredScreenshots.length);
+          setLightboxImage({
+            src: filteredScreenshots[(activeScreenshot - 1 + filteredScreenshots.length) % filteredScreenshots.length]?.image,
+            title: filteredScreenshots[(activeScreenshot - 1 + filteredScreenshots.length) % filteredScreenshots.length]?.title,
+          });
+          setLightboxZoom(1);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, activeScreenshot, filteredScreenshots]);
+
+  // Lightbox Overlay
+  const LightboxOverlay = () => {
+    if (!lightboxOpen || !lightboxImage) return null;
+
+    return (
+      <AnimatePresence>
+        <motion.div
+          className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={closeLightbox}
+        >
+          {/* Header Controls */}
+          <motion.div
+            className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/80 to-transparent"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between max-w-6xl mx-auto">
+              <div className="flex items-center gap-3">
+                <span className="text-white font-medium text-lg">{lightboxImage.title}</span>
+                <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                  {activeScreenshot + 1} / {filteredScreenshots.length}
+                </Badge>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-1 mr-2 bg-white/10 rounded-lg p-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => { e.stopPropagation(); zoomOut(); }}
+                    disabled={lightboxZoom <= 0.5}
+                    className="text-white hover:bg-white/20 h-8 w-8"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <span className="text-white text-sm min-w-[3rem] text-center">
+                    {Math.round(lightboxZoom * 100)}%
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => { e.stopPropagation(); zoomIn(); }}
+                    disabled={lightboxZoom >= 3}
+                    className="text-white hover:bg-white/20 h-8 w-8"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Close Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={closeLightbox}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Image Container */}
+          <motion.div
+            className="relative max-w-[90vw] max-h-[80vh] cursor-zoom-out"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <motion.img
+              src={lightboxImage.src}
+              alt={lightboxImage.title}
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+              style={{ transform: `scale(${lightboxZoom})` }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              drag={lightboxZoom > 1}
+              dragConstraints={{ left: -200, right: 200, top: -200, bottom: 200 }}
+            />
+          </motion.div>
+
+          {/* Navigation Arrows */}
+          <motion.div
+            className="absolute left-4 top-1/2 -translate-y-1/2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Button
+              variant="ghost"
+              size="lg"
+              className="rounded-full bg-white/10 hover:bg-white/20 text-white h-14 w-14"
+              onClick={(e) => {
+                e.stopPropagation();
+                const newIndex = (activeScreenshot - 1 + filteredScreenshots.length) % filteredScreenshots.length;
+                setActiveScreenshot(newIndex);
+                setLightboxImage({
+                  src: filteredScreenshots[newIndex]?.image,
+                  title: filteredScreenshots[newIndex]?.title,
+                });
+                setLightboxZoom(1);
+              }}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+          </motion.div>
+          <motion.div
+            className="absolute right-4 top-1/2 -translate-y-1/2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Button
+              variant="ghost"
+              size="lg"
+              className="rounded-full bg-white/10 hover:bg-white/20 text-white h-14 w-14"
+              onClick={(e) => {
+                e.stopPropagation();
+                const newIndex = (activeScreenshot + 1) % filteredScreenshots.length;
+                setActiveScreenshot(newIndex);
+                setLightboxImage({
+                  src: filteredScreenshots[newIndex]?.image,
+                  title: filteredScreenshots[newIndex]?.title,
+                });
+                setLightboxZoom(1);
+              }}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </Button>
+          </motion.div>
+
+          {/* Footer with thumbnails */}
+          <motion.div
+            className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center gap-2 overflow-x-auto pb-2">
+              {filteredScreenshots.map((screenshot, index) => (
+                <motion.button
+                  key={index}
+                  onClick={() => {
+                    setActiveScreenshot(index);
+                    setLightboxImage({ src: screenshot.image, title: screenshot.title });
+                    setLightboxZoom(1);
+                  }}
+                  className={`relative flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+                    index === activeScreenshot 
+                      ? 'border-primary ring-2 ring-primary/50' 
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <img
+                    src={screenshot.image}
+                    alt={screenshot.title}
+                    className="w-20 h-14 object-cover"
+                  />
+                </motion.button>
+              ))}
+            </div>
+            <p className="text-center text-xs text-white/60 mt-2">
+              Use <kbd className="px-1.5 py-0.5 bg-white/20 rounded text-xs">←</kbd> <kbd className="px-1.5 py-0.5 bg-white/20 rounded text-xs">→</kbd> para navegar, 
+              <kbd className="px-1.5 py-0.5 bg-white/20 rounded text-xs ml-1">+</kbd> <kbd className="px-1.5 py-0.5 bg-white/20 rounded text-xs">-</kbd> para zoom, 
+              <kbd className="px-1.5 py-0.5 bg-white/20 rounded text-xs ml-1">ESC</kbd> para fechar
+            </p>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
   };
 
   // Presentation Mode Overlay
@@ -547,20 +793,41 @@ export default function Demo() {
                 <div className="grid md:grid-cols-2 min-h-[500px]">
                   {/* Screenshot Image */}
                   <motion.div 
-                    className="relative overflow-hidden bg-muted/30"
+                    className="relative overflow-hidden bg-muted/30 cursor-pointer group"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.15, duration: 0.4 }}
+                    onClick={() => {
+                      setIsAutoPlaying(false);
+                      openLightbox(
+                        filteredScreenshots[activeScreenshot]?.image,
+                        filteredScreenshots[activeScreenshot]?.title
+                      );
+                    }}
                   >
                     <motion.img 
                       src={filteredScreenshots[activeScreenshot]?.image}
                       alt={filteredScreenshots[activeScreenshot]?.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
                       initial={{ scale: 1.1 }}
                       animate={{ scale: 1 }}
                       transition={{ duration: 0.6 }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
+                    {/* Zoom hint overlay */}
+                    <motion.div 
+                      className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors"
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                    >
+                      <motion.div
+                        className="bg-white/90 dark:bg-black/90 rounded-full p-3 shadow-lg"
+                        initial={{ scale: 0 }}
+                        whileHover={{ scale: 1 }}
+                      >
+                        <ZoomIn className="h-6 w-6 text-primary" />
+                      </motion.div>
+                    </motion.div>
                   </motion.div>
 
                   {/* Description */}
@@ -693,7 +960,9 @@ export default function Demo() {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <>
+      <LightboxOverlay />
+      <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <motion.header 
         initial={{ y: -100, opacity: 0 }}
@@ -1004,21 +1273,39 @@ export default function Demo() {
                     <div className="grid md:grid-cols-2">
                       {/* Screenshot Image */}
                       <motion.div 
-                        className="relative overflow-hidden min-h-[400px] bg-muted/30"
+                        className="relative overflow-hidden min-h-[400px] bg-muted/30 cursor-pointer group"
                         variants={slideInLeft}
                         initial="hidden"
                         animate="visible"
                         transition={{ duration: 0.5 }}
+                        onClick={() => openLightbox(
+                          filteredScreenshots[activeScreenshot]?.image,
+                          filteredScreenshots[activeScreenshot]?.title
+                        )}
                       >
                         <motion.img 
                           src={filteredScreenshots[activeScreenshot]?.image}
                           alt={filteredScreenshots[activeScreenshot]?.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
                           initial={{ scale: 1.1 }}
                           animate={{ scale: 1 }}
                           transition={{ duration: 0.6 }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/10" />
+                        {/* Zoom hint overlay */}
+                        <motion.div 
+                          className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors"
+                          initial={{ opacity: 0 }}
+                          whileHover={{ opacity: 1 }}
+                        >
+                          <motion.div
+                            className="bg-white/90 dark:bg-black/90 rounded-full p-3 shadow-lg"
+                            initial={{ scale: 0 }}
+                            whileHover={{ scale: 1 }}
+                          >
+                            <ZoomIn className="h-6 w-6 text-primary" />
+                          </motion.div>
+                        </motion.div>
                         <motion.div 
                           className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-background/90 backdrop-blur flex items-center justify-center text-primary shadow-lg"
                           initial={{ scale: 0, rotate: -180 }}
@@ -1288,6 +1575,7 @@ export default function Demo() {
           </div>
         </div>
       </motion.footer>
-    </div>
+      </div>
+    </>
   );
 }

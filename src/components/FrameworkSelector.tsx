@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, AlertTriangle, Lock, Info } from 'lucide-react';
+import { ChevronLeft, ChevronDown, AlertTriangle, Lock, Info, Settings } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   SecurityDomain, 
   getSecurityDomainById, 
@@ -413,37 +414,100 @@ function UnavailableFrameworkCard({ framework, domain }: UnavailableFrameworkCar
   const colorStyles = DOMAIN_COLORS[domain.color];
   
   return (
-    <Card className="opacity-50 cursor-not-allowed bg-muted/30 border-dashed">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <div className="h-4 w-4 rounded border-2 border-muted-foreground/30 flex items-center justify-center">
-              <Lock className="h-2.5 w-2.5 text-muted-foreground/50" />
-            </div>
-            <div>
-              <CardTitle className="text-base text-muted-foreground">{framework.shortName}</CardTitle>
-              <CardDescription className="text-xs mt-0.5">
-                {framework.frameworkName}
-              </CardDescription>
+    <TooltipProvider>
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <Card className="opacity-50 cursor-not-allowed bg-muted/30 border-dashed hover:opacity-70 transition-opacity">
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-4 rounded border-2 border-muted-foreground/30 flex items-center justify-center">
+                    <Lock className="h-2.5 w-2.5 text-muted-foreground/50" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base text-muted-foreground">{framework.shortName}</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">
+                      {framework.frameworkName}
+                    </CardDescription>
+                  </div>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className="text-[10px] shrink-0 opacity-50"
+                >
+                  {categoryLabels[framework.category]}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-xs text-muted-foreground line-clamp-2 opacity-70">
+                {framework.description}
+              </p>
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                <Info className="h-3 w-3" />
+                <span>Requer domínio "{domain.shortName}" habilitado</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TooltipTrigger>
+        <TooltipContent 
+          side="top" 
+          className="max-w-xs p-0 overflow-hidden"
+          sideOffset={8}
+        >
+          <div className={cn(
+            "px-3 py-2 border-b",
+            colorStyles?.bg || "bg-muted"
+          )}>
+            <div className="flex items-center gap-2">
+              <Lock className={cn("h-4 w-4", colorStyles?.text || "text-muted-foreground")} />
+              <span className={cn("font-semibold text-sm", colorStyles?.text || "text-foreground")}>
+                Framework Indisponível
+              </span>
             </div>
           </div>
-          <Badge 
-            variant="outline" 
-            className="text-[10px] shrink-0 opacity-50"
-          >
-            {categoryLabels[framework.category]}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <p className="text-xs text-muted-foreground line-clamp-2 opacity-70">
-          {framework.description}
-        </p>
-        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
-          <Info className="h-3 w-3" />
-          <span>Requer domínio "{domain.shortName}" habilitado</span>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="p-3 space-y-2">
+            <div>
+              <p className="text-xs font-medium text-foreground">{framework.shortName}</p>
+              <p className="text-xs text-muted-foreground">{framework.frameworkName}</p>
+            </div>
+            <div className="pt-2 border-t border-dashed">
+              <p className="text-xs text-muted-foreground mb-1">
+                <strong>Motivo:</strong> O domínio de segurança está desabilitado
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge 
+                  variant="outline" 
+                  className={cn("text-[10px]", colorStyles?.border, colorStyles?.text)}
+                >
+                  {domain.domainName}
+                </Badge>
+                <span className="text-[10px] text-destructive font-medium">
+                  DESABILITADO
+                </span>
+              </div>
+            </div>
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground">
+                <strong>Para habilitar:</strong>
+              </p>
+              <div className="flex items-start gap-1.5 mt-1">
+                <Settings className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">
+                  Vá em Configurações → Taxonomia → Hierarquia e ative o domínio "{domain.shortName}"
+                </span>
+              </div>
+            </div>
+            {domain.description && (
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground italic">
+                  "{domain.description}"
+                </p>
+              </div>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

@@ -27,6 +27,7 @@ import {
 import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, ExternalLink, Filter } from 'lucide-react';
 import { CardActionButtons, createEditAction, createDeleteAction } from './CardActionButtons';
+import { CardLoadingOverlay } from './CardLoadingOverlay';
 
 type AudienceType = 'Executive' | 'GRC' | 'Engineering';
 type CategoryType = 'core' | 'high-value' | 'tech-focused' | 'custom';
@@ -94,6 +95,7 @@ export function FrameworkManagement() {
   const [isEditingDefault, setIsEditingDefault] = useState(false);
   const [formData, setFormData] = useState<FrameworkFormData>(emptyFormData);
   const [referencesText, setReferencesText] = useState('');
+  const [operatingId, setOperatingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -231,6 +233,7 @@ export function FrameworkManagement() {
   };
 
   const handleDelete = async (frameworkId: string, isCustom: boolean) => {
+    setOperatingId(frameworkId);
     try {
       if (isCustom) {
         await deleteCustomFramework(frameworkId);
@@ -243,6 +246,8 @@ export function FrameworkManagement() {
     } catch (error) {
       toast.error('Erro ao remover framework');
       console.error(error);
+    } finally {
+      setOperatingId(null);
     }
   };
 
@@ -328,7 +333,11 @@ export function FrameworkManagement() {
             const colorStyles = domainInfo ? DOMAIN_COLORS[domainInfo.color] : null;
             
             return (
-              <Card key={fw.frameworkId} className={cn("card-interactive", !fw.isCustom && "opacity-90")}>
+              <Card key={fw.frameworkId} className={cn("card-interactive relative", !fw.isCustom && "opacity-90")}>
+                <CardLoadingOverlay 
+                  isLoading={operatingId === fw.frameworkId} 
+                  loadingText="Processando..."
+                />
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>

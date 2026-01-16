@@ -29,6 +29,7 @@ import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, Save, 
 import { questions } from '@/lib/dataset';
 import { frameworks } from '@/lib/frameworks';
 import { CardActionButtons, createEditAction, createDeleteAction, createExportAction } from './CardActionButtons';
+import { CardLoadingOverlay } from './CardLoadingOverlay';
 
 const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
   brain: Brain,
@@ -92,6 +93,7 @@ export function DomainManagement() {
   const [domains, setDomains] = useState<SecurityDomain[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [operatingId, setOperatingId] = useState<string | null>(null);
   const [editingDomain, setEditingDomain] = useState<SecurityDomain | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createStep, setCreateStep] = useState<'basics' | 'taxonomy' | 'review'>('basics');
@@ -177,6 +179,7 @@ export function DomainManagement() {
       return;
     }
 
+    setOperatingId(domain.domainId);
     setSaving(true);
     try {
       const { error } = await supabase
@@ -198,6 +201,7 @@ export function DomainManagement() {
       toast.error('Erro ao atualizar domínio');
     } finally {
       setSaving(false);
+      setOperatingId(null);
     }
   };
 
@@ -561,11 +565,15 @@ export function DomainManagement() {
 
     return (
       <Card className={cn(
-        "card-interactive h-full flex flex-col",
+        "card-interactive h-full flex flex-col relative",
         domain.isEnabled 
           ? "border-primary/50" 
           : "opacity-60 border-muted"
       )}>
+        <CardLoadingOverlay 
+          isLoading={operatingId === domain.domainId} 
+          loadingText="Processando..."
+        />
         <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-3 min-w-0 flex-1">

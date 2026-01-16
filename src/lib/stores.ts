@@ -205,7 +205,7 @@ export const useAnswersStore = create<AnswersState>()((set, get) => ({
 
   setSelectedSecurityDomain: async (domainId: string) => {
     // When changing domain, clear the selected frameworks for a fresh start
-    set({ selectedSecurityDomain: domainId, selectedFrameworks: [] });
+    set({ selectedSecurityDomain: domainId, selectedFrameworks: [], lastUpdated: new Date().toISOString() });
     try {
       await dbSetSelectedSecurityDomain(domainId);
       await dbSetSelectedFrameworks([]);

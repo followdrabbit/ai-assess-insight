@@ -281,7 +281,7 @@ export function QuestionManagement() {
         (q as any).securityDomainId === filterSecurityDomain ||
         taxonomyDomains.find(d => d.domainId === q.domainId)?.securityDomainId === filterSecurityDomain;
       const matchesFramework = filterFramework === 'all' || 
-        q.frameworks.some(fw => fw.toLowerCase().includes(filterFramework.toLowerCase()));
+        q.frameworks.some(fw => fw === filterFramework || fw.toUpperCase() === filterFramework.toUpperCase());
       return matchesSearch && matchesDomain && matchesSecurityDomain && matchesFramework;
     });
   }, [allQuestions, searchQuery, filterDomain, filterSecurityDomain, filterFramework, taxonomyDomains]);

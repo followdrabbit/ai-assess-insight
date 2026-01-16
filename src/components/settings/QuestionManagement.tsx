@@ -53,9 +53,10 @@ import {
 import { VersionComparisonView } from './VersionComparisonView';
 import { VersionAnnotations } from './VersionAnnotations';
 import { VersionTags, VersionTagsBadges } from './VersionTags';
+import { VersionFiltersBar, filterVersions, useVersionFilters, VersionFilters } from './VersionFilters';
 import { supabase } from '@/integrations/supabase/client';
 import { downloadVersionHistoryHtml, openVersionHistoryPrintView } from '@/lib/versionHistoryExport';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter as FilterIcon, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -164,6 +165,7 @@ export function QuestionManagement() {
   const [selectedVersion, setSelectedVersion] = useState<QuestionVersion | null>(null);
   const [versionCounts, setVersionCounts] = useState<Map<string, number>>(new Map());
   const [reverting, setReverting] = useState(false);
+  const { filters: versionFilters, setFilters: setVersionFilters, resetFilters: resetVersionFilters } = useVersionFilters();
 
   useEffect(() => {
     loadData();
@@ -415,6 +417,7 @@ export function QuestionManagement() {
     try {
       const versionHistory = await getQuestionVersions(questionId);
       setVersions(versionHistory);
+      resetVersionFilters(); // Reset filters when opening new question's history
     } catch (error) {
       console.error('Error loading versions:', error);
       toast.error('Erro ao carregar histórico de versões');
@@ -700,7 +703,7 @@ export function QuestionManagement() {
 
       {/* Security Domain Filter */}
       <div className="flex items-center gap-3">
-        <Filter className="h-4 w-4 text-muted-foreground" />
+        <FilterIcon className="h-4 w-4 text-muted-foreground" />
         <div className="flex gap-2 flex-wrap">
           <Badge
             variant={filterSecurityDomain === 'all' ? 'default' : 'outline'}
@@ -1429,10 +1432,40 @@ export function QuestionManagement() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="timeline" className="mt-4">
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-3 pr-4">
-                    {versions.map((version, index) => (
+              <TabsContent value="timeline" className="mt-4 space-y-4">
+                {/* Filters */}
+                <VersionFiltersBar
+                  filters={versionFilters}
+                  onFiltersChange={setVersionFilters}
+                  versions={versions}
+                />
+                
+                {(() => {
+                  const filteredVersions = filterVersions(versions, versionFilters);
+                  
+                  if (filteredVersions.length === 0) {
+                    return (
+                      <div className="py-8 text-center text-muted-foreground">
+                        <FilterIcon className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">Nenhuma versão encontrada com os filtros atuais</p>
+                        <Button variant="link" size="sm" onClick={resetVersionFilters} className="mt-2">
+                          Limpar filtros
+                        </Button>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      {versionFilters.searchText || versionFilters.dateFrom || versionFilters.dateTo || 
+                       versionFilters.changeTypes.length > 0 || versionFilters.tags.length > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Mostrando {filteredVersions.length} de {versions.length} versões
+                        </p>
+                      ) : null}
+                      <ScrollArea className="h-[350px]">
+                        <div className="space-y-3 pr-4">
+                          {filteredVersions.map((version, index) => (
                       <Card 
                         key={version.id} 
                         className={cn(
@@ -1506,8 +1539,11 @@ export function QuestionManagement() {
                         </CardContent>
                       </Card>
                     ))}
-                  </div>
-                </ScrollArea>
+                        </div>
+                      </ScrollArea>
+                    </>
+                  );
+                })()}
 
                 {/* Version Details */}
                 {selectedVersion && (

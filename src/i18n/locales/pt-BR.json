@@ -38,7 +38,9 @@
     "cloudSync": "Dados sincronizados com a nuvem",
     "refresh": "Atualizar",
     "days": "dias",
-    "unknown": "Desconhecido"
+    "unknown": "Desconhecido",
+    "minutes": "minutos",
+    "hours": "horas"
   },
   "auth": {
     "login": "Entrar",
@@ -1137,6 +1139,23 @@
       "desktop": "Desktop",
       "mobile": "Mobile",
       "tablet": "Tablet"
+    },
+    "suspiciousAccess": {
+      "title": "Alertas de Acesso Suspeito",
+      "description": "Acessos de países diferentes em curto período de tempo",
+      "accesses": "acessos",
+      "firstAccess": "Primeiro Acesso",
+      "lastAccess": "Último Acesso",
+      "severity": {
+        "high": "Alta",
+        "medium": "Média",
+        "low": "Baixa"
+      },
+      "type": {
+        "multi_country": "Múltiplos Países",
+        "rapid_location_change": "Mudança Rápida de Localização",
+        "unusual_device": "Dispositivo Incomum"
+      }
     }
   },
   "errors": {

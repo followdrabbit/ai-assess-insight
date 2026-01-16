@@ -217,3 +217,154 @@ export async function getAuditLogStats(days: number = 30): Promise<{
     uniqueIPs: uniqueIPs.size,
   };
 }
+
+/**
+ * Suspicious access alert interface
+ */
+export interface SuspiciousAccessAlert {
+  id: string;
+  userId: string;
+  severity: 'high' | 'medium' | 'low';
+  type: 'multi_country' | 'rapid_location_change' | 'unusual_device';
+  description: string;
+  countries: string[];
+  timeWindowMinutes: number;
+  firstAccess: {
+    country: string;
+    city: string | null;
+    ip: string;
+    timestamp: string;
+    device: string | null;
+  };
+  lastAccess: {
+    country: string;
+    city: string | null;
+    ip: string;
+    timestamp: string;
+    device: string | null;
+  };
+  accessCount: number;
+  detectedAt: string;
+}
+
+/**
+ * Detect suspicious access patterns - same user accessing from different countries in a short period
+ */
+export async function detectSuspiciousAccess(options: {
+  timeWindowHours?: number;
+  minCountryChanges?: number;
+}): Promise<SuspiciousAccessAlert[]> {
+  const { timeWindowHours = 24, minCountryChanges = 2 } = options;
+  
+  const startDate = new Date();
+  startDate.setHours(startDate.getHours() - timeWindowHours);
+
+  const { data, error } = await supabase
+    .from('change_logs')
+    .select('user_id, ip_address, geo_country, geo_city, device_type, created_at')
+    .gte('created_at', startDate.toISOString())
+    .not('user_id', 'is', null)
+    .not('geo_country', 'is', null)
+    .order('created_at', { ascending: true });
+
+  if (error || !data) {
+    console.error('Failed to fetch logs for suspicious access detection:', error);
+    return [];
+  }
+
+  // Group accesses by user
+  const userAccesses = new Map<string, Array<{
+    country: string;
+    city: string | null;
+    ip: string;
+    timestamp: string;
+    device: string | null;
+  }>>();
+
+  data.forEach(row => {
+    if (!row.user_id || !row.geo_country) return;
+    
+    const userId = row.user_id;
+    if (!userAccesses.has(userId)) {
+      userAccesses.set(userId, []);
+    }
+    
+    userAccesses.get(userId)!.push({
+      country: row.geo_country as string,
+      city: row.geo_city as string | null,
+      ip: row.ip_address as string,
+      timestamp: row.created_at as string,
+      device: row.device_type as string | null,
+    });
+  });
+
+  const alerts: SuspiciousAccessAlert[] = [];
+
+  // Analyze each user's access pattern
+  userAccesses.forEach((accesses, userId) => {
+    if (accesses.length < 2) return;
+
+    // Get unique countries in order of first appearance
+    const countrySequence: { country: string; firstSeen: string; lastSeen: string }[] = [];
+    const seenCountries = new Set<string>();
+
+    accesses.forEach(access => {
+      if (!seenCountries.has(access.country)) {
+        seenCountries.add(access.country);
+        countrySequence.push({
+          country: access.country,
+          firstSeen: access.timestamp,
+          lastSeen: access.timestamp,
+        });
+      } else {
+        const existing = countrySequence.find(c => c.country === access.country);
+        if (existing) {
+          existing.lastSeen = access.timestamp;
+        }
+      }
+    });
+
+    // Check if user accessed from multiple countries
+    if (countrySequence.length >= minCountryChanges) {
+      const firstAccess = accesses[0];
+      const lastAccess = accesses[accesses.length - 1];
+      
+      const timeDiffMs = new Date(lastAccess.timestamp).getTime() - new Date(firstAccess.timestamp).getTime();
+      const timeDiffMinutes = Math.round(timeDiffMs / (1000 * 60));
+
+      // Determine severity based on time window and country count
+      let severity: 'high' | 'medium' | 'low' = 'low';
+      if (timeDiffMinutes < 60 && countrySequence.length >= 3) {
+        severity = 'high';
+      } else if (timeDiffMinutes < 180 && countrySequence.length >= 2) {
+        severity = 'medium';
+      }
+
+      // Only create alert if there's an actual country change (not just same country multiple times)
+      if (firstAccess.country !== lastAccess.country || countrySequence.length > 2) {
+        alerts.push({
+          id: `${userId}-${Date.now()}`,
+          userId,
+          severity,
+          type: timeDiffMinutes < 120 ? 'rapid_location_change' : 'multi_country',
+          description: `Access from ${countrySequence.length} different countries within ${timeDiffMinutes} minutes`,
+          countries: countrySequence.map(c => c.country),
+          timeWindowMinutes: timeDiffMinutes,
+          firstAccess,
+          lastAccess,
+          accessCount: accesses.length,
+          detectedAt: new Date().toISOString(),
+        });
+      }
+    }
+  });
+
+  // Sort by severity (high first) then by time
+  return alerts.sort((a, b) => {
+    const severityOrder = { high: 0, medium: 1, low: 2 };
+    if (severityOrder[a.severity] !== severityOrder[b.severity]) {
+      return severityOrder[a.severity] - severityOrder[b.severity];
+    }
+    return new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime();
+  });
+}

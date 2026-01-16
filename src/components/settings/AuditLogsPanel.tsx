@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import {
   Activity,
+  AlertTriangle,
   Clock,
   Filter,
   Globe,
+  MapPin,
   Monitor,
   RefreshCw,
   Search,
+  ShieldAlert,
   Smartphone,
   Tablet,
   User,
@@ -23,6 +26,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Download,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,8 +38,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { getDetailedAuditLogs, getAuditLogStats, type DetailedAuditLog } from '@/lib/auditLog';
+import { getDetailedAuditLogs, getAuditLogStats, detectSuspiciousAccess, type DetailedAuditLog, type SuspiciousAccessAlert } from '@/lib/auditLog';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 const COLORS = {
@@ -53,10 +59,18 @@ const ENTITY_COLORS = {
   answer: 'hsl(142, 76%, 36%)',
 };
 
+const SEVERITY_COLORS = {
+  high: 'text-red-600 bg-red-500/10 border-red-500/30',
+  medium: 'text-amber-600 bg-amber-500/10 border-amber-500/30',
+  low: 'text-blue-600 bg-blue-500/10 border-blue-500/30',
+};
+
 export function AuditLogsPanel() {
   const { t, i18n } = useTranslation();
   const [logs, setLogs] = useState<DetailedAuditLog[]>([]);
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getAuditLogStats>> | null>(null);
+  const [suspiciousAlerts, setSuspiciousAlerts] = useState<SuspiciousAccessAlert[]>([]);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState<string>('all');
@@ -64,13 +78,14 @@ export function AuditLogsPanel() {
   const [filterDevice, setFilterDevice] = useState<string>('all');
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [statsPeriod, setStatsPeriod] = useState(30);
+  const [alertsExpanded, setAlertsExpanded] = useState(true);
 
   const locale = i18n.language === 'pt-BR' ? ptBR : i18n.language === 'es-ES' ? es : enUS;
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [logsData, statsData] = await Promise.all([
+      const [logsData, statsData, alertsData] = await Promise.all([
         getDetailedAuditLogs({
           limit: 200,
           entityType: filterEntity !== 'all' ? filterEntity : undefined,
@@ -79,15 +94,25 @@ export function AuditLogsPanel() {
           endDate: dateRange.to,
         }),
         getAuditLogStats(statsPeriod),
+        detectSuspiciousAccess({ timeWindowHours: 24, minCountryChanges: 2 }),
       ]);
       setLogs(logsData);
       setStats(statsData);
+      setSuspiciousAlerts(alertsData);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const dismissAlert = (alertId: string) => {
+    setDismissedAlerts(prev => new Set([...prev, alertId]));
+  };
+
+  const activeAlerts = useMemo(() => {
+    return suspiciousAlerts.filter(alert => !dismissedAlerts.has(alert.id));
+  }, [suspiciousAlerts, dismissedAlerts]);
 
   useEffect(() => {
     fetchData();
@@ -215,6 +240,118 @@ export function AuditLogsPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Suspicious Access Alerts */}
+      {activeAlerts.length > 0 && (
+        <Collapsible open={alertsExpanded} onOpenChange={setAlertsExpanded}>
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardHeader className="pb-2">
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-amber-600" />
+                  <CardTitle className="text-base text-amber-700 dark:text-amber-400">
+                    {t('auditLogs.suspiciousAccess.title')}
+                  </CardTitle>
+                  <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                    {activeAlerts.length}
+                  </Badge>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  {alertsExpanded ? '−' : '+'}
+                </Button>
+              </CollapsibleTrigger>
+              <CardDescription className="text-amber-600/80">
+                {t('auditLogs.suspiciousAccess.description')}
+              </CardDescription>
+            </CardHeader>
+            <CollapsibleContent>
+              <CardContent className="space-y-3 pt-2">
+                {activeAlerts.map((alert) => (
+                  <Alert 
+                    key={alert.id} 
+                    className={cn("relative", SEVERITY_COLORS[alert.severity])}
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-2 h-6 w-6 p-0 hover:bg-background/50"
+                      onClick={() => dismissAlert(alert.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <AlertTitle className="flex items-center gap-2 pr-8">
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "text-xs",
+                          alert.severity === 'high' && "border-red-500 text-red-600",
+                          alert.severity === 'medium' && "border-amber-500 text-amber-600",
+                          alert.severity === 'low' && "border-blue-500 text-blue-600"
+                        )}
+                      >
+                        {t(`auditLogs.suspiciousAccess.severity.${alert.severity}`)}
+                      </Badge>
+                      <span className="text-sm font-medium">
+                        {t(`auditLogs.suspiciousAccess.type.${alert.type}`)}
+                      </span>
+                    </AlertTitle>
+                    <AlertDescription className="mt-2 space-y-2">
+                      <div className="flex flex-wrap gap-4 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="font-mono truncate max-w-[200px]" title={alert.userId}>
+                            {alert.userId.slice(0, 8)}...
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{alert.countries.join(' → ')}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>
+                            {alert.timeWindowMinutes < 60 
+                              ? `${alert.timeWindowMinutes} ${t('common.minutes')}`
+                              : `${Math.round(alert.timeWindowMinutes / 60)} ${t('common.hours')}`
+                            }
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{alert.accessCount} {t('auditLogs.suspiciousAccess.accesses')}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-xs">
+                        <div className="p-2 rounded bg-background/50 border border-border/50">
+                          <div className="text-muted-foreground mb-1">{t('auditLogs.suspiciousAccess.firstAccess')}</div>
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-3 w-3" />
+                            <span>{alert.firstAccess.city ? `${alert.firstAccess.city}, ` : ''}{alert.firstAccess.country}</span>
+                          </div>
+                          <div className="text-muted-foreground mt-0.5">
+                            {format(new Date(alert.firstAccess.timestamp), 'dd/MM HH:mm', { locale })}
+                          </div>
+                        </div>
+                        <div className="p-2 rounded bg-background/50 border border-border/50">
+                          <div className="text-muted-foreground mb-1">{t('auditLogs.suspiciousAccess.lastAccess')}</div>
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-3 w-3" />
+                            <span>{alert.lastAccess.city ? `${alert.lastAccess.city}, ` : ''}{alert.lastAccess.country}</span>
+                          </div>
+                          <div className="text-muted-foreground mt-0.5">
+                            {format(new Date(alert.lastAccess.timestamp), 'dd/MM HH:mm', { locale })}
+                          </div>
+                        </div>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                ))}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>

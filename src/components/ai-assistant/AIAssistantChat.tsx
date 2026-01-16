@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, HelpCircle } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -200,6 +200,17 @@ export function AIAssistantChat() {
                     <div className="flex flex-wrap gap-1">
                       {getAllCommands().filter(c => c.category === 'data').map(cmd => (
                         <Badge key={cmd.id} variant="outline" className="text-xs cursor-pointer" onClick={() => setInputValue(cmd.description)}>
+                          {cmd.description}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mt-2">
+                      <Globe className="h-3 w-3" />
+                      {t('voiceCommands.domainCategory', 'Security Domains')}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {getAllCommands().filter(c => c.category === 'domain').map(cmd => (
+                        <Badge key={cmd.id} variant="default" className="text-xs cursor-pointer" onClick={() => setInputValue(cmd.description)}>
                           {cmd.description}
                         </Badge>
                       ))}

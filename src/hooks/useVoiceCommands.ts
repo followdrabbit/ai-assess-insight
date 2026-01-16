@@ -2,13 +2,15 @@ import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useDashboardMetrics } from './useDashboardMetrics';
+import { useAnswersStore } from '@/lib/stores';
+import { toast } from 'sonner';
 
 export interface VoiceCommand {
   id: string;
   patterns: RegExp[];
   action: () => void | Promise<void>;
   description: string;
-  category: 'navigation' | 'data' | 'ui';
+  category: 'navigation' | 'data' | 'ui' | 'domain';
 }
 
 export interface CommandResult {
@@ -21,6 +23,7 @@ export function useVoiceCommands() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { criticalGaps, metrics, currentDomainInfo } = useDashboardMetrics();
+  const setSelectedSecurityDomain = useAnswersStore(state => state.setSelectedSecurityDomain);
 
   // Generate summary text for the current security posture
   const generatePostureSummary = useCallback(() => {
@@ -143,7 +146,65 @@ export function useVoiceCommands() {
       description: t('voiceCommands.goToProfile', 'Ir para Perfil'),
       category: 'navigation',
     },
-  ], [navigate, t]);
+    // Domain switching commands
+    {
+      id: 'domain_ai',
+      patterns: [
+        /mudar\s*(para)?\s*(o)?\s*domínio\s*(de)?\s*i\.?a\.?/i,
+        /trocar\s*(para)?\s*(o)?\s*domínio\s*(de)?\s*i\.?a\.?/i,
+        /domínio\s*(de)?\s*i\.?a\.?\s*security/i,
+        /ai\s*security/i,
+        /segurança\s*(de)?\s*i\.?a\.?/i,
+        /inteligência\s*artificial/i,
+        /switch\s*(to)?\s*ai\s*security/i,
+        /change\s*(to)?\s*ai\s*(domain)?/i,
+      ],
+      action: async () => {
+        await setSelectedSecurityDomain('ai-security');
+        toast.success(t('voiceCommands.domainChanged', 'Domínio alterado para AI Security'));
+      },
+      description: t('voiceCommands.switchToAI', 'Mudar para AI Security'),
+      category: 'domain',
+    },
+    {
+      id: 'domain_cloud',
+      patterns: [
+        /mudar\s*(para)?\s*(o)?\s*domínio\s*(de)?\s*cloud/i,
+        /trocar\s*(para)?\s*(o)?\s*domínio\s*(de)?\s*cloud/i,
+        /domínio\s*(de)?\s*cloud\s*security/i,
+        /cloud\s*security/i,
+        /segurança\s*(de)?\s*cloud/i,
+        /segurança\s*(de)?\s*nuvem/i,
+        /switch\s*(to)?\s*cloud\s*security/i,
+        /change\s*(to)?\s*cloud\s*(domain)?/i,
+      ],
+      action: async () => {
+        await setSelectedSecurityDomain('cloud-security');
+        toast.success(t('voiceCommands.domainChanged', 'Domínio alterado para Cloud Security'));
+      },
+      description: t('voiceCommands.switchToCloud', 'Mudar para Cloud Security'),
+      category: 'domain',
+    },
+    {
+      id: 'domain_devsecops',
+      patterns: [
+        /mudar\s*(para)?\s*(o)?\s*domínio\s*(de)?\s*devsecops/i,
+        /trocar\s*(para)?\s*(o)?\s*domínio\s*(de)?\s*devsecops/i,
+        /domínio\s*(de)?\s*devsecops/i,
+        /devsecops/i,
+        /dev\s*sec\s*ops/i,
+        /segurança\s*(de)?\s*desenvolvimento/i,
+        /switch\s*(to)?\s*devsecops/i,
+        /change\s*(to)?\s*devsecops\s*(domain)?/i,
+      ],
+      action: async () => {
+        await setSelectedSecurityDomain('devsecops');
+        toast.success(t('voiceCommands.domainChanged', 'Domínio alterado para DevSecOps'));
+      },
+      description: t('voiceCommands.switchToDevSecOps', 'Mudar para DevSecOps'),
+      category: 'domain',
+    },
+  ], [navigate, t, setSelectedSecurityDomain]);
 
   // Data commands that return text instead of navigating
   const dataCommands = useMemo(() => [

@@ -3,7 +3,7 @@
  * UI for voice profile enrollment, management, and verification settings
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,6 +88,30 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
   const [selectedLevel, setSelectedLevel] = useState<EnrollmentLevel>('standard');
   const [isCompleting, setIsCompleting] = useState(false);
   const [lastSampleQuality, setLastSampleQuality] = useState<number | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
+
+  // Animate progress bar during processing
+  useEffect(() => {
+    if (isProcessing) {
+      setProcessingProgress(0);
+      const startTime = Date.now();
+      const duration = 2000; // 2 seconds to reach 90%
+      
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(90, (elapsed / duration) * 90);
+        setProcessingProgress(progress);
+      }, 50);
+      
+      return () => clearInterval(interval);
+    } else {
+      // Complete the progress bar when done
+      if (processingProgress > 0) {
+        setProcessingProgress(100);
+        setTimeout(() => setProcessingProgress(0), 300);
+      }
+    }
+  }, [isProcessing]);
 
   const handleStartEnrollment = () => {
     startEnrollment(selectedLevel, language);
@@ -187,14 +211,17 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
 
           {/* Processing Status */}
           {isProcessing && (
-            <div className="flex flex-col items-center gap-3 py-4">
+            <div className="flex flex-col items-center gap-4 py-4 w-full">
               <div className="flex items-center gap-3 text-primary">
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="text-lg font-medium">Processando áudio...</span>
               </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Analisando características vocais
-              </p>
+              <div className="w-full max-w-xs space-y-2">
+                <Progress value={processingProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">
+                  Analisando características vocais... {Math.round(processingProgress)}%
+                </p>
+              </div>
             </div>
           )}
 

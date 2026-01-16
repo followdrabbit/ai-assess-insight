@@ -66,8 +66,16 @@ export function AppSidebar() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const isCollapsed = state === 'collapsed';
+
+  // Close mobile sidebar after navigation
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
   
   const { selectedSecurityDomain, setSelectedSecurityDomain } = useAnswersStore();
   const [domains, setDomains] = useState<SecurityDomain[]>([]);
@@ -104,6 +112,9 @@ export function AppSidebar() {
         description: t('securityDomains.dataUpdated'),
         duration: 3000,
       });
+      if (isMobile) {
+        setOpenMobile(false);
+      }
     }
   };
 
@@ -180,7 +191,7 @@ export function AppSidebar() {
                           key={domain.domainId}
                           onClick={() => handleDomainChange(domain)}
                           className={cn(
-                            "cursor-pointer gap-3 py-2.5",
+                            "cursor-pointer gap-3 py-2.5 min-h-[48px]",
                             isSelected && "bg-accent"
                           )}
                         >
@@ -204,8 +215,8 @@ export function AppSidebar() {
                     })}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => navigate('/settings')}
-                      className="cursor-pointer gap-3"
+                      onClick={() => handleNavigate('/settings')}
+                      className="cursor-pointer gap-3 min-h-[44px]"
                     >
                       <Settings className="h-4 w-4" />
                       <span className="text-sm">Gerenciar Domínios</span>
@@ -226,7 +237,7 @@ export function AppSidebar() {
               {/* Home */}
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/')}
+                  onClick={() => handleNavigate('/')}
                   isActive={isActive('/')}
                   tooltip="Home"
                 >
@@ -252,9 +263,9 @@ export function AppSidebar() {
                       {dashboardSubItems.map((item) => (
                         <DropdownMenuItem
                           key={item.path}
-                          onClick={() => navigate(item.path)}
+                          onClick={() => handleNavigate(item.path)}
                           className={cn(
-                            "cursor-pointer gap-2",
+                            "cursor-pointer gap-2 min-h-[44px]",
                             isActive(item.path) && "bg-accent text-accent-foreground"
                           )}
                         >
@@ -290,9 +301,9 @@ export function AppSidebar() {
                         {dashboardSubItems.map((item) => (
                           <SidebarMenuSubItem key={item.path}>
                             <SidebarMenuSubButton
-                              onClick={() => navigate(item.path)}
+                              onClick={() => handleNavigate(item.path)}
                               isActive={isActive(item.path)}
-                              className="cursor-pointer"
+                              className="cursor-pointer min-h-[44px] md:min-h-0"
                             >
                               <item.icon className="h-3.5 w-3.5" />
                               <span>{item.label}</span>
@@ -308,7 +319,7 @@ export function AppSidebar() {
               {/* Assessment */}
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/assessment')}
+                  onClick={() => handleNavigate('/assessment')}
                   isActive={isActive('/assessment')}
                   tooltip="Avaliação"
                 >
@@ -320,7 +331,7 @@ export function AppSidebar() {
               {/* Settings */}
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/settings')}
+                  onClick={() => handleNavigate('/settings')}
                   isActive={isActive('/settings')}
                   tooltip="Configurações"
                 >
@@ -332,7 +343,7 @@ export function AppSidebar() {
               {/* Profile */}
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/profile')}
+                  onClick={() => handleNavigate('/profile')}
                   isActive={isActive('/profile')}
                   tooltip="Meu Perfil"
                 >

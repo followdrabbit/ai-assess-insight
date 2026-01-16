@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAnswersStore } from '@/lib/stores';
 import { frameworks, Framework } from '@/lib/frameworks';
 import { questions } from '@/lib/dataset';
@@ -41,37 +42,38 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-// Tab configuration with clear labels
-const TAB_CONFIG = {
-  content: { 
-    label: 'Conteúdo', 
-    icon: BookMarked,
-    description: 'Domínios, frameworks e perguntas'
-  },
-  assessment: { 
-    label: 'Avaliação', 
-    icon: ClipboardList,
-    description: 'Configurar avaliação atual'
-  },
-  system: { 
-    label: 'Geral', 
-    icon: Cog,
-    description: 'Exportação e configurações gerais'
-  },
-};
-
-const audienceLabels: Record<string, string> = {
-  Executive: 'Executivo',
-  GRC: 'GRC',
-  Engineering: 'Engenharia',
-};
-
 export default function Settings() {
+  const { t } = useTranslation();
+  
+  // Tab configuration with clear labels
+  const TAB_CONFIG = {
+    content: { 
+      label: t('settings.contentTab'), 
+      icon: BookMarked,
+      description: t('settings.manageContentDesc')
+    },
+    assessment: { 
+      label: t('settings.assessmentTab'), 
+      icon: ClipboardList,
+      description: t('settings.configureAssessmentDesc')
+    },
+    system: { 
+      label: t('settings.systemTab'), 
+      icon: Cog,
+      description: t('settings.exportAndGeneralDesc')
+    },
+  };
+
+  const audienceLabels: Record<string, string> = {
+    Executive: t('dashboard.executive'),
+    GRC: t('dashboard.grc'),
+    Engineering: t('settings.engineering'),
+  };
   const { enabledFrameworks, setEnabledFrameworks, answers, clearAnswers, generateDemoData } = useAnswersStore();
   const [pendingFrameworks, setPendingFrameworks] = useState<string[]>(enabledFrameworks);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState('content');
-  const [assessmentName, setAssessmentName] = useState('Avaliação de Maturidade em Segurança');
+  const [assessmentName, setAssessmentName] = useState(t('settings.defaultAssessmentName'));
   const [organizationName, setOrganizationName] = useState('');
   const [reassessmentInterval, setReassessmentInterval] = useState('quarterly');
   const [highlightedSection, setHighlightedSection] = useState<string | null>(null);
@@ -173,13 +175,13 @@ export default function Settings() {
 
   const saveChanges = async () => {
     if (pendingFrameworks.length === 0) {
-      toast.error('Selecione pelo menos um framework');
+      toast.error(t('settings.selectAtLeastOne'));
       return;
     }
     
     await setEnabledFrameworks(pendingFrameworks);
     setHasChanges(false);
-    toast.success('Configurações salvas com sucesso');
+    toast.success(t('settings.settingsSaved'));
   };
 
   const cancelChanges = () => {
@@ -211,21 +213,21 @@ export default function Settings() {
       const blob = await exportAnswersToXLSX(answers);
       const filename = generateExportFilename();
       downloadXLSX(blob, filename);
-      toast.success('Dados exportados com sucesso');
+      toast.success(t('settings.exportSuccess'));
     } catch (error) {
-      toast.error('Erro ao exportar dados');
+      toast.error(t('settings.exportError'));
       console.error(error);
     }
   };
 
   const handleClearAnswers = async () => {
     await clearAnswers();
-    toast.success('Respostas removidas com sucesso');
+    toast.success(t('settings.answersCleared'));
   };
 
   const handleGenerateDemo = async () => {
     await generateDemoData();
-    toast.success('Dados de demonstração gerados');
+    toast.success(t('settings.demoGenerated'));
   };
 
   const FrameworkCard = ({ fw }: { fw: Framework }) => {
@@ -250,7 +252,7 @@ export default function Settings() {
                 {fw.shortName}
                 {fw.defaultEnabled && (
                   <Badge variant="secondary" className="text-xs font-normal">
-                    Padrão
+                    {t('common.default')}
                   </Badge>
                 )}
               </CardTitle>
@@ -279,9 +281,9 @@ export default function Settings() {
           </div>
           
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{questionCount} perguntas</span>
+            <span>{questionCount} {t('settings.questions').toLowerCase()}</span>
             {answeredCount > 0 && (
-              <span className="text-primary">{answeredCount} respondidas</span>
+              <span className="text-primary">{answeredCount} {t('common.answered')}</span>
             )}
           </div>
         </CardContent>
@@ -298,7 +300,7 @@ export default function Settings() {
             <BreadcrumbLink asChild>
               <Link to="/" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
                 <Home className="h-3.5 w-3.5" />
-                Início
+                {t('navigation.home')}
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
@@ -308,7 +310,7 @@ export default function Settings() {
           <BreadcrumbItem>
             <BreadcrumbPage className="flex items-center gap-1.5 font-medium">
               <Settings2 className="h-3.5 w-3.5" />
-              Configurações
+              {t('settings.title')}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
@@ -320,10 +322,10 @@ export default function Settings() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Settings2 className="h-6 w-6 text-muted-foreground" />
-              Configurações
+              {t('settings.title')}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Gerencie a estrutura, biblioteca e configurações da plataforma
+              {t('settings.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -331,10 +333,10 @@ export default function Settings() {
             {hasChanges && (
               <>
                 <Button variant="ghost" size="sm" onClick={cancelChanges}>
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button size="sm" onClick={saveChanges}>
-                  Salvar Alterações
+                  {t('common.saveChanges')}
                 </Button>
               </>
             )}
@@ -368,9 +370,9 @@ export default function Settings() {
               <BookMarked className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-semibold">Gerenciar Conteúdo</h2>
+              <h2 className="font-semibold">{t('settings.manageContent')}</h2>
               <p className="text-sm text-muted-foreground">
-                Domínios de segurança, frameworks e perguntas
+                {t('settings.manageContentDesc')}
               </p>
             </div>
           </div>
@@ -384,7 +386,7 @@ export default function Settings() {
                     <Layers className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Domínios</p>
+                    <p className="text-sm text-muted-foreground">{t('settings.domains')}</p>
                     <p className="text-xl font-bold">3</p>
                   </div>
                 </div>
@@ -397,7 +399,7 @@ export default function Settings() {
                     <Shield className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Frameworks</p>
+                    <p className="text-sm text-muted-foreground">{t('settings.frameworks')}</p>
                     <p className="text-xl font-bold">{frameworks.length}</p>
                   </div>
                 </div>
@@ -410,7 +412,7 @@ export default function Settings() {
                     <BookOpen className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Perguntas</p>
+                    <p className="text-sm text-muted-foreground">{t('settings.questions')}</p>
                     <p className="text-xl font-bold">{questions.length}</p>
                   </div>
                 </div>
@@ -427,10 +429,10 @@ export default function Settings() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Layers className="h-4 w-4" />
-                  Domínios de Segurança
+                  {t('settings.securityDomains')}
                 </CardTitle>
                 <CardDescription>
-                  Criar, editar e gerenciar domínios de segurança
+                  {t('settings.createEditManage')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -448,10 +450,10 @@ export default function Settings() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Frameworks
+                  {t('settings.frameworks')}
                 </CardTitle>
                 <CardDescription>
-                  Criar, editar e excluir frameworks de avaliação
+                  {t('settings.createEditDelete')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -469,10 +471,10 @@ export default function Settings() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
-                  Perguntas
+                  {t('settings.questions')}
                 </CardTitle>
                 <CardDescription>
-                  Criar, editar, importar e versionar perguntas
+                  {t('settings.createEditImport')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -490,9 +492,9 @@ export default function Settings() {
               <ClipboardList className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <h2 className="font-semibold">Configurar Avaliação</h2>
+              <h2 className="font-semibold">{t('settings.configureAssessment')}</h2>
               <p className="text-sm text-muted-foreground">
-                Selecione frameworks e configure a avaliação atual
+                {t('settings.configureAssessmentDesc')}
               </p>
             </div>
           </div>
@@ -503,13 +505,13 @@ export default function Settings() {
               <CardContent className="pt-4 pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Frameworks Ativos</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('settings.activeFrameworks')}</p>
                     <p className="text-3xl font-bold text-primary">{pendingFrameworks.length}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-muted-foreground">de {frameworks.length} disponíveis</p>
+                    <p className="text-xs text-muted-foreground">{t('settings.ofAvailable', { count: frameworks.length })}</p>
                     <p className="text-sm font-medium text-primary mt-1">
-                      {totalQuestions} perguntas
+                      {totalQuestions} {t('settings.questions').toLowerCase()}
                     </p>
                   </div>
                 </div>
@@ -517,16 +519,16 @@ export default function Settings() {
             </Card>
             <Card>
               <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-xs text-muted-foreground">Respondidas</p>
+                <p className="text-xs text-muted-foreground">{t('assessment.answered')}</p>
                 <p className="text-2xl font-bold">{totalAnswered}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-xs text-muted-foreground">Última Atualização</p>
+                <p className="text-xs text-muted-foreground">{t('settings.lastUpdate')}</p>
                 <p className="text-sm font-medium">
                   {lastUpdated 
-                    ? lastUpdated.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    ? lastUpdated.toLocaleDateString()
                     : 'N/A'
                   }
                 </p>
@@ -543,40 +545,40 @@ export default function Settings() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
-                  Informações da Avaliação
+                  {t('settings.assessmentInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="assessmentName">Nome da Avaliação</Label>
+                    <Label htmlFor="assessmentName">{t('settings.assessmentName')}</Label>
                     <Input
                       id="assessmentName"
                       value={assessmentName}
                       onChange={(e) => setAssessmentName(e.target.value)}
-                      placeholder="Nome da avaliação"
+                      placeholder={t('settings.assessmentNamePlaceholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="organizationName">Organização</Label>
+                    <Label htmlFor="organizationName">{t('profile.organization')}</Label>
                     <Input
                       id="organizationName"
                       value={organizationName}
                       onChange={(e) => setOrganizationName(e.target.value)}
-                      placeholder="Nome da organização"
+                      placeholder={t('settings.organizationPlaceholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reassessmentInterval">Cadência de Reavaliação</Label>
+                    <Label htmlFor="reassessmentInterval">{t('settings.reassessmentCadence')}</Label>
                     <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
                       <SelectTrigger id="reassessmentInterval">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="monthly">Mensal</SelectItem>
-                        <SelectItem value="quarterly">Trimestral</SelectItem>
-                        <SelectItem value="semiannual">Semestral</SelectItem>
-                        <SelectItem value="annual">Anual</SelectItem>
+                        <SelectItem value="monthly">{t('settings.monthly')}</SelectItem>
+                        <SelectItem value="quarterly">{t('settings.quarterly')}</SelectItem>
+                        <SelectItem value="semiannual">{t('settings.semiannual')}</SelectItem>
+                        <SelectItem value="annual">{t('settings.annual')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -596,16 +598,16 @@ export default function Settings() {
                   <div>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Shield className="h-4 w-4" />
-                      Selecionar Frameworks para Avaliação
+                      {t('settings.selectFrameworksForAssessment')}
                     </CardTitle>
                     <CardDescription>
-                      Escolha quais frameworks serão incluídos na avaliação
+                      {t('settings.chooseFrameworksDesc')}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={selectAll}>Todos</Button>
-                    <Button variant="ghost" size="sm" onClick={selectDefaults}>Padrão</Button>
-                    <Button variant="ghost" size="sm" onClick={selectNone}>Limpar</Button>
+                    <Button variant="ghost" size="sm" onClick={selectAll}>{t('common.all')}</Button>
+                    <Button variant="ghost" size="sm" onClick={selectDefaults}>{t('common.default')}</Button>
+                    <Button variant="ghost" size="sm" onClick={selectNone}>{t('settings.clear')}</Button>
                   </div>
                 </div>
               </CardHeader>
@@ -625,11 +627,11 @@ export default function Settings() {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
                 <div className="text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground mb-1">Como funciona:</p>
+                  <p className="font-medium text-foreground mb-1">{t('settings.howItWorks')}:</p>
                   <ul className="space-y-1">
-                    <li>• A seleção afeta quais perguntas aparecem na avaliação</li>
-                    <li>• Os dashboards mostram métricas apenas dos frameworks selecionados</li>
-                    <li>• Frameworks "Padrão" são recomendados para avaliações iniciais</li>
+                    <li>• {t('settings.howItWorksItem1')}</li>
+                    <li>• {t('settings.howItWorksItem2')}</li>
+                    <li>• {t('settings.howItWorksItem3')}</li>
                   </ul>
                 </div>
               </div>
@@ -645,9 +647,9 @@ export default function Settings() {
               <Cog className="h-5 w-5 text-gray-600" />
             </div>
             <div>
-              <h2 className="font-semibold">Geral</h2>
+              <h2 className="font-semibold">{t('settings.systemTab')}</h2>
               <p className="text-sm text-muted-foreground">
-                Exportação de dados, backup e informações gerais
+                {t('settings.exportAndGeneralDesc')}
               </p>
             </div>
           </div>
@@ -656,25 +658,25 @@ export default function Settings() {
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">Versão</p>
+                <p className="text-sm text-muted-foreground">{t('settings.version')}</p>
                 <p className="text-xl font-bold">2.0.0</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">Frameworks</p>
+                <p className="text-sm text-muted-foreground">{t('settings.frameworks')}</p>
                 <p className="text-xl font-bold">{frameworks.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">Perguntas</p>
+                <p className="text-sm text-muted-foreground">{t('settings.questions')}</p>
                 <p className="text-xl font-bold">{questions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">Atualização</p>
+                <p className="text-sm text-muted-foreground">{t('settings.update')}</p>
                 <p className="text-xl font-bold">Jan/25</p>
               </CardContent>
             </Card>
@@ -687,51 +689,51 @@ export default function Settings() {
                 "transition-all duration-500 h-full",
                 highlightedSection === 'export' && "ring-2 ring-primary ring-offset-2"
               )}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileDown className="h-4 w-4" />
-                    Exportar & Backup
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Exporte as respostas e configurações para um arquivo Excel.
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileDown className="h-4 w-4" />
+                  {t('settings.exportBackup')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.exportDescription')}
+                </p>
+                <Button variant="outline" onClick={handleExportData} className="w-full justify-start">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  {t('settings.exportToExcel')}
+                </Button>
+                <Separator />
+                <div ref={setSectionRef('demo-data')}>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {t('settings.generateDemoDescription')}
                   </p>
-                  <Button variant="outline" onClick={handleExportData} className="w-full justify-start">
-                    <FileDown className="h-4 w-4 mr-2" />
-                    Exportar para Excel (.xlsx)
-                  </Button>
-                  <Separator />
-                  <div ref={setSectionRef('demo-data')}>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Gere dados de exemplo para explorar os dashboards.
-                    </p>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start">
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Gerar Dados de Demonstração
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Gerar dados de demonstração?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação substituirá todas as respostas existentes por dados simulados.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleGenerateDemo}>
-                            Gerar Dados
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        {t('settings.generateDemoData')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.generateDemoTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('settings.generateDemoDescription2')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleGenerateDemo}>
+                          {t('settings.generateData')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
             {/* Danger Zone */}
             <div ref={setSectionRef('clear-answers')}>
@@ -739,95 +741,94 @@ export default function Settings() {
                 "transition-all duration-500 h-full",
                 (highlightedSection === 'clear-answers' || highlightedSection === 'restore-defaults') && "ring-2 ring-primary ring-offset-2"
               )}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Trash2 className="h-4 w-4" />
-                    Zona de Perigo
-                  </CardTitle>
-                  <CardDescription>
-                    Ações irreversíveis que afetam seus dados
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                    <div>
-                      <div className="font-medium text-sm">Limpar Respostas</div>
-                      <div className="text-xs text-muted-foreground">
-                        Remove todas as {totalAnswered} respostas
-                      </div>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  {t('settings.dangerZone')}
+                </CardTitle>
+                <CardDescription>
+                  {t('settings.dangerZoneDesc')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                  <div>
+                    <div className="font-medium text-sm">{t('settings.clearAnswers')}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {t('settings.removesAllAnswers', { count: totalAnswered })}
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          Limpar
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Limpar todas as respostas?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Todas as {totalAnswered} respostas 
-                            serão permanentemente removidas.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={handleClearAnswers}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Limpar Respostas
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                        {t('settings.clear')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.clearAllAnswersTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('settings.clearAllAnswersDesc', { count: totalAnswered })}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleClearAnswers}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t('settings.clearAnswers')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
 
-                  <div ref={setSectionRef('restore-defaults')} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                    <div>
-                      <div className="font-medium text-sm">Restaurar Padrões</div>
-                      <div className="text-xs text-muted-foreground">
-                        Reseta configurações e dados
-                      </div>
+                <div ref={setSectionRef('restore-defaults')} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                  <div>
+                    <div className="font-medium text-sm">{t('settings.restoreDefaults')}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {t('settings.resetsSettingsAndData')}
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          Restaurar
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Restaurar configurações padrão?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação restaurará os frameworks padrão e removerá todas as respostas.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={async () => {
-                              await clearAnswers();
-                              await setEnabledFrameworks(
-                                frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
-                              );
-                              setPendingFrameworks(
-                                frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
-                              );
-                              toast.success('Configurações restauradas');
-                            }}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Restaurar Padrões
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                        {t('settings.restore')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.restoreDefaultsTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('settings.restoreDefaultsDesc')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={async () => {
+                            await clearAnswers();
+                            await setEnabledFrameworks(
+                              frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
+                            );
+                            setPendingFrameworks(
+                              frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
+                            );
+                            toast.success(t('settings.settingsRestored'));
+                          }}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t('settings.restoreDefaults')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+        </div>
 
           {/* About */}
           <div ref={setSectionRef('about')}>
@@ -838,12 +839,12 @@ export default function Settings() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Info className="h-4 w-4" />
-                  Sobre a Plataforma
+                  {t('settings.aboutPlatform')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-medium text-sm mb-2">Frameworks Suportados</h4>
+                  <h4 className="font-medium text-sm mb-2">{t('settings.supportedFrameworks')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {frameworks.map(fw => (
                       <Badge key={fw.frameworkId} variant="outline" className="text-xs">
@@ -856,19 +857,19 @@ export default function Settings() {
                 <Separator />
                 
                 <div>
-                  <h4 className="font-medium text-sm mb-2">Metodologia de Avaliação</h4>
+                  <h4 className="font-medium text-sm mb-2">{t('settings.assessmentMethodology')}</h4>
                   <ul className="text-sm text-muted-foreground space-y-1.5">
                     <li className="flex items-start gap-2">
                       <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">1</span>
-                      <span>Avaliação baseada em frameworks reconhecidos internacionalmente</span>
+                      <span>{t('settings.methodologyItem1')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">2</span>
-                      <span>Scoring considera implementação de controles e prontidão de evidências</span>
+                      <span>{t('settings.methodologyItem2')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">3</span>
-                      <span>Níveis: Inexistente → Inicial → Definido → Gerenciado</span>
+                      <span>{t('settings.methodologyItem3')}</span>
                     </li>
                   </ul>
                 </div>
@@ -877,11 +878,11 @@ export default function Settings() {
                 
                 <Card className="bg-muted/50">
                   <CardContent className="pt-4 pb-4">
-                    <h4 className="font-medium mb-2 text-sm">Privacidade e Armazenamento</h4>
+                    <h4 className="font-medium mb-2 text-sm">{t('settings.privacyStorage')}</h4>
                     <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• Dados armazenados de forma segura na nuvem</li>
-                      <li>• Apenas usuários autorizados podem acessar</li>
-                      <li>• Exporte ou limpe seus dados a qualquer momento</li>
+                      <li>• {t('settings.privacyItem1')}</li>
+                      <li>• {t('settings.privacyItem2')}</li>
+                      <li>• {t('settings.privacyItem3')}</li>
                     </ul>
                   </CardContent>
                 </Card>

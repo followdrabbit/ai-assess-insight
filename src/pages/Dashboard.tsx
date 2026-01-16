@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
-import { domains, subcategories, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, FrameworkCategoryId, questions as defaultQuestions } from '@/lib/dataset';
+import { domains, subcategories, maturityLevels, nistAiRmfFunctions, frameworkCategories, frameworkCategoryIds, questions as defaultQuestions } from '@/lib/dataset';
+import { frameworkCategoryLabels, frameworkCategoryColors } from '@/lib/frameworkCategories';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion } from '@/lib/scoring';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -35,24 +36,7 @@ const nistFunctionColors: Record<string, string> = {
   MANAGE: 'hsl(var(--chart-4))',
 };
 
-// Rationalized Framework Categories - Authoritative Set Only
-const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
-  NIST_AI_RMF: 'NIST AI RMF',
-  SECURITY_BASELINE: 'ISO 27001/27002',
-  AI_RISK_MGMT: 'ISO 23894 / Gestão de Riscos',
-  SECURE_DEVELOPMENT: 'NIST SSDF / CSA',
-  PRIVACY_LGPD: 'LGPD / Privacidade',
-  THREAT_EXPOSURE: 'OWASP LLM + API',
-};
-
-const frameworkCategoryColors: Record<FrameworkCategoryId, string> = {
-  NIST_AI_RMF: 'hsl(var(--chart-1))',
-  SECURITY_BASELINE: 'hsl(var(--chart-2))',
-  AI_RISK_MGMT: 'hsl(var(--chart-3))',
-  SECURE_DEVELOPMENT: 'hsl(var(--chart-4))',
-  PRIVACY_LGPD: 'hsl(var(--chart-5))',
-  THREAT_EXPOSURE: 'hsl(221, 83%, 53%)',
-};
+// Framework category labels and colors imported from shared lib
 
 export default function Dashboard() {
   const { answers, isLoading } = useAnswersStore();

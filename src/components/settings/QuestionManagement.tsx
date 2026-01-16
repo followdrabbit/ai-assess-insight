@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -133,6 +134,7 @@ const ownershipLabels: Record<OwnershipType, string> = {
 };
 
 export function QuestionManagement() {
+  const { t } = useTranslation();
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [disabledQuestionIds, setDisabledQuestionIds] = useState<string[]>([]);
   const [customFrameworksList, setCustomFrameworksList] = useState<{ frameworkId: string; shortName: string }[]>([]);
@@ -358,25 +360,25 @@ export function QuestionManagement() {
 
   const validateForm = (): boolean => {
     if (!formData.questionId.trim()) {
-      toast.error('ID da pergunta é obrigatório');
+      toast.error(t('settings.questions.validation.questionIdRequired'));
       return false;
     }
     if (!formData.questionText.trim()) {
-      toast.error('Texto da pergunta é obrigatório');
+      toast.error(t('settings.questions.validation.questionTextRequired'));
       return false;
     }
     if (!formData.domainId) {
-      toast.error('Selecione um domínio de taxonomia');
+      toast.error(t('settings.questions.validation.taxonomyDomainRequired'));
       return false;
     }
     if (!formData.securityDomainId) {
-      toast.error('Selecione um domínio de segurança');
+      toast.error(t('settings.questions.validation.securityDomainRequired'));
       return false;
     }
 
     const existingCustomIds = customQuestions.map(q => q.questionId);
     if (!editingQuestion && !isEditingDefault && existingCustomIds.includes(formData.questionId)) {
-      toast.error('Já existe uma pergunta personalizada com este ID');
+      toast.error(t('settings.questions.validation.duplicateId'));
       return false;
     }
     return true;
@@ -405,10 +407,10 @@ export function QuestionManagement() {
           editingQuestion.questionId,
           questionData,
           'update',
-          'Atualização manual'
+          t('settings.questions.version.manualUpdate')
         );
         await updateCustomQuestion(editingQuestion.questionId, questionData);
-        toast.success('Pergunta atualizada com sucesso');
+        toast.success(t('settings.questions.toast.updateSuccess'));
       } else if (isEditingDefault) {
         await disableDefaultQuestion(formData.questionId);
         await createCustomQuestion({
@@ -420,9 +422,9 @@ export function QuestionManagement() {
           formData.questionId,
           questionData,
           'create',
-          'Substituição de pergunta padrão'
+          t('settings.questions.version.defaultReplacement')
         );
-        toast.success('Pergunta padrão substituída por versão personalizada');
+        toast.success(t('settings.questions.toast.replaceSuccess'));
       } else {
         await createCustomQuestion(questionData);
         // Save initial version
@@ -430,15 +432,15 @@ export function QuestionManagement() {
           formData.questionId,
           questionData,
           'create',
-          'Criação inicial'
+          t('settings.questions.version.initialCreation')
         );
-        toast.success('Pergunta criada com sucesso');
+        toast.success(t('settings.questions.toast.createSuccess'));
       }
       await loadData();
       setIsDialogOpen(false);
       setIsEditingDefault(false);
     } catch (error) {
-      toast.error('Erro ao salvar pergunta');
+      toast.error(t('settings.questions.toast.saveError'));
       console.error(error);
     }
   };
@@ -450,10 +452,10 @@ export function QuestionManagement() {
         await deleteCustomQuestion(questionId);
         // Also delete version history
         await deleteQuestionVersions(questionId);
-        toast.success('Pergunta personalizada removida com sucesso');
+        toast.success(t('settings.questions.toast.deleteSuccess'));
       } else {
         await disableDefaultQuestion(questionId);
-        toast.success('Pergunta padrão desabilitada com sucesso');
+        toast.success(t('settings.questions.toast.disableSuccess'));
       }
       await loadData();
     } catch (error) {
@@ -522,12 +524,12 @@ export function QuestionManagement() {
         `Revertido para versão ${version.versionNumber}`
       );
 
-      toast.success(`Revertido para versão ${version.versionNumber}`);
+      toast.success(t('settings.questions.toast.revertSuccess', { version: version.versionNumber }));
       setShowVersionDialog(false);
       await loadData();
     } catch (error) {
       console.error('Error reverting:', error);
-      toast.error('Erro ao reverter versão');
+      toast.error(t('settings.questions.toast.revertError'));
     } finally {
       setReverting(false);
     }
@@ -544,10 +546,10 @@ export function QuestionManagement() {
           await disableDefaultQuestion(questionId);
         }
       }
-      toast.success(isDisabled ? 'Pergunta habilitada' : 'Pergunta desabilitada');
+      toast.success(isDisabled ? t('settings.questions.toast.enableSuccess') : t('settings.questions.toast.disableSuccess'));
       await loadData();
     } catch (error) {
-      toast.error('Erro ao alterar status');
+      toast.error(t('settings.questions.toast.statusError'));
       console.error(error);
     }
   };
@@ -582,7 +584,7 @@ export function QuestionManagement() {
     if (!file) return;
 
     if (!bulkImportDomainId) {
-      toast.error('Selecione um domínio de segurança primeiro');
+      toast.error(t('settings.questions.import.selectDomainFirst'));
       return;
     }
 
@@ -590,7 +592,7 @@ export function QuestionManagement() {
     setBulkImportValidation(validation);
 
     if (validation.totalRows === 0) {
-      toast.error(validation.errors[0] || 'Arquivo vazio ou inválido');
+      toast.error(validation.errors[0] || t('settings.questions.import.emptyOrInvalid'));
     }
 
     // Reset file input
@@ -604,7 +606,7 @@ export function QuestionManagement() {
 
     const validQuestions = bulkImportValidation.questions.filter(q => q.isValid);
     if (validQuestions.length === 0) {
-      toast.error('Nenhuma pergunta válida para importar');
+      toast.error(t('settings.questions.import.noValidQuestions'));
       return;
     }
 
@@ -615,19 +617,19 @@ export function QuestionManagement() {
       const result = await importBulkQuestions(bulkImportValidation.questions, { skipInvalid: true });
 
       if (result.success) {
-        toast.success(`${result.imported} perguntas importadas com sucesso!`);
+        toast.success(t('settings.questions.import.importSuccess', { count: result.imported }));
         if (result.failed > 0) {
-          toast.warning(`${result.failed} perguntas falharam na importação`);
+          toast.warning(t('settings.questions.import.importPartialFail', { count: result.failed }));
         }
         setShowBulkImportDialog(false);
         setBulkImportValidation(null);
         await loadData();
       } else {
-        toast.error('Erro ao importar perguntas');
+        toast.error(t('settings.questions.import.importError'));
       }
     } catch (error) {
       console.error('Bulk import error:', error);
-      toast.error('Erro ao processar importação');
+      toast.error(t('settings.questions.import.processError'));
     } finally {
       setImporting(false);
       setImportProgress(0);
@@ -642,17 +644,17 @@ export function QuestionManagement() {
 
   const handleDownloadTemplate = () => {
     if (!bulkImportDomainId) {
-      toast.error('Selecione um domínio de segurança primeiro');
+      toast.error(t('settings.questions.import.selectDomainFirst'));
       return;
     }
     downloadImportTemplate(bulkImportDomainId);
-    toast.success('Template baixado com sucesso');
+    toast.success(t('settings.questions.import.templateDownloaded'));
   };
 
   // Export handlers
   const handleExportExcel = async () => {
     if (!exportDomainId) {
-      toast.error('Selecione um domínio de segurança');
+      toast.error(t('settings.questions.export.selectDomain'));
       return;
     }
 
@@ -666,7 +668,7 @@ export function QuestionManagement() {
     });
 
     if (questionsToExport.length === 0) {
-      toast.error('Nenhuma pergunta encontrada para este domínio');
+      toast.error(t('settings.questions.export.noQuestions'));
       return;
     }
 
@@ -677,11 +679,11 @@ export function QuestionManagement() {
         exportDomainId,
         domain.domainName
       );
-      toast.success(`${questionsToExport.length} perguntas exportadas com sucesso`);
+      toast.success(t('settings.questions.export.exportSuccess', { count: questionsToExport.length }));
       setShowExportDialog(false);
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Erro ao exportar perguntas');
+      toast.error(t('settings.questions.export.exportError'));
     } finally {
       setExporting(false);
     }
@@ -689,7 +691,7 @@ export function QuestionManagement() {
 
   const handleExportCSV = async () => {
     if (!exportDomainId) {
-      toast.error('Selecione um domínio de segurança');
+      toast.error(t('settings.questions.export.selectDomain'));
       return;
     }
 
@@ -703,7 +705,7 @@ export function QuestionManagement() {
     });
 
     if (questionsToExport.length === 0) {
-      toast.error('Nenhuma pergunta encontrada para este domínio');
+      toast.error(t('settings.questions.export.noQuestions'));
       return;
     }
 
@@ -713,11 +715,11 @@ export function QuestionManagement() {
         questionsToExport as ExportableQuestion[],
         exportDomainId
       );
-      toast.success(`${questionsToExport.length} perguntas exportadas com sucesso`);
+      toast.success(t('settings.questions.export.exportSuccess', { count: questionsToExport.length }));
       setShowExportDialog(false);
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Erro ao exportar perguntas');
+      toast.error(t('settings.questions.export.exportError'));
     } finally {
       setExporting(false);
     }
@@ -738,23 +740,23 @@ export function QuestionManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Gerenciar Perguntas</h3>
+          <h3 className="text-lg font-semibold">{t('settings.questions.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            Visualize, crie e edite perguntas da avaliação
+            {t('settings.questions.description')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setShowExportDialog(true)}>
             <Download className="h-4 w-4 mr-2" />
-            Exportar
+            {t('settings.questions.export.button')}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowBulkImportDialog(true)}>
             <Upload className="h-4 w-4 mr-2" />
-            Importar
+            {t('settings.questions.import.button')}
           </Button>
           <Button variant="outline" onClick={openNewDialog}>
             <Plus className="h-4 w-4 mr-2" />
-            Nova Pergunta
+            {t('settings.questions.newQuestion')}
           </Button>
         </div>
       </div>
@@ -762,7 +764,7 @@ export function QuestionManagement() {
       <FilterBar
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Buscar por texto ou ID..."
+        searchPlaceholder={t('settings.questions.searchPlaceholder')}
         domainBadges={{
           value: filterSecurityDomain,
           onChange: setFilterSecurityDomain,
@@ -771,15 +773,15 @@ export function QuestionManagement() {
             ICON_COMPONENTS,
             DOMAIN_COLORS
           ),
-          allLabel: 'Todos os Domínios',
+          allLabel: t('settings.questions.allDomains'),
         }}
         selectFilters={[
           {
             id: 'framework',
             value: filterFramework,
             onChange: setFilterFramework,
-            placeholder: 'Filtrar por framework',
-            allLabel: 'Todos os frameworks',
+            placeholder: t('settings.questions.filterByFramework'),
+            allLabel: t('settings.questions.allFrameworks'),
             options: enabledFrameworkOptions.map(fw => ({
               value: fw.frameworkId,
               label: fw.shortName,
@@ -789,8 +791,8 @@ export function QuestionManagement() {
             id: 'domain',
             value: filterDomain,
             onChange: setFilterDomain,
-            placeholder: 'Filtrar por área',
-            allLabel: 'Todas as áreas',
+            placeholder: t('settings.questions.filterByArea'),
+            allLabel: t('settings.questions.allAreas'),
             options: taxonomyDomains
               .filter(d => filterSecurityDomain === 'all' || d.securityDomainId === filterSecurityDomain)
               .map(d => ({
@@ -810,10 +812,10 @@ export function QuestionManagement() {
       {/* Stats */}
       <StatsGrid
         stats={[
-          createTotalStat(defaultQuestions.length, 'Perguntas Padrão'),
-          createCustomStat(customQuestions.length, 'Personalizadas'),
-          createDisabledStat(disabledQuestionIds.length, 'Desabilitadas'),
-          createFilteredStat(filteredQuestions.length, 'Exibindo'),
+          createTotalStat(defaultQuestions.length, t('settings.questions.stats.defaultQuestions')),
+          createCustomStat(customQuestions.length, t('settings.questions.stats.custom')),
+          createDisabledStat(disabledQuestionIds.length, t('settings.questions.stats.disabled')),
+          createFilteredStat(filteredQuestions.length, t('settings.questions.stats.showing')),
         ]}
         columns={4}
       />
@@ -821,9 +823,9 @@ export function QuestionManagement() {
       {/* Questions Tabs */}
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="all">Todas ({filteredQuestions.length})</TabsTrigger>
-          <TabsTrigger value="default">Padrão ({defaultQuestionsFiltered.length})</TabsTrigger>
-          <TabsTrigger value="custom">Personalizadas ({customQuestionsFiltered.length})</TabsTrigger>
+          <TabsTrigger value="all">{t('settings.questions.tabs.all')} ({filteredQuestions.length})</TabsTrigger>
+          <TabsTrigger value="default">{t('settings.questions.tabs.default')} ({defaultQuestionsFiltered.length})</TabsTrigger>
+          <TabsTrigger value="custom">{t('settings.questions.tabs.custom')} ({customQuestionsFiltered.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
@@ -868,14 +870,14 @@ export function QuestionManagement() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingQuestion ? 'Editar Pergunta' : isEditingDefault ? 'Editar Pergunta Padrão' : 'Nova Pergunta'}
+              {editingQuestion ? t('settings.questions.dialog.editTitle') : isEditingDefault ? t('settings.questions.dialog.editDefaultTitle') : t('settings.questions.dialog.newTitle')}
             </DialogTitle>
             <DialogDescription>
               {editingQuestion 
-                ? 'Atualize as informações da pergunta.'
+                ? t('settings.questions.dialog.editDescription')
                 : isEditingDefault
-                  ? 'Crie uma versão personalizada da pergunta padrão. A original será desabilitada e substituída.'
-                  : 'Crie uma nova pergunta personalizada para a avaliação.'
+                  ? t('settings.questions.dialog.editDefaultDescription')
+                  : t('settings.questions.dialog.newDescription')
               }
             </DialogDescription>
           </DialogHeader>
@@ -885,7 +887,7 @@ export function QuestionManagement() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <FolderTree className="h-4 w-4" />
-                Domínio de Segurança *
+                {t('settings.questions.form.securityDomain')} *
               </Label>
               <Select
                 value={formData.securityDomainId}
@@ -897,7 +899,7 @@ export function QuestionManagement() {
                 }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o domínio de segurança" />
+                  <SelectValue placeholder={t('settings.questions.form.selectSecurityDomain')} />
                 </SelectTrigger>
                 <SelectContent>
                   {securityDomains.filter(d => d.isEnabled).map(domain => {
@@ -918,7 +920,7 @@ export function QuestionManagement() {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="questionId">ID da Pergunta *</Label>
+                <Label htmlFor="questionId">{t('settings.questions.form.questionId')} *</Label>
                 <Input
                   id="questionId"
                   value={formData.questionId}
@@ -928,19 +930,19 @@ export function QuestionManagement() {
                 />
                 {isEditingDefault && (
                   <p className="text-xs text-muted-foreground">
-                    ID mantido para substituir a pergunta padrão
+                    {t('settings.questions.form.idKeptForReplacement')}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Área de Taxonomia *</Label>
+                <Label>{t('settings.questions.form.taxonomyArea')} *</Label>
                 <Select 
                   value={formData.domainId} 
                   onValueChange={(value) => setFormData(prev => ({ ...prev, domainId: value, subcatId: '' }))}
                   disabled={!formData.securityDomainId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={formData.securityDomainId ? "Selecione a área" : "Selecione o domínio primeiro"} />
+                    <SelectValue placeholder={formData.securityDomainId ? t('settings.questions.form.selectArea') : t('settings.questions.form.selectDomainFirst')} />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredTaxonomyDomains.map(d => (
@@ -952,7 +954,7 @@ export function QuestionManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Subcategoria</Label>
+                <Label>{t('settings.questions.form.subcategory')}</Label>
                 <Select
                   value={formData.subcatId}
                   onValueChange={(value) => {
@@ -966,7 +968,7 @@ export function QuestionManagement() {
                   disabled={!formData.domainId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={formData.domainId ? "Selecione" : "Selecione a área primeiro"} />
+                    <SelectValue placeholder={formData.domainId ? t('settings.questions.form.select') : t('settings.questions.form.selectAreaFirst')} />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredSubcategories.map(s => (
@@ -987,7 +989,7 @@ export function QuestionManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="questionText">Texto da Pergunta *</Label>
+              <Label htmlFor="questionText">{t('settings.questions.form.questionText')} *</Label>
               <Textarea
                 id="questionText"
                 value={formData.questionText}
@@ -1126,20 +1128,20 @@ export function QuestionManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5" />
-              Importar Perguntas em Lote
+              {t('settings.questions.import.title')}
             </DialogTitle>
             <DialogDescription>
-              Importe múltiplas perguntas de um arquivo CSV ou Excel
+              {t('settings.questions.import.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Domain Selection */}
             <div className="space-y-2">
-              <Label>Domínio de Segurança *</Label>
+              <Label>{t('settings.questions.form.securityDomain')} *</Label>
               <Select value={bulkImportDomainId} onValueChange={setBulkImportDomainId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o domínio de destino" />
+                  <SelectValue placeholder={t('settings.questions.import.selectDestinationDomain')} />
                 </SelectTrigger>
                 <SelectContent>
                   {securityDomains.filter(d => d.isEnabled).map(domain => {
@@ -1161,9 +1163,9 @@ export function QuestionManagement() {
             <div className="p-3 rounded-lg bg-muted/50 border">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-sm">Template de Importação</h4>
+                  <h4 className="font-medium text-sm">{t('settings.questions.import.templateTitle')}</h4>
                   <p className="text-xs text-muted-foreground">
-                    Baixe o template Excel com as colunas corretas
+                    {t('settings.questions.import.templateDescription')}
                   </p>
                 </div>
                 <Button 
@@ -1173,14 +1175,14 @@ export function QuestionManagement() {
                   disabled={!bulkImportDomainId}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Baixar Template
+                  {t('settings.questions.import.downloadTemplate')}
                 </Button>
               </div>
             </div>
 
             {/* File Upload */}
             <div className="space-y-2">
-              <Label>Arquivo de Perguntas</Label>
+              <Label>{t('settings.questions.import.questionFile')}</Label>
               <div className="flex gap-2">
                 <input
                   ref={importFileRef}
@@ -1197,11 +1199,11 @@ export function QuestionManagement() {
                   disabled={!bulkImportDomainId}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Selecionar Arquivo CSV/Excel
+                  {t('settings.questions.import.selectFile')}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Formatos suportados: .csv, .xlsx, .xls
+                {t('settings.questions.import.supportedFormats')}
               </p>
             </div>
 
@@ -1212,17 +1214,17 @@ export function QuestionManagement() {
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="p-3 rounded-lg bg-muted/30">
                     <div className="text-xl font-bold">{bulkImportValidation.totalRows}</div>
-                    <div className="text-xs text-muted-foreground">Linhas Total</div>
+                    <div className="text-xs text-muted-foreground">{t('settings.questions.import.totalRows')}</div>
                   </div>
                   <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                     <div className="text-xl font-bold text-green-600">{bulkImportValidation.validRows}</div>
-                    <div className="text-xs text-muted-foreground">Válidas</div>
+                    <div className="text-xs text-muted-foreground">{t('settings.questions.import.validRows')}</div>
                   </div>
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                     <div className="text-xl font-bold text-red-600">
                       {bulkImportValidation.totalRows - bulkImportValidation.validRows}
                     </div>
-                    <div className="text-xs text-muted-foreground">Com Erros</div>
+                    <div className="text-xs text-muted-foreground">{t('settings.questions.import.withErrors')}</div>
                   </div>
                 </div>
 
@@ -1231,7 +1233,7 @@ export function QuestionManagement() {
                   <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
                     <div className="flex items-center gap-2 text-blue-600 text-sm font-medium mb-2">
                       <CheckCircle2 className="h-4 w-4" />
-                      Colunas Detectadas
+                      {t('settings.questions.import.detectedColumns')}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {Object.entries(bulkImportValidation.columnMapping).map(([field, original]) => (
@@ -1248,7 +1250,7 @@ export function QuestionManagement() {
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                     <div className="flex items-center gap-2 text-red-600 text-sm font-medium mb-2">
                       <XCircle className="h-4 w-4" />
-                      Erros ({bulkImportValidation.errors.length})
+                      {t('settings.questions.import.errors')} ({bulkImportValidation.errors.length})
                     </div>
                     <ScrollArea className="h-32">
                       <ul className="text-xs text-muted-foreground space-y-1">
@@ -1268,7 +1270,7 @@ export function QuestionManagement() {
                   <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                     <div className="flex items-center gap-2 text-yellow-600 text-sm font-medium mb-2">
                       <AlertTriangle className="h-4 w-4" />
-                      Avisos ({bulkImportValidation.warnings.length})
+                      {t('settings.questions.import.warnings')} ({bulkImportValidation.warnings.length})
                     </div>
                     <ScrollArea className="h-24">
                       <ul className="text-xs text-muted-foreground space-y-1">
@@ -1288,7 +1290,7 @@ export function QuestionManagement() {
                   <div className="space-y-2">
                     <Progress value={importProgress} />
                     <p className="text-xs text-center text-muted-foreground">
-                      Importando perguntas...
+                      {t('settings.questions.import.importing')}
                     </p>
                   </div>
                 )}
@@ -1298,7 +1300,7 @@ export function QuestionManagement() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={resetBulkImportDialog}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button 
               onClick={handleBulkImport} 
@@ -1307,12 +1309,12 @@ export function QuestionManagement() {
               {importing ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
-                  Importando...
+                  {t('settings.questions.import.importingProgress')}
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Importar {bulkImportValidation?.validRows || 0} Perguntas
+                  {t('settings.questions.import.importCount', { count: bulkImportValidation?.validRows || 0 })}
                 </>
               )}
             </Button>
@@ -1326,20 +1328,20 @@ export function QuestionManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Download className="h-5 w-5" />
-              Exportar Perguntas
+              {t('settings.questions.export.title')}
             </DialogTitle>
             <DialogDescription>
-              Exporte perguntas de um domínio de segurança para backup ou compartilhamento
+              {t('settings.questions.export.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Domain Selection */}
             <div className="space-y-2">
-              <Label>Domínio de Segurança</Label>
+              <Label>{t('settings.questions.form.securityDomain')}</Label>
               <Select value={exportDomainId} onValueChange={setExportDomainId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o domínio" />
+                  <SelectValue placeholder={t('settings.questions.export.selectDomain')} />
                 </SelectTrigger>
                 <SelectContent>
                   {securityDomains.filter(d => d.isEnabled).map(domain => {
@@ -1357,7 +1359,7 @@ export function QuestionManagement() {
                             {domain.domainName}
                           </div>
                           <Badge variant="secondary" className="text-xs">
-                            {domainQuestionCount} perguntas
+                            {domainQuestionCount} {t('settings.questions.export.questionsCount')}
                           </Badge>
                         </div>
                       </SelectItem>
@@ -1526,8 +1528,8 @@ export function QuestionManagement() {
                                   {CHANGE_TYPE_LABELS[version.changeType]}
                                 </Badge>
                                 {index === 0 && (
-                                  <Badge variant="default" className="text-xs">
-                                    Atual
+                      <Badge variant="default" className="text-xs">
+                                    {t('settings.questions.version.current')}
                                   </Badge>
                                 )}
                                 {version.annotations && version.annotations.length > 0 && (
@@ -1565,7 +1567,7 @@ export function QuestionManagement() {
                                 disabled={reverting}
                               >
                                 <RotateCcw className="h-4 w-4 mr-1" />
-                                Reverter
+                                {t('settings.questions.version.revert')}
                               </Button>
                             )}
                           </div>
@@ -1582,36 +1584,36 @@ export function QuestionManagement() {
                 {selectedVersion && (
                   <div className="p-4 rounded-lg bg-muted/50 border space-y-4 mt-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">Detalhes da Versão {selectedVersion.versionNumber}</h4>
+                      <h4 className="font-medium text-sm">{t('settings.questions.version.detailsTitle', { version: selectedVersion.versionNumber })}</h4>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedVersion(null)}
                       >
-                        Fechar
+                        {t('common.close')}
                       </Button>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Área:</span>{' '}
+                        <span className="text-muted-foreground">{t('settings.questions.version.area')}:</span>{' '}
                         {selectedVersion.domainId}
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Criticidade:</span>{' '}
-                        {selectedVersion.criticality || 'Não definida'}
+                        <span className="text-muted-foreground">{t('settings.questions.version.criticality')}:</span>{' '}
+                        {selectedVersion.criticality || t('settings.questions.version.notDefined')}
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Responsável:</span>{' '}
-                        {selectedVersion.ownershipType || 'Não definido'}
+                        <span className="text-muted-foreground">{t('settings.questions.version.owner')}:</span>{' '}
+                        {selectedVersion.ownershipType || t('settings.questions.version.notDefined')}
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Frameworks:</span>{' '}
-                        {(selectedVersion.frameworks || []).join(', ') || 'Nenhum'}
+                        <span className="text-muted-foreground">{t('settings.questions.version.frameworks')}:</span>{' '}
+                        {(selectedVersion.frameworks || []).join(', ') || t('settings.questions.version.none')}
                       </div>
                     </div>
                     {selectedVersion.expectedEvidence && (
                       <div className="text-sm">
-                        <span className="text-muted-foreground">Evidência:</span>{' '}
+                        <span className="text-muted-foreground">{t('settings.questions.version.evidence')}:</span>{' '}
                         <span className="line-clamp-2">{selectedVersion.expectedEvidence}</span>
                       </div>
                     )}
@@ -1673,7 +1675,7 @@ export function QuestionManagement() {
                   })}
                 >
                   <FileText className="h-4 w-4 mr-2" />
-                  Exportar HTML
+                  {t('settings.questions.version.exportHTML')}
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -1685,12 +1687,12 @@ export function QuestionManagement() {
                   })}
                 >
                   <Printer className="h-4 w-4 mr-2" />
-                  Imprimir/PDF
+                  {t('settings.questions.version.printPDF')}
                 </Button>
               </div>
             )}
             <Button variant="ghost" onClick={() => setShowVersionDialog(false)}>
-              Fechar
+              {t('common.close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1723,12 +1725,14 @@ interface QuestionsListProps {
 }
 
 function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplicate, onViewHistory, operatingId }: QuestionsListProps) {
+  const { t } = useTranslation();
+  
   if (questions.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Nenhuma pergunta encontrada com os filtros atuais.
+            {t('settings.questions.noQuestionsFound')}
           </p>
         </CardContent>
       </Card>
@@ -1748,7 +1752,7 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
           >
             <CardLoadingOverlay 
               isLoading={operatingId === q.questionId} 
-              loadingText="Processando..."
+              loadingText={t('common.processing')}
             />
             <CardContent className="py-3">
               <div className="flex items-start gap-4">
@@ -1758,10 +1762,10 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                       {q.questionId}
                     </span>
                     {q.isCustom && (
-                      <Badge variant="secondary" className="text-[10px]">Personalizada</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{t('settings.questions.badge.custom')}</Badge>
                     )}
                     {q.isDisabled && (
-                      <Badge variant="outline" className="text-[10px] text-destructive">Desabilitada</Badge>
+                      <Badge variant="outline" className="text-[10px] text-destructive">{t('settings.questions.badge.disabled')}</Badge>
                     )}
                   </div>
                   <p className="text-sm line-clamp-2">{q.questionText}</p>
@@ -1795,11 +1799,11 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                       () => onDelete(q.questionId, q.isCustom),
                       {
                         isDefault: !q.isCustom,
-                        confirmTitle: q.isCustom ? 'Excluir pergunta?' : 'Desabilitar pergunta padrão?',
+                        confirmTitle: q.isCustom ? t('settings.questions.delete.customTitle') : t('settings.questions.delete.defaultTitle'),
                         confirmDescription: q.isCustom
-                          ? 'Você deseja excluir permanentemente esta pergunta personalizada? Esta ação não pode ser desfeita.'
-                          : 'Você deseja desabilitar esta pergunta padrão? Ela será removida da avaliação mas poderá ser restaurada posteriormente.',
-                        confirmActionLabel: q.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar',
+                          ? t('settings.questions.delete.customDescription')
+                          : t('settings.questions.delete.defaultDescription'),
+                        confirmActionLabel: q.isCustom ? t('settings.questions.delete.confirmDelete') : t('settings.questions.delete.confirmDisable'),
                       }
                     ),
                   ]}

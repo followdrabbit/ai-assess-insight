@@ -326,11 +326,11 @@ export default function Settings() {
               Gerencie a estrutura, biblioteca e configurações da plataforma
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <SettingsSearch onNavigate={handleSearchNavigate} />
             {hasChanges && (
               <>
-                <Button variant="outline" size="sm" onClick={cancelChanges}>
+                <Button variant="ghost" size="sm" onClick={cancelChanges}>
                   Cancelar
                 </Button>
                 <Button size="sm" onClick={saveChanges}>
@@ -603,8 +603,8 @@ export default function Settings() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={selectAll}>Todos</Button>
-                    <Button variant="outline" size="sm" onClick={selectDefaults}>Padrão</Button>
+                    <Button variant="ghost" size="sm" onClick={selectAll}>Todos</Button>
+                    <Button variant="ghost" size="sm" onClick={selectDefaults}>Padrão</Button>
                     <Button variant="ghost" size="sm" onClick={selectNone}>Limpar</Button>
                   </div>
                 </div>
@@ -697,7 +697,7 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground">
                     Exporte as respostas e configurações para um arquivo Excel.
                   </p>
-                  <Button onClick={handleExportData} className="w-full">
+                  <Button variant="outline" onClick={handleExportData} className="w-full justify-start">
                     <FileDown className="h-4 w-4 mr-2" />
                     Exportar para Excel (.xlsx)
                   </Button>
@@ -708,7 +708,7 @@ export default function Settings() {
                     </p>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full">
+                        <Button variant="outline" className="w-full justify-start">
                           <RefreshCw className="h-4 w-4 mr-2" />
                           Gerar Dados de Demonstração
                         </Button>
@@ -736,11 +736,11 @@ export default function Settings() {
             {/* Danger Zone */}
             <div ref={setSectionRef('clear-answers')}>
               <Card className={cn(
-                "border-destructive/30 transition-all duration-500 h-full",
+                "transition-all duration-500 h-full",
                 (highlightedSection === 'clear-answers' || highlightedSection === 'restore-defaults') && "ring-2 ring-primary ring-offset-2"
               )}>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                  <CardTitle className="text-base flex items-center gap-2">
                     <Trash2 className="h-4 w-4" />
                     Zona de Perigo
                   </CardTitle>
@@ -749,7 +749,7 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
                     <div>
                       <div className="font-medium text-sm">Limpar Respostas</div>
                       <div className="text-xs text-muted-foreground">
@@ -758,7 +758,7 @@ export default function Settings() {
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                           Limpar
                         </Button>
                       </AlertDialogTrigger>
@@ -783,7 +783,7 @@ export default function Settings() {
                     </AlertDialog>
                   </div>
 
-                  <div ref={setSectionRef('restore-defaults')} className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
+                  <div ref={setSectionRef('restore-defaults')} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
                     <div>
                       <div className="font-medium text-sm">Restaurar Padrões</div>
                       <div className="text-xs text-muted-foreground">
@@ -792,7 +792,7 @@ export default function Settings() {
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                           Restaurar
                         </Button>
                       </AlertDialogTrigger>

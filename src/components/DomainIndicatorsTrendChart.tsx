@@ -151,7 +151,7 @@ export function DomainIndicatorsTrendChart({ securityDomainId, className }: Doma
     const loadSnapshots = async () => {
       setLoading(true);
       try {
-        const data = await getMaturitySnapshots(parseInt(daysBack));
+        const data = await getMaturitySnapshots(parseInt(daysBack), securityDomainId);
         setSnapshots(data);
       } catch (error) {
         console.error('Error loading snapshots:', error);
@@ -160,7 +160,7 @@ export function DomainIndicatorsTrendChart({ securityDomainId, className }: Doma
       }
     };
     loadSnapshots();
-  }, [daysBack]);
+  }, [daysBack, securityDomainId]);
 
   const config = domainIndicatorConfig[securityDomainId] || domainIndicatorConfig.AI_SECURITY;
 

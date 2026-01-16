@@ -13,7 +13,7 @@ import { getAllCustomQuestions, getDisabledQuestions, getEnabledFrameworks } fro
 import { getQuestionFrameworkIds } from '@/lib/frameworks';
 
 export function useMaturitySnapshots() {
-  const { answers, isLoading } = useAnswersStore();
+  const { answers, isLoading, selectedSecurityDomain } = useAnswersStore();
 
   const captureSnapshot = useCallback(async (snapshotType: 'automatic' | 'manual' = 'automatic') => {
     if (answers.size === 0) return;
@@ -89,10 +89,11 @@ export function useMaturitySnapshots() {
         coverage: fc.coverage
       }));
 
-      // Save snapshot
+      // Save snapshot with security domain
       await saveMaturitySnapshot({
         snapshotDate: new Date().toISOString().split('T')[0],
         snapshotType,
+        securityDomainId: selectedSecurityDomain || undefined,
         overallScore: metrics.overallScore,
         overallCoverage: metrics.coverage,
         evidenceReadiness: metrics.evidenceReadiness,
@@ -105,11 +106,11 @@ export function useMaturitySnapshots() {
         frameworkCategoryMetrics
       });
 
-      console.log('Maturity snapshot saved successfully');
+      console.log('Maturity snapshot saved successfully for domain:', selectedSecurityDomain);
     } catch (error) {
       console.error('Error saving maturity snapshot:', error);
     }
-  }, [answers]);
+  }, [answers, selectedSecurityDomain]);
 
   // Auto-capture daily snapshot
   useEffect(() => {
@@ -117,10 +118,10 @@ export function useMaturitySnapshots() {
 
     const checkAndCaptureSnapshot = async () => {
       try {
-        const lastDate = await getLastSnapshotDate();
+        const lastDate = await getLastSnapshotDate(selectedSecurityDomain || undefined);
         const today = new Date().toISOString().split('T')[0];
         
-        // If no snapshot today, capture one
+        // If no snapshot today for this domain, capture one
         if (lastDate !== today) {
           await captureSnapshot('automatic');
         }
@@ -133,7 +134,7 @@ export function useMaturitySnapshots() {
     const timeoutId = setTimeout(checkAndCaptureSnapshot, 5000);
     
     return () => clearTimeout(timeoutId);
-  }, [isLoading, answers.size, captureSnapshot]);
+  }, [isLoading, answers.size, captureSnapshot, selectedSecurityDomain]);
 
   return { captureSnapshot };
 }

@@ -668,6 +668,7 @@ export interface MaturitySnapshot {
   id: string;
   snapshotDate: string;
   snapshotType: 'automatic' | 'manual';
+  securityDomainId?: string;
   overallScore: number;
   overallCoverage: number;
   evidenceReadiness: number;
@@ -704,15 +705,22 @@ export interface FrameworkCategorySnapshot {
   coverage: number;
 }
 
-export async function getMaturitySnapshots(daysBack: number = 90): Promise<MaturitySnapshot[]> {
+export async function getMaturitySnapshots(daysBack: number = 90, securityDomainId?: string): Promise<MaturitySnapshot[]> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - daysBack);
   
-  const { data, error } = await supabase
+  let query = supabase
     .from('maturity_snapshots')
     .select('*')
     .gte('snapshot_date', startDate.toISOString().split('T')[0])
     .order('snapshot_date', { ascending: true });
+  
+  // Filter by security domain if provided
+  if (securityDomainId) {
+    query = query.eq('security_domain_id', securityDomainId);
+  }
+  
+  const { data, error } = await query;
   
   if (error) throw error;
   
@@ -736,6 +744,7 @@ export async function getMaturitySnapshots(daysBack: number = 90): Promise<Matur
       id: row.id,
       snapshotDate: row.snapshot_date,
       snapshotType: row.snapshot_type as 'automatic' | 'manual',
+      securityDomainId: row.security_domain_id || undefined,
       overallScore: Number(row.overall_score),
       overallCoverage: Number(row.overall_coverage),
       evidenceReadiness: Number(row.evidence_readiness),
@@ -756,15 +765,23 @@ export async function saveMaturitySnapshot(
   forceInsert: boolean = false
 ): Promise<void> {
   const today = new Date().toISOString().split('T')[0];
+  const securityDomainId = snapshot.securityDomainId || null;
   
-  // Check if we already have a snapshot for today with same type
+  // Check if we already have a snapshot for today with same type and domain
   if (!forceInsert && snapshot.snapshotType === 'automatic') {
-    const { data: existing } = await supabase
+    let existingQuery = supabase
       .from('maturity_snapshots')
       .select('id')
       .eq('snapshot_date', today)
-      .eq('snapshot_type', 'automatic')
-      .maybeSingle();
+      .eq('snapshot_type', 'automatic');
+    
+    if (securityDomainId) {
+      existingQuery = existingQuery.eq('security_domain_id', securityDomainId);
+    } else {
+      existingQuery = existingQuery.is('security_domain_id', null);
+    }
+    
+    const { data: existing } = await existingQuery.maybeSingle();
     
     if (existing) {
       // Update existing snapshot
@@ -795,6 +812,7 @@ export async function saveMaturitySnapshot(
     .insert([{
       snapshot_date: snapshot.snapshotDate || today,
       snapshot_type: snapshot.snapshotType,
+      security_domain_id: securityDomainId,
       overall_score: snapshot.overallScore,
       overall_coverage: snapshot.overallCoverage,
       evidence_readiness: snapshot.evidenceReadiness,
@@ -810,13 +828,18 @@ export async function saveMaturitySnapshot(
   if (error) throw error;
 }
 
-export async function getLastSnapshotDate(): Promise<string | null> {
-  const { data, error } = await supabase
+export async function getLastSnapshotDate(securityDomainId?: string): Promise<string | null> {
+  let query = supabase
     .from('maturity_snapshots')
     .select('snapshot_date')
     .order('snapshot_date', { ascending: false })
-    .limit(1)
-    .single();
+    .limit(1);
+  
+  if (securityDomainId) {
+    query = query.eq('security_domain_id', securityDomainId);
+  }
+  
+  const { data, error } = await query.maybeSingle();
   
   if (error || !data) return null;
   return data.snapshot_date;

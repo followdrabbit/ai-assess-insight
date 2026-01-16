@@ -35,9 +35,11 @@ import {
 import { getMaturitySnapshots, MaturitySnapshot, getChartAnnotations, ChartAnnotation } from '@/lib/database';
 import { cn } from '@/lib/utils';
 import ChartAnnotations from '@/components/ChartAnnotations';
+import { useAnswersStore } from '@/lib/stores';
 
 interface MaturityTrendChartProps {
   className?: string;
+  securityDomainId?: string;
 }
 
 const domainColors = [
@@ -98,7 +100,10 @@ function calculateMovingAverage(data: number[], windowSize: number): (number | n
   });
 }
 
-export default function MaturityTrendChart({ className }: MaturityTrendChartProps) {
+export default function MaturityTrendChart({ className, securityDomainId: propDomainId }: MaturityTrendChartProps) {
+  const { selectedSecurityDomain } = useAnswersStore();
+  const effectiveDomainId = propDomainId || selectedSecurityDomain || undefined;
+  
   const [snapshots, setSnapshots] = useState<MaturitySnapshot[]>([]);
   const [annotations, setAnnotations] = useState<ChartAnnotation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,8 +127,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
       setLoading(true);
       try {
         const [snapshotData, annotationData] = await Promise.all([
-          getMaturitySnapshots(parseInt(daysBack)),
-          getChartAnnotations()
+          getMaturitySnapshots(parseInt(daysBack), effectiveDomainId),
+          getChartAnnotations(effectiveDomainId)
         ]);
         setSnapshots(snapshotData);
         setAnnotations(annotationData);
@@ -134,7 +139,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
       }
     };
     loadData();
-  }, [daysBack]);
+  }, [daysBack, effectiveDomainId]);
 
   // Transform data for overall chart with trend lines, moving averages and projections
   const { overallChartData, projectionData } = useMemo(() => {

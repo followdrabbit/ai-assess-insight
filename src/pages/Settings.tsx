@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { frameworks, Framework } from '@/lib/frameworks';
@@ -22,6 +22,7 @@ import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
 import { CascadeHierarchy } from '@/components/settings/CascadeHierarchy';
+import { SettingsSearch } from '@/components/settings/SettingsSearch';
 import { 
   FolderTree, 
   Library, 
@@ -81,6 +82,35 @@ export default function Settings() {
   const [assessmentName, setAssessmentName] = useState('Avaliação de Maturidade em Segurança');
   const [organizationName, setOrganizationName] = useState('');
   const [reassessmentInterval, setReassessmentInterval] = useState('quarterly');
+  const [highlightedSection, setHighlightedSection] = useState<string | null>(null);
+
+  // Refs for scrolling to sections
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Handle search navigation
+  const handleSearchNavigate = useCallback((tab: string, sectionId?: string) => {
+    setActiveTab(tab);
+    
+    if (sectionId) {
+      setHighlightedSection(sectionId);
+      
+      // Wait for tab change to render, then scroll
+      setTimeout(() => {
+        const element = sectionRefs.current[sectionId];
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Clear highlight after animation
+        setTimeout(() => setHighlightedSection(null), 2000);
+      }, 100);
+    }
+  }, []);
+
+  // Helper to register section refs
+  const setSectionRef = useCallback((id: string) => (el: HTMLDivElement | null) => {
+    sectionRefs.current[id] = el;
+  }, []);
 
   // Count questions per framework
   const questionCountByFramework = useMemo(() => {
@@ -293,26 +323,31 @@ export default function Settings() {
       </Breadcrumb>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings2 className="h-6 w-6 text-muted-foreground" />
-            Configurações
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gerencie a estrutura, biblioteca e configurações da plataforma
-          </p>
-        </div>
-        {hasChanges && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={cancelChanges}>
-              Cancelar
-            </Button>
-            <Button size="sm" onClick={saveChanges}>
-              Salvar Alterações
-            </Button>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Settings2 className="h-6 w-6 text-muted-foreground" />
+              Configurações
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Gerencie a estrutura, biblioteca e configurações da plataforma
+            </p>
           </div>
-        )}
+          <div className="flex items-center gap-3">
+            <SettingsSearch onNavigate={handleSearchNavigate} />
+            {hasChanges && (
+              <>
+                <Button variant="outline" size="sm" onClick={cancelChanges}>
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={saveChanges}>
+                  Salvar Alterações
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Main Tabs */}
@@ -386,36 +421,46 @@ export default function Settings() {
           </div>
 
           {/* Hierarchy View */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 rotate-90" />
-                Hierarquia: Domínios → Frameworks → Perguntas
-              </CardTitle>
-              <CardDescription>
-                Visualize como os elementos se relacionam e gerencie a disponibilidade
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CascadeHierarchy />
-            </CardContent>
-          </Card>
+          <div ref={setSectionRef('hierarchy')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'hierarchy' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 rotate-90" />
+                  Hierarquia: Domínios → Frameworks → Perguntas
+                </CardTitle>
+                <CardDescription>
+                  Visualize como os elementos se relacionam e gerencie a disponibilidade
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CascadeHierarchy />
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Domain Management */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <FolderTree className="h-4 w-4" />
-                Gerenciar Domínios de Segurança
-              </CardTitle>
-              <CardDescription>
-                Criar, editar, importar e exportar domínios de segurança
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DomainManagement />
-            </CardContent>
-          </Card>
+          <div ref={setSectionRef('domains')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'domains' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FolderTree className="h-4 w-4" />
+                  Gerenciar Domínios de Segurança
+                </CardTitle>
+                <CardDescription>
+                  Criar, editar, importar e exportar domínios de segurança
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DomainManagement />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ========== LIBRARY TAB ========== */}
@@ -464,36 +509,46 @@ export default function Settings() {
           </div>
 
           {/* Framework Management */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Gerenciar Frameworks
-              </CardTitle>
-              <CardDescription>
-                Criar, editar e excluir frameworks de avaliação
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FrameworkManagement />
-            </CardContent>
-          </Card>
+          <div ref={setSectionRef('frameworks-management')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'frameworks-management' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Gerenciar Frameworks
+                </CardTitle>
+                <CardDescription>
+                  Criar, editar e excluir frameworks de avaliação
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FrameworkManagement />
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Question Management */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                Gerenciar Perguntas
-              </CardTitle>
-              <CardDescription>
-                Criar, editar, importar e versionar perguntas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <QuestionManagement />
-            </CardContent>
-          </Card>
+          <div ref={setSectionRef('questions-management')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'questions-management' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Gerenciar Perguntas
+                </CardTitle>
+                <CardDescription>
+                  Criar, editar, importar e versionar perguntas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <QuestionManagement />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ========== ASSESSMENT TAB ========== */}
@@ -549,79 +604,89 @@ export default function Settings() {
           </div>
 
           {/* Assessment Info */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Informações da Avaliação
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="assessmentName">Nome da Avaliação</Label>
-                  <Input
-                    id="assessmentName"
-                    value={assessmentName}
-                    onChange={(e) => setAssessmentName(e.target.value)}
-                    placeholder="Nome da avaliação"
-                  />
+          <div ref={setSectionRef('assessment-info')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'assessment-info' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Informações da Avaliação
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="assessmentName">Nome da Avaliação</Label>
+                    <Input
+                      id="assessmentName"
+                      value={assessmentName}
+                      onChange={(e) => setAssessmentName(e.target.value)}
+                      placeholder="Nome da avaliação"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="organizationName">Organização</Label>
+                    <Input
+                      id="organizationName"
+                      value={organizationName}
+                      onChange={(e) => setOrganizationName(e.target.value)}
+                      placeholder="Nome da organização"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reassessmentInterval">Cadência de Reavaliação</Label>
+                    <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
+                      <SelectTrigger id="reassessmentInterval">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Mensal</SelectItem>
+                        <SelectItem value="quarterly">Trimestral</SelectItem>
+                        <SelectItem value="semiannual">Semestral</SelectItem>
+                        <SelectItem value="annual">Anual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="organizationName">Organização</Label>
-                  <Input
-                    id="organizationName"
-                    value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
-                    placeholder="Nome da organização"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reassessmentInterval">Cadência de Reavaliação</Label>
-                  <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
-                    <SelectTrigger id="reassessmentInterval">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Mensal</SelectItem>
-                      <SelectItem value="quarterly">Trimestral</SelectItem>
-                      <SelectItem value="semiannual">Semestral</SelectItem>
-                      <SelectItem value="annual">Anual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Framework Selection */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    Selecionar Frameworks para Avaliação
-                  </CardTitle>
-                  <CardDescription>
-                    Escolha quais frameworks serão incluídos na avaliação
-                  </CardDescription>
+          <div ref={setSectionRef('framework-selection')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'framework-selection' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Selecionar Frameworks para Avaliação
+                    </CardTitle>
+                    <CardDescription>
+                      Escolha quais frameworks serão incluídos na avaliação
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={selectAll}>Todos</Button>
+                    <Button variant="outline" size="sm" onClick={selectDefaults}>Padrão</Button>
+                    <Button variant="ghost" size="sm" onClick={selectNone}>Limpar</Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={selectAll}>Todos</Button>
-                  <Button variant="outline" size="sm" onClick={selectDefaults}>Padrão</Button>
-                  <Button variant="ghost" size="sm" onClick={selectNone}>Limpar</Button>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {frameworks.map(fw => (
+                    <FrameworkCard key={fw.frameworkId} fw={fw} />
+                  ))}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {frameworks.map(fw => (
-                  <FrameworkCard key={fw.frameworkId} fw={fw} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Info Card */}
           <Card className="bg-muted/30 border-dashed">
@@ -686,197 +751,212 @@ export default function Settings() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Export */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileDown className="h-4 w-4" />
-                  Exportar & Backup
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Exporte as respostas e configurações para um arquivo Excel.
-                </p>
-                <Button onClick={handleExportData} className="w-full">
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Exportar para Excel (.xlsx)
-                </Button>
-                <Separator />
-                <div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Gere dados de exemplo para explorar os dashboards.
+            <div ref={setSectionRef('export')}>
+              <Card className={cn(
+                "transition-all duration-500 h-full",
+                highlightedSection === 'export' && "ring-2 ring-primary ring-offset-2"
+              )}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileDown className="h-4 w-4" />
+                    Exportar & Backup
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Exporte as respostas e configurações para um arquivo Excel.
                   </p>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="w-full">
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Gerar Dados de Demonstração
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Gerar dados de demonstração?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação substituirá todas as respostas existentes por dados simulados.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleGenerateDemo}>
-                          Gerar Dados
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
+                  <Button onClick={handleExportData} className="w-full">
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Exportar para Excel (.xlsx)
+                  </Button>
+                  <Separator />
+                  <div ref={setSectionRef('demo-data')}>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Gere dados de exemplo para explorar os dashboards.
+                    </p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Gerar Dados de Demonstração
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Gerar dados de demonstração?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação substituirá todas as respostas existentes por dados simulados.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleGenerateDemo}>
+                            Gerar Dados
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Danger Zone */}
-            <Card className="border-destructive/30">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                  Zona de Perigo
-                </CardTitle>
-                <CardDescription>
-                  Ações irreversíveis que afetam seus dados
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
-                  <div>
-                    <div className="font-medium text-sm">Limpar Respostas</div>
-                    <div className="text-xs text-muted-foreground">
-                      Remove todas as {totalAnswered} respostas
+            <div ref={setSectionRef('clear-answers')}>
+              <Card className={cn(
+                "border-destructive/30 transition-all duration-500 h-full",
+                (highlightedSection === 'clear-answers' || highlightedSection === 'restore-defaults') && "ring-2 ring-primary ring-offset-2"
+              )}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                    Zona de Perigo
+                  </CardTitle>
+                  <CardDescription>
+                    Ações irreversíveis que afetam seus dados
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
+                    <div>
+                      <div className="font-medium text-sm">Limpar Respostas</div>
+                      <div className="text-xs text-muted-foreground">
+                        Remove todas as {totalAnswered} respostas
+                      </div>
                     </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          Limpar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Limpar todas as respostas?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Todas as {totalAnswered} respostas 
+                            serão permanentemente removidas.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleClearAnswers}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Limpar Respostas
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        Limpar
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Limpar todas as respostas?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. Todas as {totalAnswered} respostas 
-                          serão permanentemente removidas.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={handleClearAnswers}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Limpar Respostas
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
 
-                <div className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
-                  <div>
-                    <div className="font-medium text-sm">Restaurar Padrões</div>
-                    <div className="text-xs text-muted-foreground">
-                      Reseta configurações e dados
+                  <div ref={setSectionRef('restore-defaults')} className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
+                    <div>
+                      <div className="font-medium text-sm">Restaurar Padrões</div>
+                      <div className="text-xs text-muted-foreground">
+                        Reseta configurações e dados
+                      </div>
                     </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          Restaurar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Restaurar configurações padrão?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação restaurará os frameworks padrão e removerá todas as respostas.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={async () => {
+                              await clearAnswers();
+                              await setEnabledFrameworks(
+                                frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
+                              );
+                              setPendingFrameworks(
+                                frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
+                              );
+                              toast.success('Configurações restauradas');
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Restaurar Padrões
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        Restaurar
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Restaurar configurações padrão?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação restaurará os frameworks padrão e removerá todas as respostas.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={async () => {
-                            await clearAnswers();
-                            await setEnabledFrameworks(
-                              frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
-                            );
-                            setPendingFrameworks(
-                              frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
-                            );
-                            toast.success('Configurações restauradas');
-                          }}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Restaurar Padrões
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* About */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                Sobre a Plataforma
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium text-sm mb-2">Frameworks Suportados</h4>
-                <div className="flex flex-wrap gap-2">
-                  {frameworks.map(fw => (
-                    <Badge key={fw.frameworkId} variant="outline" className="text-xs">
-                      {fw.shortName}
-                    </Badge>
-                  ))}
+          <div ref={setSectionRef('about')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'about' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  Sobre a Plataforma
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Frameworks Suportados</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {frameworks.map(fw => (
+                      <Badge key={fw.frameworkId} variant="outline" className="text-xs">
+                        {fw.shortName}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h4 className="font-medium text-sm mb-2">Metodologia de Avaliação</h4>
-                <ul className="text-sm text-muted-foreground space-y-1.5">
-                  <li className="flex items-start gap-2">
-                    <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">1</span>
-                    <span>Avaliação baseada em frameworks reconhecidos internacionalmente</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">2</span>
-                    <span>Scoring considera implementação de controles e prontidão de evidências</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">3</span>
-                    <span>Níveis: Inexistente → Inicial → Definido → Gerenciado</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <Separator />
-              
-              <Card className="bg-muted/50">
-                <CardContent className="pt-4 pb-4">
-                  <h4 className="font-medium mb-2 text-sm">Privacidade e Armazenamento</h4>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• Dados armazenados de forma segura na nuvem</li>
-                    <li>• Apenas usuários autorizados podem acessar</li>
-                    <li>• Exporte ou limpe seus dados a qualquer momento</li>
+                
+                <Separator />
+                
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Metodologia de Avaliação</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1.5">
+                    <li className="flex items-start gap-2">
+                      <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">1</span>
+                      <span>Avaliação baseada em frameworks reconhecidos internacionalmente</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">2</span>
+                      <span>Scoring considera implementação de controles e prontidão de evidências</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">3</span>
+                      <span>Níveis: Inexistente → Inicial → Definido → Gerenciado</span>
+                    </li>
                   </ul>
-                </CardContent>
-              </Card>
-            </CardContent>
-          </Card>
+                </div>
+                
+                <Separator />
+                
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-4 pb-4">
+                    <h4 className="font-medium mb-2 text-sm">Privacidade e Armazenamento</h4>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• Dados armazenados de forma segura na nuvem</li>
+                      <li>• Apenas usuários autorizados podem acessar</li>
+                      <li>• Exporte ou limpe seus dados a qualquer momento</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

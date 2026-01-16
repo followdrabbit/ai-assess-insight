@@ -26,6 +26,7 @@ import {
 } from '@/lib/database';
 import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, ExternalLink, Filter } from 'lucide-react';
+import { CardActionButtons, createEditAction, createDeleteAction } from './CardActionButtons';
 
 type AudienceType = 'Executive' | 'GRC' | 'Engineering';
 type CategoryType = 'core' | 'high-value' | 'tech-focused' | 'custom';
@@ -371,49 +372,24 @@ export function FrameworkManagement() {
                       </Badge>
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => openEditDialog(fw)}>
-                      Editar
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          Excluir
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            {fw.isCustom ? 'Excluir framework?' : 'Desabilitar framework padrão?'}
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {fw.isCustom ? (
-                              <>
-                                Você deseja excluir permanentemente o framework "{fw.shortName}"?
-                                Esta ação não pode ser desfeita. Perguntas associadas não serão afetadas.
-                                {defaultFrameworks.some(df => df.frameworkId === fw.frameworkId) && (
-                                  <span className="block mt-2 text-foreground">
-                                    O framework padrão original será restaurado.
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                Você deseja desabilitar o framework padrão "{fw.shortName}"?
-                                Ele será removido da avaliação mas poderá ser restaurado posteriormente.
-                              </>
-                            )}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(fw.frameworkId, fw.isCustom)}>
-                            {fw.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                  <CardActionButtons
+                    withBorder={false}
+                    actions={[
+                      createEditAction(() => openEditDialog(fw)),
+                      createDeleteAction(
+                        () => handleDelete(fw.frameworkId, fw.isCustom),
+                        {
+                          itemName: fw.shortName,
+                          isDefault: !fw.isCustom,
+                          confirmTitle: fw.isCustom ? 'Excluir framework?' : 'Desabilitar framework padrão?',
+                          confirmDescription: fw.isCustom 
+                            ? `Você deseja excluir permanentemente o framework "${fw.shortName}"? Esta ação não pode ser desfeita.`
+                            : `Você deseja desabilitar o framework padrão "${fw.shortName}"? Ele será removido da avaliação mas poderá ser restaurado posteriormente.`,
+                          confirmActionLabel: fw.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar',
+                        }
+                      ),
+                    ]}
+                  />
                 </CardContent>
               </Card>
             );

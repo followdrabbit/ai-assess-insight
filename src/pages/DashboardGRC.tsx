@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download } from 'lucide-react';
+import { Download, Users } from 'lucide-react';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { cn } from '@/lib/utils';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
@@ -550,6 +551,14 @@ export default function DashboardGRC() {
         isTransitioning && "opacity-50 scale-[0.99] blur-[1px]"
       )}
     >
+      {/* Breadcrumb */}
+      <PageBreadcrumb 
+        items={[
+          { label: 'Dashboards', href: '/dashboard' },
+          { label: 'GRC', icon: Users }
+        ]} 
+      />
+
       {/* Header with Domain Switcher and Framework Selector */}
       <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <div className="flex flex-col gap-4">

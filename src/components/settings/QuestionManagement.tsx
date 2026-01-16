@@ -56,7 +56,7 @@ import { VersionTags, VersionTagsBadges } from './VersionTags';
 import { VersionFiltersBar, filterVersions, useVersionFilters, VersionFilters } from './VersionFilters';
 import { supabase } from '@/integrations/supabase/client';
 import { downloadVersionHistoryHtml, openVersionHistoryPrintView } from '@/lib/versionHistoryExport';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter as FilterIcon, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter as FilterIcon, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag, X } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -738,7 +738,7 @@ export function QuestionManagement() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex gap-4 flex-wrap items-center">
         <div className="flex-1 min-w-[200px]">
           <Input
             placeholder="Buscar por texto ou ID..."
@@ -774,6 +774,22 @@ export function QuestionManagement() {
               ))}
           </SelectContent>
         </Select>
+        {(searchQuery || filterFramework !== 'all' || filterDomain !== 'all' || filterSecurityDomain !== 'all') && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchQuery('');
+              setFilterFramework('all');
+              setFilterDomain('all');
+              setFilterSecurityDomain('all');
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Limpar filtros
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

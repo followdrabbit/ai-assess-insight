@@ -10,11 +10,12 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Cell
+  Cell,
+  ReferenceLine
 } from 'recharts';
 import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval, startOfQuarter, endOfQuarter, subQuarters, subWeeks, startOfWeek, endOfWeek, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, CalendarIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, CalendarIcon, Flag } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -31,8 +32,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { getMaturitySnapshots, MaturitySnapshot } from '@/lib/database';
+import { getMaturitySnapshots, MaturitySnapshot, getChartAnnotations, ChartAnnotation } from '@/lib/database';
 import { cn } from '@/lib/utils';
+import ChartAnnotations from '@/components/ChartAnnotations';
 
 interface MaturityTrendChartProps {
   className?: string;
@@ -98,6 +100,7 @@ function calculateMovingAverage(data: number[], windowSize: number): (number | n
 
 export default function MaturityTrendChart({ className }: MaturityTrendChartProps) {
   const [snapshots, setSnapshots] = useState<MaturitySnapshot[]>([]);
+  const [annotations, setAnnotations] = useState<ChartAnnotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [daysBack, setDaysBack] = useState<string>('90');
   const [activeTab, setActiveTab] = useState('overall');
@@ -105,6 +108,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
   const [showTrendLines, setShowTrendLines] = useState(true);
   const [showMovingAverage, setShowMovingAverage] = useState(true);
   const [showProjection, setShowProjection] = useState(true);
+  const [showAnnotations, setShowAnnotations] = useState(true);
   const [projectionDays, setProjectionDays] = useState<number>(30);
   const [customRange, setCustomRange] = useState<CustomDateRange>({
     currentStart: subDays(new Date(), 30),
@@ -114,18 +118,22 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
   });
 
   useEffect(() => {
-    const loadSnapshots = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        const data = await getMaturitySnapshots(parseInt(daysBack));
-        setSnapshots(data);
+        const [snapshotData, annotationData] = await Promise.all([
+          getMaturitySnapshots(parseInt(daysBack)),
+          getChartAnnotations()
+        ]);
+        setSnapshots(snapshotData);
+        setAnnotations(annotationData);
       } catch (error) {
-        console.error('Error loading snapshots:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadSnapshots();
+    loadData();
   }, [daysBack]);
 
   // Transform data for overall chart with trend lines, moving averages and projections
@@ -506,7 +514,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         </TabsList>
 
         <TabsContent value="overall">
-          {/* Trend/MA/Projection toggles */}
+          {/* Trend/MA/Projection/Annotations toggles */}
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -534,6 +542,15 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                 className="rounded border-border"
               />
               <span className="text-muted-foreground">Projeção</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showAnnotations}
+                onChange={(e) => setShowAnnotations(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-muted-foreground">Marcos</span>
             </label>
             {showProjection && (
               <Select value={projectionDays.toString()} onValueChange={(v) => setProjectionDays(parseInt(v))}>
@@ -748,6 +765,30 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     />
                   </>
                 )}
+
+                {/* Annotation reference lines */}
+                {showAnnotations && annotations.map(annotation => {
+                  const annotationDateFormatted = format(parseISO(annotation.annotationDate), 'dd/MM', { locale: ptBR });
+                  const existsInChart = overallChartData.some(d => d.dateFormatted === annotationDateFormatted);
+                  if (!existsInChart) return null;
+                  
+                  return (
+                    <ReferenceLine
+                      key={annotation.id}
+                      x={annotationDateFormatted}
+                      stroke={annotation.color || '#3b82f6'}
+                      strokeWidth={2}
+                      strokeDasharray="3 3"
+                      label={{
+                        value: annotation.title,
+                        position: 'top',
+                        fill: annotation.color || '#3b82f6',
+                        fontSize: 10,
+                        fontWeight: 500,
+                      }}
+                    />
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -838,6 +879,13 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
               </div>
             </div>
           )}
+
+          {/* Annotations Management */}
+          <div className="mt-4 pt-4 border-t">
+            <ChartAnnotations 
+              onAnnotationsChange={(newAnnotations) => setAnnotations(newAnnotations)} 
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="comparison">

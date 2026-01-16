@@ -122,6 +122,45 @@ export type Database = {
         }
         Relationships: []
       }
+      chart_annotations: {
+        Row: {
+          annotation_date: string
+          annotation_type: string
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          security_domain_id: string | null
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          annotation_date: string
+          annotation_type?: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          security_domain_id?: string | null
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          annotation_date?: string
+          annotation_type?: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          security_domain_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       custom_frameworks: {
         Row: {
           assessment_scope: string | null

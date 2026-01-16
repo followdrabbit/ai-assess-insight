@@ -23,16 +23,6 @@ export default function DashboardExecutive() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard Executivo</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Visão estratégica para CISO e liderança de segurança
-          </p>
-        </div>
-        <DomainSwitcher variant="badge" />
-      </div>
-
       <ExecutiveDashboard 
         metrics={metrics}
         criticalGaps={criticalGaps}
@@ -42,6 +32,7 @@ export default function DashboardExecutive() {
         selectedFrameworkIds={selectedFrameworkIds}
         onFrameworkSelectionChange={handleFrameworkSelectionChange}
         activeQuestions={questionsForDashboard}
+        domainSwitcher={<DomainSwitcher variant="badge" />}
       />
 
       {/* Maturity Trend Chart */}

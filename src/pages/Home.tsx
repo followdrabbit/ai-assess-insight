@@ -90,17 +90,17 @@ export default function Home() {
       <section className="text-center space-y-6 py-12">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
           <Shield className="h-4 w-4" />
-          Framework de Avaliação de Segurança em IA
+          TrustLayer
         </div>
         
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground max-w-3xl mx-auto">
-          Avalie a Maturidade de Segurança em{' '}
-          <span className="text-primary">Inteligência Artificial</span>
+          Governança de Segurança{' '}
+          <span className="text-primary">Multi-Domínio</span>
         </h1>
         
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Ferramenta completa para avaliar, medir e melhorar a postura de segurança 
-          das iniciativas de IA da sua organização, alinhada com os principais 
+          Plataforma completa para avaliar, medir e melhorar a postura de segurança 
+          em AI, Cloud e DevSecOps, alinhada com os principais 
           frameworks e regulamentações do mercado.
         </p>
         

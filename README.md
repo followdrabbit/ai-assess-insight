@@ -1,6 +1,6 @@
-# 🛡️ AI Security Maturity Assessment Tool
+# 🛡️ TrustLayer - Security Governance Platform
 
-Uma ferramenta completa para avaliação de maturidade em segurança de Inteligência Artificial, baseada em frameworks reconhecidos internacionalmente como NIST AI RMF, ISO 27001/27002, LGPD e outros.
+Uma plataforma completa de governança de segurança multi-domínio para AI Security, Cloud Security e DevSecOps, baseada em frameworks reconhecidos internacionalmente como NIST AI RMF, ISO 27001/27002, LGPD e outros.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-18.3-61dafb.svg)

@@ -53,6 +53,7 @@ import {
   DashboardKPICard,
   DashboardSection,
   DashboardRoadmapGrid,
+  PeriodComparisonCard,
 } from '@/components/dashboard';
 
 // Framework category labels and colors imported from shared lib
@@ -1655,8 +1656,14 @@ export default function DashboardGRC() {
         </DialogContent>
       </Dialog>
 
+      {/* Period Comparison */}
+      <PeriodComparisonCard 
+        securityDomainId={currentDomainInfo?.domainId}
+        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" 
+      />
+
       {/* Maturity Trend Chart */}
-      <MaturityTrendChart className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" />
+      <MaturityTrendChart className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-100" />
     </div>
   );
 }

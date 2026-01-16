@@ -112,31 +112,20 @@ export function ExecutiveDashboard({
   const [showAllGaps, setShowAllGaps] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  // Calculate correct coverage based on active questions
+  // Calculate correct coverage based on metrics (which comes from calculateOverallMetrics)
+  // The metrics object already has the accurate answered/total count
   const coverageStats = useMemo(() => {
-    const totalQuestions = activeQuestions.length;
-    let answeredCount = 0;
-    activeQuestions.forEach(q => {
-      // Check if we have a valid answer for this question
-      // We need to check if the question has a response in criticalGaps or isn't in gaps (meaning it's answered/ok)
-      const gap = criticalGaps.find(g => g.questionId === q.questionId);
-      if (gap && gap.response !== 'Não respondido') {
-        answeredCount++;
-      } else if (!gap) {
-        // If not in gaps, check if it might be answered (NA or above threshold)
-        answeredCount++;
-      }
-    });
-    // For a more accurate count, count questions where we have actual responses
-    // This is a simplified approximation
-    const coverage = totalQuestions > 0 ? Math.min(answeredCount / totalQuestions, 1) : 0;
+    const totalQuestions = metrics.totalQuestions;
+    const answeredCount = metrics.answeredQuestions;
+    const coverage = metrics.coverage;
+    
     return {
       total: totalQuestions,
-      answered: Math.min(answeredCount, totalQuestions),
+      answered: answeredCount,
       pending: Math.max(0, totalQuestions - answeredCount),
       coverage
     };
-  }, [activeQuestions, criticalGaps]);
+  }, [metrics]);
 
   // Filter questions and gaps by selected frameworks
   const filteredByFramework = useMemo(() => {

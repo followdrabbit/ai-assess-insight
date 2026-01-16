@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DomainSwitcher } from '@/components/DomainSwitcher';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { domains, maturityLevels, FrameworkCategoryId } from '@/lib/dataset';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
@@ -742,6 +743,7 @@ export default function DashboardSpecialist() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <DomainSwitcher variant="badge" />
               <Button 
                 variant="outline" 
                 size="sm"

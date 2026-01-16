@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DomainSwitcher } from '@/components/DomainSwitcher';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { cn } from '@/lib/utils';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
@@ -555,6 +556,7 @@ export default function DashboardGRC() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <DomainSwitcher variant="badge" />
               <Button 
                 variant="outline" 
                 size="sm"

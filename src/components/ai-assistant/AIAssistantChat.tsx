@@ -13,17 +13,19 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAIAssistant, ChatMessage } from '@/hooks/useAIAssistant';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { useSyncedSpeechSynthesis } from '@/hooks/useSyncedSpeechSynthesis';
 import { useVoiceCommands } from '@/hooks/useVoiceCommands';
+import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
 import { toast } from 'sonner';
 
 export function AIAssistantChat() {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
-  const [autoSpeak, setAutoSpeak] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastMessageRef = useRef<string>('');
+
+  const { settings: voiceSettings, updateSettings: updateVoiceSettings } = useVoiceSettings();
 
   const { messages, isLoading, error, sendMessage, clearMessages, stopGeneration, addSystemMessage, currentProvider } = useAIAssistant();
   const { 
@@ -44,13 +46,14 @@ export function AIAssistantChat() {
     isSupported: ttsSupported, 
     error: ttsError,
     progress: speakProgress,
+    autoSpeak,
     speak, 
     stop: stopSpeaking,
     pause: pauseSpeaking,
     resume: resumeSpeaking,
     skip: skipSpeaking,
     clearError: clearTtsError
-  } = useSpeechSynthesis();
+  } = useSyncedSpeechSynthesis();
   const { executeCommand, getDataFromCommand, isCommand, getAllCommands } = useVoiceCommands();
 
   // Process voice commands when transcript changes
@@ -146,11 +149,26 @@ export function AIAssistantChat() {
     }
   };
 
-  const toggleAutoSpeak = () => {
+  const toggleAutoSpeak = async () => {
     if (isSpeaking) {
       stopSpeaking();
     }
-    setAutoSpeak(!autoSpeak);
+    // Update local context state (optimistic update)
+    updateVoiceSettings({ voice_auto_speak: !autoSpeak });
+    
+    // Save to database
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ voice_auto_speak: !autoSpeak, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+      }
+    } catch (err) {
+      console.error('Error saving auto-speak preference:', err);
+    }
   };
 
   const speakMessage = (content: string) => {

@@ -11,6 +11,15 @@ interface SpeechQueueItem {
   priority: number;
 }
 
+export interface VoiceSettingsConfig {
+  voice_language?: string;
+  voice_rate?: number;
+  voice_pitch?: number;
+  voice_volume?: number;
+  voice_name?: string | null;
+  voice_auto_speak?: boolean;
+}
+
 interface UseSpeechSynthesisReturn {
   isSpeaking: boolean;
   isPaused: boolean;
@@ -35,6 +44,8 @@ interface UseSpeechSynthesisReturn {
   queueLength: number;
   clearQueue: () => void;
   clearError: () => void;
+  autoSpeak: boolean;
+  applySettings: (settings: VoiceSettingsConfig) => void;
 }
 
 interface SpeakOptions {
@@ -76,14 +87,17 @@ function preprocessTextForSpeech(text: string): string {
   return processed;
 }
 
-export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
+export function useSpeechSynthesis(initialSettings?: VoiceSettingsConfig): UseSpeechSynthesisReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const [rate, setRate] = useState(1);
-  const [pitch, setPitch] = useState(1);
-  const [volume, setVolume] = useState(1);
+  const [rate, setRate] = useState(initialSettings?.voice_rate ?? 1);
+  const [pitch, setPitch] = useState(initialSettings?.voice_pitch ?? 1);
+  const [volume, setVolume] = useState(initialSettings?.voice_volume ?? 1);
+  const [autoSpeak, setAutoSpeak] = useState(initialSettings?.voice_auto_speak ?? false);
+  const [preferredLanguage, setPreferredLanguage] = useState(initialSettings?.voice_language ?? 'pt-BR');
+  const [preferredVoiceName, setPreferredVoiceName] = useState<string | null>(initialSettings?.voice_name ?? null);
   const [error, setError] = useState<SpeechSynthesisError | null>(null);
   const [currentText, setCurrentText] = useState('');
   const [progress, setProgress] = useState(0);
@@ -98,10 +112,22 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
   const estimatedDurationRef = useRef<number>(0);
+  const settingsAppliedRef = useRef(false);
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
-  // Load voices
+  // Apply settings from context/props
+  const applySettings = useCallback((settings: VoiceSettingsConfig) => {
+    if (settings.voice_rate !== undefined) setRate(settings.voice_rate);
+    if (settings.voice_pitch !== undefined) setPitch(settings.voice_pitch);
+    if (settings.voice_volume !== undefined) setVolume(settings.voice_volume);
+    if (settings.voice_auto_speak !== undefined) setAutoSpeak(settings.voice_auto_speak);
+    if (settings.voice_language !== undefined) setPreferredLanguage(settings.voice_language);
+    if (settings.voice_name !== undefined) setPreferredVoiceName(settings.voice_name);
+    settingsAppliedRef.current = true;
+  }, []);
+
+  // Load voices and apply preferred voice
   useEffect(() => {
     if (!isSupported) return;
 
@@ -109,12 +135,23 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
       const availableVoices = window.speechSynthesis.getVoices();
       setVoices(availableVoices);
       
-      // Try to select a Portuguese voice by default, fallback to first available
-      if (!selectedVoice && availableVoices.length > 0) {
+      if (availableVoices.length > 0) {
+        // First try to find the preferred voice by name
+        if (preferredVoiceName) {
+          const namedVoice = availableVoices.find(v => v.name === preferredVoiceName);
+          if (namedVoice) {
+            setSelectedVoice(namedVoice);
+            return;
+          }
+        }
+        
+        // Then try to find a voice matching the preferred language
+        const langVoice = availableVoices.find(v => v.lang === preferredLanguage);
+        const langPrefixVoice = availableVoices.find(v => v.lang.startsWith(preferredLanguage.split('-')[0]));
         const ptBrVoice = availableVoices.find(v => v.lang === 'pt-BR');
-        const ptVoice = availableVoices.find(v => v.lang.startsWith('pt'));
         const enVoice = availableVoices.find(v => v.lang.startsWith('en') && v.name.includes('Google'));
-        const defaultVoice = ptBrVoice || ptVoice || enVoice || availableVoices[0];
+        
+        const defaultVoice = langVoice || langPrefixVoice || ptBrVoice || enVoice || availableVoices[0];
         setSelectedVoice(defaultVoice);
       }
     };
@@ -125,7 +162,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
     return () => {
       window.speechSynthesis.onvoiceschanged = null;
     };
-  }, [isSupported, selectedVoice]);
+  }, [isSupported, preferredLanguage, preferredVoiceName]);
 
   // Process queue
   useEffect(() => {
@@ -341,5 +378,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
     queueLength: queue.length,
     clearQueue,
     clearError,
+    autoSpeak,
+    applySettings,
   };
 }

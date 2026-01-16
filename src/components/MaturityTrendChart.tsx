@@ -12,7 +12,7 @@ import {
   Bar,
   Cell
 } from 'recharts';
-import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval, startOfQuarter, endOfQuarter, subQuarters, subWeeks, startOfWeek, endOfWeek, subDays } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval, startOfQuarter, endOfQuarter, subQuarters, subWeeks, startOfWeek, endOfWeek, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, CalendarIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -104,6 +104,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
   const [comparisonType, setComparisonType] = useState<ComparisonType>('month');
   const [showTrendLines, setShowTrendLines] = useState(true);
   const [showMovingAverage, setShowMovingAverage] = useState(true);
+  const [showProjection, setShowProjection] = useState(true);
+  const [projectionDays, setProjectionDays] = useState<number>(30);
   const [customRange, setCustomRange] = useState<CustomDateRange>({
     currentStart: subDays(new Date(), 30),
     currentEnd: new Date(),
@@ -126,18 +128,19 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
     loadSnapshots();
   }, [daysBack]);
 
-  // Transform data for overall chart with trend lines and moving averages
-  const overallChartData = useMemo(() => {
+  // Transform data for overall chart with trend lines, moving averages and projections
+  const { overallChartData, projectionData } = useMemo(() => {
     const baseData = snapshots.map(s => ({
       date: s.snapshotDate,
       dateFormatted: format(parseISO(s.snapshotDate), 'dd/MM', { locale: ptBR }),
       score: Math.round(s.overallScore * 100),
       coverage: Math.round(s.overallCoverage * 100),
       evidence: Math.round(s.evidenceReadiness * 100),
-      gaps: s.criticalGaps
+      gaps: s.criticalGaps,
+      isProjection: false
     }));
 
-    if (baseData.length < 2) return baseData;
+    if (baseData.length < 2) return { overallChartData: baseData, projectionData: null };
 
     // Calculate regression lines
     const scoreReg = calculateLinearRegression(baseData.map(d => d.score));
@@ -150,7 +153,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
     const coverageMA = calculateMovingAverage(baseData.map(d => d.coverage), windowSize);
     const evidenceMA = calculateMovingAverage(baseData.map(d => d.evidence), windowSize);
 
-    return baseData.map((d, i) => ({
+    const enrichedData = baseData.map((d, i) => ({
       ...d,
       scoreTrend: Math.round(scoreReg.intercept + scoreReg.slope * i),
       coverageTrend: Math.round(coverageReg.intercept + coverageReg.slope * i),
@@ -158,8 +161,88 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
       scoreMA: scoreMA[i],
       coverageMA: coverageMA[i],
       evidenceMA: evidenceMA[i],
+      scoreProjection: null as number | null,
+      coverageProjection: null as number | null,
+      evidenceProjection: null as number | null,
     }));
-  }, [snapshots]);
+
+    // Generate projection data points
+    const lastDate = parseISO(baseData[baseData.length - 1].date);
+    const n = baseData.length;
+    const projectionPoints: typeof enrichedData = [];
+
+    // Add last real data point as starting point for projection
+    const lastEnriched = enrichedData[enrichedData.length - 1];
+    projectionPoints.push({
+      ...lastEnriched,
+      scoreProjection: lastEnriched.score,
+      coverageProjection: lastEnriched.coverage,
+      evidenceProjection: lastEnriched.evidence,
+    });
+
+    // Calculate interval between data points (average)
+    const avgInterval = baseData.length > 1 
+      ? Math.round((parseISO(baseData[baseData.length - 1].date).getTime() - parseISO(baseData[0].date).getTime()) / (baseData.length - 1) / (1000 * 60 * 60 * 24))
+      : 3;
+
+    // Generate future projection points
+    const numProjectionPoints = Math.ceil(projectionDays / Math.max(avgInterval, 1));
+    for (let i = 1; i <= numProjectionPoints; i++) {
+      const futureDate = addDays(lastDate, avgInterval * i);
+      const projIndex = n - 1 + i;
+      
+      // Clamp values between 0 and 100
+      const clamp = (val: number) => Math.max(0, Math.min(100, Math.round(val)));
+      
+      projectionPoints.push({
+        date: futureDate.toISOString().split('T')[0],
+        dateFormatted: format(futureDate, 'dd/MM', { locale: ptBR }),
+        score: null as any,
+        coverage: null as any,
+        evidence: null as any,
+        gaps: null as any,
+        isProjection: true,
+        scoreTrend: null as any,
+        coverageTrend: null as any,
+        evidenceTrend: null as any,
+        scoreMA: null,
+        coverageMA: null,
+        evidenceMA: null,
+        scoreProjection: clamp(scoreReg.intercept + scoreReg.slope * projIndex),
+        coverageProjection: clamp(coverageReg.intercept + coverageReg.slope * projIndex),
+        evidenceProjection: clamp(evidenceReg.intercept + evidenceReg.slope * projIndex),
+      });
+    }
+
+    // Calculate projection summary
+    const lastProjection = projectionPoints[projectionPoints.length - 1];
+    const projectionSummary = {
+      days: projectionDays,
+      score: {
+        current: lastEnriched.score,
+        projected: lastProjection.scoreProjection!,
+        change: lastProjection.scoreProjection! - lastEnriched.score,
+        trend: scoreReg.slope > 0 ? 'up' : scoreReg.slope < 0 ? 'down' : 'stable'
+      },
+      coverage: {
+        current: lastEnriched.coverage,
+        projected: lastProjection.coverageProjection!,
+        change: lastProjection.coverageProjection! - lastEnriched.coverage,
+        trend: coverageReg.slope > 0 ? 'up' : coverageReg.slope < 0 ? 'down' : 'stable'
+      },
+      evidence: {
+        current: lastEnriched.evidence,
+        projected: lastProjection.evidenceProjection!,
+        change: lastProjection.evidenceProjection! - lastEnriched.evidence,
+        trend: evidenceReg.slope > 0 ? 'up' : evidenceReg.slope < 0 ? 'down' : 'stable'
+      }
+    };
+
+    return { 
+      overallChartData: [...enrichedData, ...projectionPoints.slice(1)], 
+      projectionData: projectionSummary 
+    };
+  }, [snapshots, projectionDays]);
 
   // Transform data for domain chart
   const domainChartData = useMemo(() => {
@@ -423,8 +506,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         </TabsList>
 
         <TabsContent value="overall">
-          {/* Trend/MA toggles */}
-          <div className="flex items-center gap-4 mb-4">
+          {/* Trend/MA/Projection toggles */}
+          <div className="flex flex-wrap items-center gap-4 mb-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
                 type="checkbox"
@@ -432,7 +515,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                 onChange={(e) => setShowTrendLines(e.target.checked)}
                 className="rounded border-border"
               />
-              <span className="text-muted-foreground">Linhas de Tendência</span>
+              <span className="text-muted-foreground">Tendência</span>
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -443,6 +526,28 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
               />
               <span className="text-muted-foreground">Média Móvel</span>
             </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showProjection}
+                onChange={(e) => setShowProjection(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-muted-foreground">Projeção</span>
+            </label>
+            {showProjection && (
+              <Select value={projectionDays.toString()} onValueChange={(v) => setProjectionDays(parseInt(v))}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="15">15 dias</SelectItem>
+                  <SelectItem value="30">30 dias</SelectItem>
+                  <SelectItem value="60">60 dias</SelectItem>
+                  <SelectItem value="90">90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="h-[300px]">
@@ -601,9 +706,96 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     />
                   </>
                 )}
+
+                {/* Projection lines */}
+                {showProjection && (
+                  <>
+                    <Line 
+                      type="monotone" 
+                      dataKey="scoreProjection" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      strokeDasharray="4 2"
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="Projeção Maturidade"
+                      legendType="none"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="coverageProjection" 
+                      stroke="hsl(var(--chart-2))" 
+                      strokeWidth={2}
+                      strokeDasharray="4 2"
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="Projeção Cobertura"
+                      legendType="none"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="evidenceProjection" 
+                      stroke="hsl(var(--chart-3))" 
+                      strokeWidth={2}
+                      strokeDasharray="4 2"
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="Projeção Evidências"
+                      legendType="none"
+                    />
+                  </>
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Projection Summary Cards */}
+          {showProjection && projectionData && (
+            <div className="mt-4 p-4 rounded-lg border bg-muted/30">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Projeção para {projectionData.days} dias</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Maturidade</div>
+                  <div className="text-lg font-bold">{projectionData.score.projected}%</div>
+                  <div className={cn(
+                    "text-xs font-medium",
+                    projectionData.score.change > 0 ? "text-green-600" : 
+                    projectionData.score.change < 0 ? "text-red-600" : "text-muted-foreground"
+                  )}>
+                    {projectionData.score.change > 0 ? '+' : ''}{projectionData.score.change}pp
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Cobertura</div>
+                  <div className="text-lg font-bold">{projectionData.coverage.projected}%</div>
+                  <div className={cn(
+                    "text-xs font-medium",
+                    projectionData.coverage.change > 0 ? "text-green-600" : 
+                    projectionData.coverage.change < 0 ? "text-red-600" : "text-muted-foreground"
+                  )}>
+                    {projectionData.coverage.change > 0 ? '+' : ''}{projectionData.coverage.change}pp
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Evidências</div>
+                  <div className="text-lg font-bold">{projectionData.evidence.projected}%</div>
+                  <div className={cn(
+                    "text-xs font-medium",
+                    projectionData.evidence.change > 0 ? "text-green-600" : 
+                    projectionData.evidence.change < 0 ? "text-red-600" : "text-muted-foreground"
+                  )}>
+                    {projectionData.evidence.change > 0 ? '+' : ''}{projectionData.evidence.change}pp
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Summary stats */}
           {overallChartData.length >= 2 && (

@@ -841,6 +841,8 @@ export interface RoadmapItem {
   impact: string;
   effort: 'low' | 'medium' | 'high';
   ownershipType: string;
+  questionId: string; // For direct navigation to assessment
+  subcatId: string;
 }
 
 export function generateRoadmap(
@@ -870,12 +872,17 @@ export function generateRoadmap(
     worstScore: number;
     hasUnanswered: boolean;
     ownershipType: string;
+    questionId: string; // First/worst question for navigation
   }
 
   const subcatSummaries: SubcatSummary[] = [];
   subcatGaps.forEach((gapList, subcatId) => {
     const first = gapList[0];
-    const worstScore = Math.min(...gapList.map(g => g.effectiveScore));
+    // Find the gap with worst score for navigation
+    const worstGap = gapList.reduce((worst, current) => 
+      current.effectiveScore < worst.effectiveScore ? current : worst
+    , gapList[0]);
+    const worstScore = worstGap.effectiveScore;
     const hasCritical = gapList.some(g => g.criticality === 'Critical');
     const hasUnanswered = gapList.some(g => g.response === 'Não respondido');
 
@@ -888,6 +895,7 @@ export function generateRoadmap(
       worstScore,
       hasUnanswered,
       ownershipType: first.ownershipType || 'GRC',
+      questionId: worstGap.questionId, // Use worst gap's questionId for navigation
     });
   });
 
@@ -917,6 +925,8 @@ export function generateRoadmap(
       impact: summary.criticality === 'Critical' ? 'Alto impacto em risco' : 'Médio impacto em risco',
       effort: summary.hasUnanswered ? 'medium' : summary.worstScore < 0.25 ? 'high' : 'low',
       ownershipType: summary.ownershipType,
+      questionId: summary.questionId,
+      subcatId: summary.subcatId,
     });
   });
 

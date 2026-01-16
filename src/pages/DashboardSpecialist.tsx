@@ -1018,7 +1018,11 @@ export default function DashboardSpecialist() {
                   <h4 className="font-medium text-sm mb-3">{config.label}</h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {items.length > 0 ? items.slice(0, 6).map((item, itemIdx) => (
-                      <div key={itemIdx} className="text-xs group cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1">
+                      <div 
+                        key={itemIdx} 
+                        className="text-xs group cursor-pointer hover:bg-muted/50 p-1.5 rounded -mx-1.5 transition-colors"
+                        onClick={() => navigate(`/assessment?questionId=${item.questionId}`)}
+                      >
                         <p className="font-medium line-clamp-2 group-hover:text-primary transition-colors">{item.action}</p>
                         <p className="text-muted-foreground mt-0.5">{item.domain} · {item.ownershipType}</p>
                       </div>

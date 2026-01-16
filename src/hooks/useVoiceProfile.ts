@@ -24,6 +24,7 @@ interface UseVoiceProfileReturn {
   isLoading: boolean;
   isEnrolling: boolean;
   isRecording: boolean;
+  isProcessing: boolean;
   recordingDuration: number;
   currentPhraseIndex: number;
   enrollmentProgress: number;
@@ -61,6 +62,7 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [enrolledSamples, setEnrolledSamples] = useState<EnrollmentSample[]>([]);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
@@ -192,6 +194,10 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
           
           const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
           
+          // Show processing indicator
+          setIsRecording(false);
+          setIsProcessing(true);
+          
           try {
             const features = await featureExtractorRef.current!.extractFeaturesFromBlob(audioBlob);
             const qualityScore = featureExtractorRef.current!.calculateQualityScore(features, durationMs);
@@ -206,10 +212,10 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
             };
             
             setEnrolledSamples(prev => [...prev, sample]);
-            setIsRecording(false);
+            setIsProcessing(false);
             resolve(sample);
           } catch (err: any) {
-            setIsRecording(false);
+            setIsProcessing(false);
             reject(err);
           }
         };
@@ -445,6 +451,7 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
     isLoading,
     isEnrolling,
     isRecording,
+    isProcessing,
     recordingDuration,
     currentPhraseIndex,
     enrollmentProgress,

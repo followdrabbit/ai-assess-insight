@@ -64,6 +64,7 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
     isLoading,
     isEnrolling,
     isRecording,
+    isProcessing,
     recordingDuration,
     currentPhraseIndex,
     enrollmentProgress,
@@ -184,8 +185,21 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
             </div>
           )}
 
+          {/* Processing Status */}
+          {isProcessing && (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <div className="flex items-center gap-3 text-primary">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-lg font-medium">Processando áudio...</span>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Analisando características vocais
+              </p>
+            </div>
+          )}
+
           {/* Quality Feedback */}
-          {lastSampleQuality !== null && !isRecording && (
+          {lastSampleQuality !== null && !isRecording && !isProcessing && (
             <div className={cn(
               "flex items-center gap-2 rounded-lg p-3",
               lastSampleQuality >= 0.7 ? "bg-green-500/10 text-green-600" : 
@@ -226,7 +240,7 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
               </Button>
             )}
 
-            {hasRecordedCurrentPhrase && !isRecording && (
+            {hasRecordedCurrentPhrase && !isRecording && !isProcessing && (
               <>
                 <Button onClick={retryPhrase} variant="outline" size="sm" className="gap-2">
                   <RefreshCw className="h-4 w-4" />
@@ -251,7 +265,7 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
           </div>
 
           {/* Skip Option */}
-          {!hasRecordedCurrentPhrase && !isRecording && currentPhraseIndex < totalPhrases - 1 && (
+          {!hasRecordedCurrentPhrase && !isRecording && !isProcessing && currentPhraseIndex < totalPhrases - 1 && (
             <div className="flex justify-center">
               <Button 
                 variant="ghost" 

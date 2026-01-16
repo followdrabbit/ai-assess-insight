@@ -58,6 +58,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { downloadVersionHistoryHtml, openVersionHistoryPrintView } from '@/lib/versionHistoryExport';
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter as FilterIcon, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag, X } from 'lucide-react';
 import { CardActionButtons, createEditAction, createDeleteAction, createDuplicateAction, createToggleAction, createHistoryAction } from './CardActionButtons';
+import { CardLoadingOverlay } from './CardLoadingOverlay';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -145,6 +146,7 @@ export function QuestionManagement() {
   const [filterDomain, setFilterDomain] = useState<string>('all');
   const [filterSecurityDomain, setFilterSecurityDomain] = useState<string>('all');
   const [filterFramework, setFilterFramework] = useState<string>('all');
+  const [operatingId, setOperatingId] = useState<string | null>(null);
 
   // Bulk import state
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
@@ -411,6 +413,7 @@ export function QuestionManagement() {
   };
 
   const handleDelete = async (questionId: string, isCustom: boolean) => {
+    setOperatingId(questionId);
     try {
       if (isCustom) {
         await deleteCustomQuestion(questionId);
@@ -425,6 +428,8 @@ export function QuestionManagement() {
     } catch (error) {
       toast.error('Erro ao remover pergunta');
       console.error(error);
+    } finally {
+      setOperatingId(null);
     }
   };
 
@@ -855,6 +860,7 @@ export function QuestionManagement() {
             onToggleDisable={handleToggleDisable}
             onDuplicate={handleDuplicate}
             onViewHistory={openVersionHistory}
+            operatingId={operatingId}
           />
         </TabsContent>
 
@@ -866,6 +872,7 @@ export function QuestionManagement() {
             onToggleDisable={handleToggleDisable}
             onDuplicate={handleDuplicate}
             onViewHistory={openVersionHistory}
+            operatingId={operatingId}
           />
         </TabsContent>
 
@@ -877,6 +884,7 @@ export function QuestionManagement() {
             onToggleDisable={handleToggleDisable}
             onDuplicate={handleDuplicate}
             onViewHistory={openVersionHistory}
+            operatingId={operatingId}
           />
         </TabsContent>
       </Tabs>
@@ -1737,9 +1745,10 @@ interface QuestionsListProps {
   onToggleDisable: (questionId: string, isDisabled: boolean, isCustom: boolean) => void;
   onDuplicate: (question: QuestionsListProps['questions'][0]) => void;
   onViewHistory?: (questionId: string, questionText: string) => void;
+  operatingId?: string | null;
 }
 
-function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplicate, onViewHistory }: QuestionsListProps) {
+function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplicate, onViewHistory, operatingId }: QuestionsListProps) {
   if (questions.length === 0) {
     return (
       <Card className="border-dashed">
@@ -1759,10 +1768,14 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
           <Card 
             key={q.questionId} 
             className={cn(
-              "card-interactive",
+              "card-interactive relative",
               q.isDisabled && "opacity-50"
             )}
           >
+            <CardLoadingOverlay 
+              isLoading={operatingId === q.questionId} 
+              loadingText="Processando..."
+            />
             <CardContent className="py-3">
               <div className="flex items-start gap-4">
                 <div className="flex-1 min-w-0">

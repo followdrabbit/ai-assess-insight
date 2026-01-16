@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Brain, Cloud, Code, Shield, ChevronDown, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DomainSwitcherProps {
   className?: string;
@@ -64,9 +65,13 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
   const displayInfo = currentDomain ? getDomainDisplayInfo(currentDomain) : null;
   const IconComponent = currentDomain ? (iconMap[currentDomain.icon] || Shield) : Shield;
 
-  const handleSelectDomain = async (domainId: string) => {
-    if (domainId !== selectedSecurityDomain) {
-      await setSelectedSecurityDomain(domainId);
+  const handleSelectDomain = async (domain: SecurityDomain) => {
+    if (domain.domainId !== selectedSecurityDomain) {
+      await setSelectedSecurityDomain(domain.domainId);
+      toast.success(`Domínio alterado para ${domain.domainName}`, {
+        description: 'Os dados foram atualizados para refletir o novo contexto.',
+        duration: 3000,
+      });
     }
   };
 
@@ -106,7 +111,7 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
             return (
               <DropdownMenuItem 
                 key={domain.domainId}
-                onClick={() => handleSelectDomain(domain.domainId)}
+                onClick={() => handleSelectDomain(domain)}
                 className="cursor-pointer"
               >
                 <div className={cn(
@@ -155,7 +160,7 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
             return (
               <DropdownMenuItem 
                 key={domain.domainId}
-                onClick={() => handleSelectDomain(domain.domainId)}
+                onClick={() => handleSelectDomain(domain)}
                 className="cursor-pointer"
               >
                 <div className={cn(
@@ -215,7 +220,7 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
           return (
             <DropdownMenuItem 
               key={domain.domainId}
-              onClick={() => handleSelectDomain(domain.domainId)}
+              onClick={() => handleSelectDomain(domain)}
               className="cursor-pointer py-2"
             >
               <div className={cn(

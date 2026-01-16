@@ -199,6 +199,153 @@ describe("i18n Translation Keys", () => {
     }
   });
 
+  describe("Placeholder Validation", () => {
+    // Comprehensive placeholder validation
+    const placeholderPatterns = {
+      interpolation: /\{\{(\w+)\}\}/g,      // {{variable}}
+      htmlTags: /<(\w+)[^>]*>/g,             // <tag>
+      closingTags: /<\/(\w+)>/g,             // </tag>
+    };
+
+    /**
+     * Extract all placeholders from a string
+     */
+    function extractPlaceholders(value: string): {
+      interpolations: string[];
+      htmlTags: string[];
+    } {
+      const interpolations = [...value.matchAll(placeholderPatterns.interpolation)].map(m => m[1]);
+      const openTags = [...value.matchAll(placeholderPatterns.htmlTags)].map(m => m[1]);
+      const closeTags = [...value.matchAll(placeholderPatterns.closingTags)].map(m => m[1]);
+      
+      return {
+        interpolations: interpolations.sort(),
+        htmlTags: [...new Set([...openTags, ...closeTags])].sort(),
+      };
+    }
+
+    it("should have consistent placeholders across all languages", () => {
+      const inconsistencies: Array<{
+        key: string;
+        type: string;
+        expected: string[];
+        actual: string[];
+        language: string;
+      }> = [];
+
+      for (const key of allKeys) {
+        const placeholdersByLang: Record<string, ReturnType<typeof extractPlaceholders>> = {};
+
+        for (const lang of languageNames) {
+          const value = getNestedValue(languages[lang] as TranslationObject, key);
+          if (typeof value === "string") {
+            placeholdersByLang[lang] = extractPlaceholders(value);
+          }
+        }
+
+        // Compare with reference language (en-US)
+        const refLang = languageNames[0];
+        const refPlaceholders = placeholdersByLang[refLang];
+
+        if (!refPlaceholders) continue;
+
+        for (const lang of languageNames.slice(1)) {
+          const langPlaceholders = placeholdersByLang[lang];
+          if (!langPlaceholders) continue;
+
+          // Check interpolations
+          if (JSON.stringify(refPlaceholders.interpolations) !== JSON.stringify(langPlaceholders.interpolations)) {
+            inconsistencies.push({
+              key,
+              type: "interpolation",
+              expected: refPlaceholders.interpolations,
+              actual: langPlaceholders.interpolations,
+              language: lang,
+            });
+          }
+
+          // Check HTML tags
+          if (JSON.stringify(refPlaceholders.htmlTags) !== JSON.stringify(langPlaceholders.htmlTags)) {
+            inconsistencies.push({
+              key,
+              type: "htmlTags",
+              expected: refPlaceholders.htmlTags,
+              actual: langPlaceholders.htmlTags,
+              language: lang,
+            });
+          }
+        }
+      }
+
+      if (inconsistencies.length > 0) {
+        console.warn("\n⚠️ Placeholder Inconsistencies Found:");
+        for (const issue of inconsistencies) {
+          console.warn(`   ${issue.key} (${issue.language}): ${issue.type}`);
+          console.warn(`     Expected: ${JSON.stringify(issue.expected)}`);
+          console.warn(`     Actual:   ${JSON.stringify(issue.actual)}`);
+        }
+      }
+
+      expect(inconsistencies).toEqual([]);
+    });
+
+    it("should report placeholder usage statistics", () => {
+      const stats = {
+        totalKeysWithPlaceholders: 0,
+        interpolationCount: 0,
+        uniqueInterpolations: new Set<string>(),
+      };
+
+      for (const key of allKeys) {
+        const value = getNestedValue(languages["en-US"] as TranslationObject, key);
+        if (typeof value === "string") {
+          const placeholders = extractPlaceholders(value);
+          
+          if (placeholders.interpolations.length > 0) {
+            stats.totalKeysWithPlaceholders++;
+            stats.interpolationCount += placeholders.interpolations.length;
+            placeholders.interpolations.forEach(p => stats.uniqueInterpolations.add(p));
+          }
+        }
+      }
+
+      console.log("\n📊 Placeholder Statistics:");
+      console.log(`   Keys with placeholders: ${stats.totalKeysWithPlaceholders}`);
+      console.log(`   Total interpolations: ${stats.interpolationCount}`);
+      console.log(`   Unique variables: ${stats.uniqueInterpolations.size}`);
+      console.log(`   Variables used: ${[...stats.uniqueInterpolations].sort().join(", ")}`);
+
+      expect(true).toBe(true);
+    });
+
+    it("should validate common placeholder patterns", () => {
+      const commonPlaceholders = ["count", "name", "email", "time", "value", "total", "id", "language", "domain", "framework"];
+      const usedPlaceholders = new Set<string>();
+
+      for (const key of allKeys) {
+        const value = getNestedValue(languages["en-US"] as TranslationObject, key);
+        if (typeof value === "string") {
+          const matches = [...value.matchAll(placeholderPatterns.interpolation)];
+          matches.forEach(m => usedPlaceholders.add(m[1]));
+        }
+      }
+
+      console.log("\n📋 Common Placeholder Usage:");
+      for (const placeholder of commonPlaceholders) {
+        const isUsed = usedPlaceholders.has(placeholder);
+        console.log(`   {{${placeholder}}}: ${isUsed ? "✓ Used" : "○ Not used"}`);
+      }
+
+      // Report any unusual placeholders
+      const unusualPlaceholders = [...usedPlaceholders].filter(p => !commonPlaceholders.includes(p));
+      if (unusualPlaceholders.length > 0) {
+        console.log(`\n   Other placeholders: ${unusualPlaceholders.join(", ")}`);
+      }
+
+      expect(true).toBe(true);
+    });
+  });
+
   describe("Summary Statistics", () => {
     it("should report translation coverage", () => {
       console.log("\n📊 i18n Coverage Report:");

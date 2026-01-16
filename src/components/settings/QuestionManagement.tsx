@@ -131,6 +131,7 @@ export function QuestionManagement() {
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
   const [disabledQuestionIds, setDisabledQuestionIds] = useState<string[]>([]);
   const [customFrameworksList, setCustomFrameworksList] = useState<{ frameworkId: string; shortName: string }[]>([]);
+  const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [securityDomains, setSecurityDomains] = useState<SecurityDomain[]>([]);
   const [taxonomyDomains, setTaxonomyDomains] = useState<TaxonomyDomain[]>([]);
   const [taxonomySubcategories, setTaxonomySubcategories] = useState<TaxonomySubcategory[]>([]);
@@ -184,6 +185,17 @@ export function QuestionManagement() {
     setCustomFrameworksList(customFw.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })));
     setSecurityDomains(secDomains);
 
+    // Load enabled frameworks from assessment_meta
+    const { data: metaData } = await supabase
+      .from('assessment_meta')
+      .select('enabled_frameworks')
+      .eq('id', 'current')
+      .single();
+    
+    if (metaData?.enabled_frameworks) {
+      setEnabledFrameworkIds(metaData.enabled_frameworks);
+    }
+
     // Load taxonomy domains and subcategories from database
     const { data: domainsData } = await supabase
       .from('domains')
@@ -213,10 +225,16 @@ export function QuestionManagement() {
     }
   };
 
+  // All available frameworks (for form selection)
   const allFrameworkOptions = useMemo(() => [
     ...defaultFrameworks.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })),
     ...customFrameworksList
   ], [customFrameworksList]);
+
+  // Enabled frameworks only (for filter dropdown)
+  const enabledFrameworkOptions = useMemo(() => {
+    return allFrameworkOptions.filter(fw => enabledFrameworkIds.includes(fw.frameworkId));
+  }, [allFrameworkOptions, enabledFrameworkIds]);
 
   // Get domains for selected security domain in form
   const filteredTaxonomyDomains = useMemo(() => {
@@ -752,7 +770,7 @@ export function QuestionManagement() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os frameworks</SelectItem>
-            {allFrameworkOptions.map(fw => (
+            {enabledFrameworkOptions.map(fw => (
               <SelectItem key={fw.frameworkId} value={fw.frameworkId}>
                 {fw.shortName}
               </SelectItem>

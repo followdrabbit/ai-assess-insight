@@ -8,10 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell, Moon, Sun, Monitor } from 'lucide-react';
+import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell, Moon, Sun, Monitor, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const LANGUAGES = [
+  { code: 'pt-BR', name: 'Português (Brasil)', flag: '🇧🇷' },
+  { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
+  { code: 'es-ES', name: 'Español (España)', flag: '🇪🇸' },
+] as const;
 
 interface Profile {
   display_name: string | null;
@@ -42,9 +49,11 @@ export default function Profile() {
     notify_weekly_digest: false,
     notify_new_features: true,
   });
+  const [language, setLanguage] = useState('pt-BR');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
+  const [savingLanguage, setSavingLanguage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Password change state
@@ -64,7 +73,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features')
+        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features, language')
         .eq('user_id', user.id)
         .single();
       
@@ -88,6 +97,7 @@ export default function Profile() {
           notify_weekly_digest: data.notify_weekly_digest ?? false,
           notify_new_features: data.notify_new_features ?? true,
         });
+        setLanguage((data as any).language || 'pt-BR');
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar perfil');
@@ -173,6 +183,35 @@ export default function Profile() {
       toast.error(err.message || 'Erro ao salvar preferência');
     } finally {
       setSavingNotifications(false);
+    }
+  };
+
+  const handleSaveLanguage = async (newLanguage: string) => {
+    if (!user) return;
+    
+    const previousLanguage = language;
+    setLanguage(newLanguage);
+    setSavingLanguage(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          language: newLanguage,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      const langName = LANGUAGES.find(l => l.code === newLanguage)?.name || newLanguage;
+      toast.success(`Idioma alterado para ${langName}`);
+    } catch (err: any) {
+      // Revert on error
+      setLanguage(previousLanguage);
+      toast.error(err.message || 'Erro ao salvar idioma');
+    } finally {
+      setSavingLanguage(false);
     }
   };
 
@@ -440,6 +479,37 @@ export default function Profile() {
                   <Monitor className="h-4 w-4" />
                 </ToggleGroupItem>
               </ToggleGroup>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Idioma
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Selecione o idioma da interface
+                </p>
+              </div>
+              <Select 
+                value={language} 
+                onValueChange={handleSaveLanguage}
+                disabled={savingLanguage}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Selecionar idioma" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

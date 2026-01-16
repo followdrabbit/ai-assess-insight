@@ -512,6 +512,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          language: string | null
           notify_assessment_updates: boolean | null
           notify_new_features: boolean | null
           notify_security_alerts: boolean | null
@@ -526,6 +527,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          language?: string | null
           notify_assessment_updates?: boolean | null
           notify_new_features?: boolean | null
           notify_security_alerts?: boolean | null
@@ -540,6 +542,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          language?: string | null
           notify_assessment_updates?: boolean | null
           notify_new_features?: boolean | null
           notify_security_alerts?: boolean | null

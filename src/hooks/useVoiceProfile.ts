@@ -24,6 +24,7 @@ interface UseVoiceProfileReturn {
   isLoading: boolean;
   isEnrolling: boolean;
   isRecording: boolean;
+  recordingDuration: number;
   currentPhraseIndex: number;
   enrollmentProgress: number;
   enrolledSamples: EnrollmentSample[];
@@ -71,6 +72,9 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
   const audioChunksRef = useRef<Blob[]>([]);
   const featureExtractorRef = useRef<AudioFeatureExtractor | null>(null);
   const verifierRef = useRef<SpeakerVerifier | null>(null);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize feature extractor and verifier
   useEffect(() => {
@@ -218,6 +222,19 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
         
         mediaRecorderRef.current!.start();
         setIsRecording(true);
+        setRecordingDuration(0);
+        
+        // Start duration counter
+        recordingIntervalRef.current = setInterval(() => {
+          setRecordingDuration(prev => prev + 1);
+        }, 1000);
+        
+        // Auto-stop after 15 seconds for mobile reliability
+        recordingTimeoutRef.current = setTimeout(() => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+          }
+        }, 15000);
       });
     } catch (err: any) {
       console.error('Error recording phrase:', err);
@@ -227,6 +244,17 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
   }, [currentPhraseIndex, getCurrentPhrase]);
 
   const stopRecording = useCallback(() => {
+    // Clear timers
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    setRecordingDuration(0);
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
@@ -417,6 +445,7 @@ export function useVoiceProfile(): UseVoiceProfileReturn {
     isLoading,
     isEnrolling,
     isRecording,
+    recordingDuration,
     currentPhraseIndex,
     enrollmentProgress,
     enrolledSamples,

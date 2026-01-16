@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useSyncedSpeechSynthesis } from '@/hooks/useSyncedSpeechSynthesis';
 import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
+import { STTProviderType } from '@/lib/sttProviders';
+import { STTConfigurationCard } from '@/components/settings/STTConfigurationCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,12 +76,19 @@ export default function Profile() {
     voice_name: null,
     voice_auto_speak: false,
   });
+  const [sttSettings, setSttSettings] = useState({
+    stt_provider: 'web-speech-api' as STTProviderType,
+    stt_api_key: null as string | null,
+    stt_model: 'whisper-1',
+    stt_endpoint_url: null as string | null,
+  });
   const [language, setLanguage] = useState('pt-BR');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [savingLanguage, setSavingLanguage] = useState(false);
   const [savingVoice, setSavingVoice] = useState(false);
+  const [savingSTT, setSavingSTT] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Password change state
@@ -99,7 +108,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features, language, voice_language, voice_rate, voice_pitch, voice_volume, voice_name, voice_auto_speak')
+        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features, language, voice_language, voice_rate, voice_pitch, voice_volume, voice_name, voice_auto_speak, stt_provider, stt_api_key_encrypted, stt_model, stt_endpoint_url')
         .eq('user_id', user.id)
         .single();
       
@@ -130,6 +139,12 @@ export default function Profile() {
           voice_volume: Number((data as any).voice_volume) || 1.0,
           voice_name: (data as any).voice_name || null,
           voice_auto_speak: (data as any).voice_auto_speak ?? false,
+        });
+        setSttSettings({
+          stt_provider: ((data as any).stt_provider as STTProviderType) || 'web-speech-api',
+          stt_api_key: (data as any).stt_api_key_encrypted || null,
+          stt_model: (data as any).stt_model || 'whisper-1',
+          stt_endpoint_url: (data as any).stt_endpoint_url || null,
         });
         const userLang = (data as any).language || 'pt-BR';
         setLanguage(userLang);
@@ -339,6 +354,37 @@ export default function Profile() {
         pitch: voiceSettings.voice_pitch,
         volume: voiceSettings.voice_volume,
       });
+    }
+  };
+
+  const handleSaveSTTSetting = async (key: string, value: string | null) => {
+    if (!user) return;
+    
+    const dbKey = key === 'stt_api_key' ? 'stt_api_key_encrypted' : key;
+    setSavingSTT(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          [dbKey]: value,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setSttSettings(prev => ({ ...prev, [key]: value }));
+      
+      // Sync with context
+      updateVoiceSettingsContext({ [key]: value } as any);
+      
+      toast.success(t('profile.sttSettingsSaved', 'STT setting saved!'));
+    } catch (err: any) {
+      toast.error(err.message || t('errors.saveSTTSettings', 'Error saving STT setting'));
+    } finally {
+      setSavingSTT(false);
     }
   };
 
@@ -806,6 +852,13 @@ export default function Profile() {
           </div>
         </CardContent>
       </Card>
+
+      {/* STT Configuration */}
+      <STTConfigurationCard
+        settings={sttSettings}
+        onSave={handleSaveSTTSetting}
+        isSaving={savingSTT}
+      />
 
       {/* Notification Preferences */}
       <Card>

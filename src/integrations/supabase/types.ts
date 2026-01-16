@@ -1001,6 +1001,92 @@ export type Database = {
           },
         ]
       }
+      voice_enrollment_samples: {
+        Row: {
+          audio_features: Json
+          duration_ms: number
+          id: string
+          phrase_index: number
+          phrase_text: string
+          quality_score: number | null
+          recorded_at: string
+          sample_rate: number
+          voice_profile_id: string
+        }
+        Insert: {
+          audio_features: Json
+          duration_ms: number
+          id?: string
+          phrase_index: number
+          phrase_text: string
+          quality_score?: number | null
+          recorded_at?: string
+          sample_rate?: number
+          voice_profile_id: string
+        }
+        Update: {
+          audio_features?: Json
+          duration_ms?: number
+          id?: string
+          phrase_index?: number
+          phrase_text?: string
+          quality_score?: number | null
+          recorded_at?: string
+          sample_rate?: number
+          voice_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_enrollment_samples_voice_profile_id_fkey"
+            columns: ["voice_profile_id"]
+            isOneToOne: false
+            referencedRelation: "voice_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_profiles: {
+        Row: {
+          created_at: string
+          enrolled_at: string | null
+          enrollment_level: string
+          enrollment_phrases_count: number
+          id: string
+          is_enabled: boolean
+          noise_threshold: number | null
+          profile_name: string
+          updated_at: string
+          user_id: string
+          voice_features: Json | null
+        }
+        Insert: {
+          created_at?: string
+          enrolled_at?: string | null
+          enrollment_level?: string
+          enrollment_phrases_count?: number
+          id?: string
+          is_enabled?: boolean
+          noise_threshold?: number | null
+          profile_name?: string
+          updated_at?: string
+          user_id: string
+          voice_features?: Json | null
+        }
+        Update: {
+          created_at?: string
+          enrolled_at?: string | null
+          enrollment_level?: string
+          enrollment_phrases_count?: number
+          id?: string
+          is_enabled?: boolean
+          noise_threshold?: number | null
+          profile_name?: string
+          updated_at?: string
+          user_id?: string
+          voice_features?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

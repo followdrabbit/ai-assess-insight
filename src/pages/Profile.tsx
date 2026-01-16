@@ -7,6 +7,7 @@ import { useSyncedSpeechSynthesis } from '@/hooks/useSyncedSpeechSynthesis';
 import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
 import { STTProviderType } from '@/lib/sttProviders';
 import { STTConfigurationCard } from '@/components/settings/STTConfigurationCard';
+import { VoiceProfileCard } from '@/components/settings/VoiceProfileCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -859,6 +860,9 @@ export default function Profile() {
         onSave={handleSaveSTTSetting}
         isSaving={savingSTT}
       />
+
+      {/* Voice Profile (Speaker Recognition) */}
+      <VoiceProfileCard language={voiceSettings.voice_language} />
 
       {/* Notification Preferences */}
       <Card>

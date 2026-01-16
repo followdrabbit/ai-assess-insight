@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { AuditLogsPanel } from '@/components/settings/AuditLogsPanel';
 import { SIEMIntegrationsPanel } from '@/components/settings/SIEMIntegrationsPanel';
+import { SIEMHealthPanel } from '@/components/settings/SIEMHealthPanel';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -939,6 +940,9 @@ export default function Settings() {
           </div>
 
           <SIEMIntegrationsPanel />
+
+          {/* Health Monitoring */}
+          <SIEMHealthPanel />
         </TabsContent>
       </Tabs>
     </div>

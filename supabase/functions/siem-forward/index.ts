@@ -197,7 +197,9 @@ function formatEvent(event: AuditEvent, integration: SIEMIntegration): string {
 async function forwardToSIEM(
   event: AuditEvent,
   integration: SIEMIntegration
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; latencyMs: number; responseStatus?: number; error?: string }> {
+  const startTime = Date.now();
+  
   try {
     const formattedEvent = formatEvent(event, integration);
     
@@ -228,17 +230,23 @@ async function forwardToSIEM(
       body: formattedEvent,
     });
     
+    const latencyMs = Date.now() - startTime;
+    
     if (!response.ok) {
       return { 
-        success: false, 
+        success: false,
+        latencyMs,
+        responseStatus: response.status,
         error: `HTTP ${response.status}: ${response.statusText}` 
       };
     }
     
-    return { success: true };
+    return { success: true, latencyMs, responseStatus: response.status };
   } catch (error) {
+    const latencyMs = Date.now() - startTime;
     return { 
-      success: false, 
+      success: false,
+      latencyMs,
       error: error instanceof Error ? error.message : 'Unknown error' 
     };
   }
@@ -304,7 +312,7 @@ serve(async (req) => {
       );
     }
     
-    const results: { integrationId: string; success: boolean; error?: string }[] = [];
+    const results: { integrationId: string; success: boolean; latencyMs: number; error?: string }[] = [];
     
     for (const integration of integrations) {
       if (!shouldForwardEvent(event, integration)) {
@@ -312,7 +320,20 @@ serve(async (req) => {
       }
       
       const result = await forwardToSIEM(event, integration);
-      results.push({ integrationId: integration.id, ...result });
+      results.push({ integrationId: integration.id, success: result.success, latencyMs: result.latencyMs, error: result.error });
+      
+      // Record metrics
+      await supabase
+        .from('siem_metrics')
+        .insert({
+          integration_id: integration.id,
+          latency_ms: result.latencyMs,
+          success: result.success,
+          error_code: result.responseStatus?.toString() || null,
+          error_message: result.error || null,
+          events_batch_size: 1,
+          response_status: result.responseStatus || null,
+        });
       
       // Update integration stats
       if (result.success) {
@@ -321,6 +342,7 @@ serve(async (req) => {
           .update({
             last_success_at: new Date().toISOString(),
             events_sent: integration.events_sent + 1,
+            consecutive_failures: 0,
           })
           .eq('id', integration.id);
       } else {
@@ -329,9 +351,14 @@ serve(async (req) => {
           .update({
             last_error_at: new Date().toISOString(),
             last_error_message: result.error,
+            consecutive_failures: (integration.consecutive_failures || 0) + 1,
+            total_failures: (integration.total_failures || 0) + 1,
           })
           .eq('id', integration.id);
       }
+      
+      // Update health status asynchronously
+      await supabase.rpc('update_siem_integration_health', { p_integration_id: integration.id });
     }
     
     const successCount = results.filter(r => r.success).length;

@@ -733,11 +733,14 @@ export type Database = {
           auth_header: string | null
           auth_type: string
           auth_value_encrypted: string | null
+          avg_latency_ms: number | null
+          consecutive_failures: number | null
           created_at: string
           endpoint_url: string
           entity_filter: string[] | null
           events_sent: number
           format: string
+          health_status: string | null
           id: string
           include_device: boolean
           include_geo: boolean
@@ -748,6 +751,8 @@ export type Database = {
           last_success_at: string | null
           name: string
           severity_filter: string[] | null
+          success_rate: number | null
+          total_failures: number | null
           updated_at: string
           user_id: string | null
         }
@@ -756,11 +761,14 @@ export type Database = {
           auth_header?: string | null
           auth_type?: string
           auth_value_encrypted?: string | null
+          avg_latency_ms?: number | null
+          consecutive_failures?: number | null
           created_at?: string
           endpoint_url: string
           entity_filter?: string[] | null
           events_sent?: number
           format?: string
+          health_status?: string | null
           id?: string
           include_device?: boolean
           include_geo?: boolean
@@ -771,6 +779,8 @@ export type Database = {
           last_success_at?: string | null
           name: string
           severity_filter?: string[] | null
+          success_rate?: number | null
+          total_failures?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -779,11 +789,14 @@ export type Database = {
           auth_header?: string | null
           auth_type?: string
           auth_value_encrypted?: string | null
+          avg_latency_ms?: number | null
+          consecutive_failures?: number | null
           created_at?: string
           endpoint_url?: string
           entity_filter?: string[] | null
           events_sent?: number
           format?: string
+          health_status?: string | null
           id?: string
           include_device?: boolean
           include_geo?: boolean
@@ -794,10 +807,56 @@ export type Database = {
           last_success_at?: string | null
           name?: string
           severity_filter?: string[] | null
+          success_rate?: number | null
+          total_failures?: number | null
           updated_at?: string
           user_id?: string | null
         }
         Relationships: []
+      }
+      siem_metrics: {
+        Row: {
+          error_code: string | null
+          error_message: string | null
+          events_batch_size: number
+          id: string
+          integration_id: string
+          latency_ms: number
+          response_status: number | null
+          success: boolean
+          timestamp: string
+        }
+        Insert: {
+          error_code?: string | null
+          error_message?: string | null
+          events_batch_size?: number
+          id?: string
+          integration_id: string
+          latency_ms: number
+          response_status?: number | null
+          success: boolean
+          timestamp?: string
+        }
+        Update: {
+          error_code?: string | null
+          error_message?: string | null
+          events_batch_size?: number
+          id?: string
+          integration_id?: string
+          latency_ms?: number
+          response_status?: number | null
+          success?: boolean
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "siem_metrics_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "siem_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subcategories: {
         Row: {
@@ -863,7 +922,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_siem_integration_health: {
+        Args: { p_integration_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

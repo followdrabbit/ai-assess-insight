@@ -46,9 +46,9 @@ import {
 // Tab configuration with clear labels
 const TAB_CONFIG = {
   structure: { 
-    label: 'Estrutura', 
+    label: 'Domínios', 
     icon: FolderTree,
-    description: 'Domínios e hierarquia do sistema'
+    description: 'Gerenciar domínios de segurança'
   },
   library: { 
     label: 'Biblioteca', 

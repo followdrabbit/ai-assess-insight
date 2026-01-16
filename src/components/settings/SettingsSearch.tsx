@@ -118,7 +118,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
 ];
 
 const TAB_CONFIG = {
-  structure: { label: 'Estrutura', icon: FolderTree, color: 'bg-purple-500/10 text-purple-700' },
+  structure: { label: 'Domínios', icon: FolderTree, color: 'bg-purple-500/10 text-purple-700' },
   library: { label: 'Biblioteca', icon: Library, color: 'bg-blue-500/10 text-blue-700' },
   assessment: { label: 'Avaliação', icon: SlidersHorizontal, color: 'bg-amber-500/10 text-amber-700' },
   system: { label: 'Sistema', icon: Wrench, color: 'bg-gray-500/10 text-gray-700' },

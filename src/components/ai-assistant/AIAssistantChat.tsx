@@ -137,25 +137,25 @@ export function AIAssistantChat() {
   };
 
   return (
-    <Card className="flex flex-col h-[600px] border-border/50">
-      <CardHeader className="pb-3 border-b border-border/30">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Bot className="h-5 w-5 text-primary" />
+    <Card className="flex flex-col h-[600px] max-h-[80vh] border-border/50">
+      <CardHeader className="pb-3 border-b border-border/30 px-3 sm:px-6">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 flex-shrink-0">
+              <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
-            <div>
-              <CardTitle className="text-lg">{t('aiAssistant.title', 'Security AI Assistant')}</CardTitle>
-              <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-xs text-muted-foreground">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-base sm:text-lg truncate">{t('aiAssistant.title', 'Security AI Assistant')}</CardTitle>
+              <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden xs:block">
                   {t('aiAssistant.subtitle', 'Ask questions about your security posture')}
                 </p>
                 {currentProvider && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-1 cursor-default">
-                        <Sparkles className="h-2.5 w-2.5" />
-                        {currentProvider.name}
+                      <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0 h-3.5 sm:h-4 gap-0.5 sm:gap-1 cursor-default flex-shrink-0">
+                        <Sparkles className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
+                        <span className="truncate max-w-[60px] sm:max-w-none">{currentProvider.name}</span>
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
@@ -169,7 +169,7 @@ export function AIAssistantChat() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
             {ttsSupported && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -177,9 +177,9 @@ export function AIAssistantChat() {
                     variant={autoSpeak ? 'default' : 'ghost'}
                     size="icon"
                     onClick={toggleAutoSpeak}
-                    className="h-8 w-8"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
                   >
-                    {autoSpeak ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                    {autoSpeak ? <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -189,11 +189,11 @@ export function AIAssistantChat() {
             )}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Command className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                  <Command className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
+              <PopoverContent className="w-72 sm:w-80" align="end">
                 <div className="space-y-3">
                   <div className="font-medium text-sm">{t('voiceCommands.title', 'Voice Commands')}</div>
                   <p className="text-xs text-muted-foreground">
@@ -255,9 +255,9 @@ export function AIAssistantChat() {
                   size="icon"
                   onClick={clearMessages}
                   disabled={messages.length === 0}
-                  className="h-8 w-8"
+                  className="h-7 w-7 sm:h-8 sm:w-8"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('aiAssistant.clearChat', 'Clear chat')}</TooltipContent>
@@ -317,8 +317,8 @@ export function AIAssistantChat() {
         </ScrollArea>
 
         {/* Input area */}
-        <div className="p-4 border-t border-border/30">
-          <div className="flex gap-2">
+        <div className="p-3 sm:p-4 border-t border-border/30">
+          <div className="flex gap-1.5 sm:gap-2">
             <div className="relative flex-1">
               <Textarea
                 ref={inputRef}
@@ -327,7 +327,7 @@ export function AIAssistantChat() {
                 onKeyDown={handleKeyDown}
                 placeholder={isListening ? t('aiAssistant.listening', 'Listening...') : t('aiAssistant.placeholder', 'Type your question...')}
                 className={cn(
-                  "min-h-[44px] max-h-[120px] resize-none pr-10",
+                  "min-h-[40px] sm:min-h-[44px] max-h-[100px] sm:max-h-[120px] resize-none pr-9 sm:pr-10 text-sm",
                   isListening && "border-primary ring-1 ring-primary/50"
                 )}
                 disabled={isLoading}
@@ -338,31 +338,31 @@ export function AIAssistantChat() {
                   size="icon"
                   onClick={toggleListening}
                   className={cn(
-                    "absolute right-1 top-1 h-8 w-8",
+                    "absolute right-0.5 top-0.5 sm:right-1 sm:top-1 h-7 w-7 sm:h-8 sm:w-8",
                     isListening && "text-primary animate-pulse"
                   )}
                   disabled={isLoading}
                 >
-                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  {isListening ? <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 </Button>
               )}
             </div>
             {isLoading ? (
-              <Button variant="destructive" size="icon" onClick={stopGeneration} className="h-[44px] w-[44px]">
-                <StopCircle className="h-5 w-5" />
+              <Button variant="destructive" size="icon" onClick={stopGeneration} className="h-10 w-10 sm:h-[44px] sm:w-[44px] flex-shrink-0">
+                <StopCircle className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             ) : (
               <Button
                 onClick={handleSend}
                 disabled={!inputValue.trim()}
-                className="h-[44px] w-[44px]"
+                className="h-10 w-10 sm:h-[44px] sm:w-[44px] flex-shrink-0"
               >
-                <Send className="h-5 w-5" />
+                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             )}
           </div>
           {!sttSupported && (
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2">
               {t('aiAssistant.sttNotSupported', 'Voice input not supported in this browser')}
             </p>
           )}

@@ -579,6 +579,237 @@ print(response.json())
 
 ---
 
+## 🎤 Voice Recognition & Speech Synthesis
+
+A plataforma TrustLayer oferece recursos avançados de reconhecimento de voz e síntese de fala para interação hands-free com o Assistente de IA.
+
+### Reconhecimento de Voz (Speech-to-Text)
+
+O sistema utiliza a Web Speech API para transcrição em tempo real.
+
+#### Funcionalidades
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Transcrição em Tempo Real** | Exibe texto enquanto você fala |
+| **Indicador de Confiança** | Mostra a precisão da transcrição (0-100%) |
+| **Auto-restart** | Reinicia automaticamente após pausas |
+| **Detecção de Silêncio** | Pausa após 3 segundos sem fala |
+| **Histórico de Segmentos** | Mantém registro de todas as transcrições |
+| **Multi-idioma** | Suporte a PT-BR, EN-US, ES-ES |
+
+#### Interface TypeScript
+
+```typescript
+interface UseSpeechRecognitionReturn {
+  isListening: boolean;           // Se está ouvindo
+  transcript: string;             // Texto completo transcrito
+  interimTranscript: string;      // Texto sendo processado
+  finalTranscript: string;        // Texto já confirmado
+  confidence: number;             // Nível de confiança (0-1)
+  isSupported: boolean;           // Se o navegador suporta
+  error: SpeechRecognitionError | null;
+  transcriptHistory: TranscriptSegment[];
+  startListening: (options?: SpeechRecognitionOptions) => void;
+  stopListening: () => void;
+  resetTranscript: () => void;
+  clearError: () => void;
+}
+
+interface SpeechRecognitionOptions {
+  language?: string;        // Idioma (default: navigator.language)
+  continuous?: boolean;     // Modo contínuo (default: true)
+  interimResults?: boolean; // Resultados intermediários (default: true)
+  maxAlternatives?: number; // Alternativas de transcrição (default: 3)
+  autoRestart?: boolean;    // Reinício automático (default: true)
+  silenceTimeout?: number;  // Timeout de silêncio em ms (default: 3000)
+}
+```
+
+#### Exemplo de Uso
+
+```typescript
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+
+function VoiceInput() {
+  const { 
+    isListening, 
+    transcript, 
+    confidence,
+    startListening, 
+    stopListening 
+  } = useSpeechRecognition();
+
+  return (
+    <div>
+      <button onClick={() => startListening({ language: 'pt-BR' })}>
+        {isListening ? 'Parar' : 'Falar'}
+      </button>
+      <p>{transcript}</p>
+      <p>Confiança: {Math.round(confidence * 100)}%</p>
+    </div>
+  );
+}
+```
+
+#### Tratamento de Erros
+
+| Tipo de Erro | Descrição | Solução |
+|--------------|-----------|---------|
+| `no-speech` | Nenhuma fala detectada | Fale mais alto ou próximo ao microfone |
+| `audio-capture` | Falha na captura de áudio | Verifique o microfone |
+| `not-allowed` | Permissão negada | Habilite nas configurações do navegador |
+| `network` | Erro de rede | Verifique a conexão |
+| `aborted` | Cancelado pelo usuário | N/A |
+
+---
+
+### Síntese de Fala (Text-to-Speech)
+
+O sistema converte texto em áudio usando vozes nativas do sistema.
+
+#### Funcionalidades
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Fila de Prioridade** | Mensagens urgentes podem furar a fila |
+| **Controles de Reprodução** | Play, Pause, Stop, Skip |
+| **Progresso Visual** | Barra de progresso estimada |
+| **Pré-processamento** | Remove markdown, adiciona pausas naturais |
+| **Seleção de Voz** | Escolha entre vozes disponíveis no sistema |
+| **Ajustes de Velocidade** | Taxa de 0.5x a 2x |
+
+#### Interface TypeScript
+
+```typescript
+interface UseSpeechSynthesisReturn {
+  isSpeaking: boolean;        // Se está falando
+  isPaused: boolean;          // Se está pausado
+  isSupported: boolean;       // Se o navegador suporta
+  error: SpeechSynthesisError | null;
+  currentText: string;        // Texto sendo falado
+  progress: number;           // Progresso (0-100)
+  speak: (text: string, options?: SpeakOptions) => string;
+  stop: () => void;
+  pause: () => void;
+  resume: () => void;
+  skip: () => void;
+  voices: SpeechSynthesisVoice[];
+  selectedVoice: SpeechSynthesisVoice | null;
+  setSelectedVoice: (voice: SpeechSynthesisVoice) => void;
+  rate: number;               // Velocidade (0.1 - 10)
+  setRate: (rate: number) => void;
+  pitch: number;              // Tom (0 - 2)
+  setPitch: (pitch: number) => void;
+  volume: number;             // Volume (0 - 1)
+  setVolume: (volume: number) => void;
+  queueLength: number;        // Itens na fila
+  clearQueue: () => void;
+  clearError: () => void;
+}
+
+interface SpeakOptions {
+  priority?: number;          // Prioridade (maior = mais urgente)
+  voice?: SpeechSynthesisVoice;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: (error: SpeechSynthesisError) => void;
+}
+```
+
+#### Exemplo de Uso
+
+```typescript
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+
+function TextReader() {
+  const { 
+    isSpeaking, 
+    isPaused,
+    progress,
+    speak, 
+    pause,
+    resume,
+    stop,
+    voices,
+    selectedVoice,
+    setSelectedVoice
+  } = useSpeechSynthesis();
+
+  return (
+    <div>
+      <select onChange={(e) => setSelectedVoice(voices[+e.target.value])}>
+        {voices.map((v, i) => (
+          <option key={i} value={i}>{v.name} ({v.lang})</option>
+        ))}
+      </select>
+      
+      <button onClick={() => speak('Olá, bem-vindo ao TrustLayer!')}>
+        Falar
+      </button>
+      
+      {isSpeaking && (
+        <>
+          <progress value={progress} max="100" />
+          <button onClick={isPaused ? resume : pause}>
+            {isPaused ? 'Continuar' : 'Pausar'}
+          </button>
+          <button onClick={stop}>Parar</button>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### Comandos de Voz
+
+O Assistente de IA suporta comandos de voz para navegação e consulta de dados.
+
+#### Comandos de Navegação
+
+| Comando (PT) | Comando (EN) | Ação |
+|--------------|--------------|------|
+| "Ir para home" | "Go to home" | Navega para Home |
+| "Abrir dashboard" | "Open dashboard" | Dashboard Executivo |
+| "Dashboard GRC" | "GRC dashboard" | Dashboard GRC |
+| "Dashboard especialista" | "Specialist dashboard" | Dashboard Técnico |
+| "Ir para avaliação" | "Go to assessment" | Página de Avaliação |
+| "Ir para configurações" | "Go to settings" | Página de Configurações |
+| "Meu perfil" | "My profile" | Página de Perfil |
+
+#### Comandos de Domínio
+
+| Comando (PT) | Ação |
+|--------------|------|
+| "AI Security" / "Segurança de IA" | Muda para domínio AI Security |
+| "Cloud Security" / "Segurança de nuvem" | Muda para domínio Cloud Security |
+| "DevSecOps" | Muda para domínio DevSecOps |
+
+#### Comandos de Dados
+
+| Comando (PT) | Resposta |
+|--------------|----------|
+| "Mostrar gaps críticos" | Lista os top gaps identificados |
+| "Resumo da postura" | Resumo geral de segurança |
+| "Qual é meu score?" | Score atual e nível de maturidade |
+| "Nível de maturidade" | Nível de maturidade detalhado |
+| "Cobertura" | Progresso da avaliação |
+
+#### Comandos de Exportação
+
+| Comando (PT) | Ação |
+|--------------|------|
+| "Exportar HTML" | Gera relatório HTML |
+| "Exportar Excel" | Gera planilha XLSX |
+
+---
+
 ## 📚 Referências
 
 - [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
@@ -586,3 +817,6 @@ print(response.json())
 - [CEF Format Specification](https://community.microfocus.com/t5/ArcSight-Connectors/ArcSight-Common-Event-Format-CEF-Implementation-Standard/ta-p/1645557)
 - [LEEF Format Specification](https://www.ibm.com/docs/en/dsm?topic=leef-overview)
 - [Syslog RFC 5424](https://datatracker.ietf.org/doc/html/rfc5424)
+- [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API)
+- [SpeechRecognition](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition)
+- [SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis)

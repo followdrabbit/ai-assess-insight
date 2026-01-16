@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, Globe, FileDown, Sparkles, Settings2 } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, Globe, FileDown, Sparkles, AlertCircle, Pause, Play, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAIAssistant, ChatMessage } from '@/hooks/useAIAssistant';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -24,8 +26,31 @@ export function AIAssistantChat() {
   const lastMessageRef = useRef<string>('');
 
   const { messages, isLoading, error, sendMessage, clearMessages, stopGeneration, addSystemMessage, currentProvider } = useAIAssistant();
-  const { isListening, transcript, isSupported: sttSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
-  const { isSpeaking, isSupported: ttsSupported, speak, stop: stopSpeaking } = useSpeechSynthesis();
+  const { 
+    isListening, 
+    transcript, 
+    interimTranscript,
+    confidence,
+    isSupported: sttSupported, 
+    error: sttError,
+    startListening, 
+    stopListening, 
+    resetTranscript,
+    clearError: clearSttError 
+  } = useSpeechRecognition();
+  const { 
+    isSpeaking, 
+    isPaused,
+    isSupported: ttsSupported, 
+    error: ttsError,
+    progress: speakProgress,
+    speak, 
+    stop: stopSpeaking,
+    pause: pauseSpeaking,
+    resume: resumeSpeaking,
+    skip: skipSpeaking,
+    clearError: clearTtsError
+  } = useSpeechSynthesis();
   const { executeCommand, getDataFromCommand, isCommand, getAllCommands } = useVoiceCommands();
 
   // Process voice commands when transcript changes
@@ -316,6 +341,103 @@ export function AIAssistantChat() {
           )}
         </ScrollArea>
 
+        {/* Speech errors */}
+        {(sttError || ttsError) && (
+          <div className="px-3 sm:px-4 py-2">
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs ml-2">
+                {sttError?.message || ttsError?.message}
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 ml-2 text-xs" 
+                  onClick={() => { clearSttError(); clearTtsError(); }}
+                >
+                  {t('common.dismiss', 'Dismiss')}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        {/* Speech recognition indicator */}
+        {isListening && (
+          <div className="px-3 sm:px-4 py-2 border-t border-border/30 bg-primary/5">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-muted-foreground">
+                  {t('aiAssistant.recognizing', 'Recognizing speech...')}
+                </span>
+                {confidence > 0 && (
+                  <Badge variant="outline" className="text-[9px] h-4 px-1">
+                    {Math.round(confidence * 100)}% {t('aiAssistant.confidence', 'confidence')}
+                  </Badge>
+                )}
+              </div>
+              {interimTranscript && (
+                <span className="text-muted-foreground italic truncate max-w-[150px]">
+                  "{interimTranscript}"
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Speech synthesis progress */}
+        {isSpeaking && (
+          <div className="px-3 sm:px-4 py-2 border-t border-border/30 bg-muted/30">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <Progress value={speakProgress} className="h-1" />
+              </div>
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={isPaused ? resumeSpeaking : pauseSpeaking}
+                    >
+                      {isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isPaused ? t('aiAssistant.resume', 'Resume') : t('aiAssistant.pause', 'Pause')}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={skipSpeaking}
+                    >
+                      <SkipForward className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('aiAssistant.skip', 'Skip')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={stopSpeaking}
+                    >
+                      <StopCircle className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('aiAssistant.stop', 'Stop')}</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Input area */}
         <div className="p-3 sm:p-4 border-t border-border/30">
           <div className="flex gap-1.5 sm:gap-2">
@@ -333,18 +455,27 @@ export function AIAssistantChat() {
                 disabled={isLoading}
               />
               {sttSupported && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleListening}
-                  className={cn(
-                    "absolute right-0.5 top-0.5 sm:right-1 sm:top-1 h-7 w-7 sm:h-8 sm:w-8",
-                    isListening && "text-primary animate-pulse"
-                  )}
-                  disabled={isLoading}
-                >
-                  {isListening ? <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleListening}
+                      className={cn(
+                        "absolute right-0.5 top-0.5 sm:right-1 sm:top-1 h-7 w-7 sm:h-8 sm:w-8",
+                        isListening && "text-primary animate-pulse"
+                      )}
+                      disabled={isLoading}
+                    >
+                      {isListening ? <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isListening 
+                      ? t('aiAssistant.stopListening', 'Stop listening') 
+                      : t('aiAssistant.startListening', 'Start voice input')}
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
             {isLoading ? (

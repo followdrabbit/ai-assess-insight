@@ -7,6 +7,15 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieCha
 import { cn } from '@/lib/utils';
 import { useMaturitySnapshots } from '@/hooks/useMaturitySnapshots';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
+import { 
+  CoverageHelp,
+  CriticalGapsHelp,
+  CriticalityLevelsHelp,
+  HeatmapHelp,
+  ResponseDistributionHelp,
+  DomainMetricsHelp,
+  FrameworkCategoryHelp
+} from '@/components/HelpTooltip';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -927,6 +936,7 @@ export default function DashboardSpecialist() {
           <div className="border-t pt-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-sm font-medium">Frameworks em Análise</span>
+              <FrameworkCategoryHelp />
               <span className="text-xs text-muted-foreground">
                 ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
               </span>
@@ -1118,6 +1128,10 @@ export default function DashboardSpecialist() {
 
         {/* Technical Gaps Tab */}
         <TabsContent value="gaps" className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-sm font-medium">Gaps por Criticidade</h3>
+            <CriticalityLevelsHelp />
+          </div>
           {/* Filter Bar */}
           <div className="filter-bar">
             <div className="flex-1 min-w-[200px]">
@@ -1247,6 +1261,10 @@ export default function DashboardSpecialist() {
 
         {/* Heatmap Tab */}
         <TabsContent value="heatmap" className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-sm font-medium">Mapa de Calor por Subcategoria</h3>
+            <HeatmapHelp />
+          </div>
           <div className="flex items-center justify-between">
             <Select value={selectedHeatmapDomain} onValueChange={setSelectedHeatmapDomain}>
               <SelectTrigger className="w-[250px]">
@@ -1307,7 +1325,10 @@ export default function DashboardSpecialist() {
           {/* Response Distribution */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
-              <h3 className="font-semibold mb-4">Distribuição de Respostas</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="font-semibold">Distribuição de Respostas</h3>
+                <ResponseDistributionHelp />
+              </div>
               <p className="text-xs text-muted-foreground mb-2">Clique em uma fatia para ver detalhes</p>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1345,7 +1366,10 @@ export default function DashboardSpecialist() {
             </div>
 
             <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-right-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
-              <h3 className="font-semibold mb-4">Resumo por Criticidade</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="font-semibold">Resumo por Criticidade</h3>
+                <CriticalityLevelsHelp />
+              </div>
               <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
               <div className="space-y-4">
                 {['Critical', 'High', 'Medium', 'Low'].map((crit, idx) => {
@@ -1387,7 +1411,10 @@ export default function DashboardSpecialist() {
         {/* Domains Tab */}
         <TabsContent value="domains" className="space-y-4">
           <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
-            <h3 className="font-semibold mb-4">Detalhamento por Domínio</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="font-semibold">Detalhamento por Domínio</h3>
+              <DomainMetricsHelp />
+            </div>
             <p className="text-xs text-muted-foreground mb-3">Clique nas barras para ver detalhes</p>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">

@@ -8,7 +8,11 @@ import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { 
   MaturityScoreHelp, 
   CoverageHelp, 
-  EvidenceReadinessHelp 
+  EvidenceReadinessHelp,
+  CriticalGapsHelp,
+  FrameworkCategoryHelp,
+  OwnershipHelp,
+  DomainMetricsHelp
 } from '@/components/HelpTooltip';
 import { FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
@@ -746,6 +750,7 @@ export default function DashboardGRC() {
           <div className="border-t pt-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-sm font-medium">Frameworks em Análise</span>
+              <FrameworkCategoryHelp />
               <span className="text-xs text-muted-foreground">
                 ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
               </span>
@@ -896,7 +901,10 @@ export default function DashboardGRC() {
           style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
-          <div className="kpi-label">Gaps Críticos</div>
+          <div className="flex items-center justify-between mb-1">
+            <div className="kpi-label">Gaps Críticos</div>
+            <CriticalGapsHelp />
+          </div>
           <div className="kpi-value text-destructive">
             {quickStats.criticalGapsCount}
           </div>
@@ -912,7 +920,7 @@ export default function DashboardGRC() {
       {/* Tabs for different views */}
       <Tabs defaultValue="domains" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="domains">Por Domínio</TabsTrigger>
+          <TabsTrigger value="domains" className="gap-1">Por Domínio</TabsTrigger>
           <TabsTrigger value="frameworks">Por Framework</TabsTrigger>
           <TabsTrigger value="gaps">Gaps Críticos</TabsTrigger>
           <TabsTrigger value="ownership">Por Responsável</TabsTrigger>
@@ -920,6 +928,10 @@ export default function DashboardGRC() {
 
         {/* Domains Tab */}
         <TabsContent value="domains" className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-sm font-medium">Métricas por Domínio</h3>
+            <DomainMetricsHelp />
+          </div>
           {/* Filter Bar */}
           <div className="filter-bar">
             <div className="flex-1 min-w-[200px]">
@@ -1289,7 +1301,10 @@ export default function DashboardGRC() {
         <TabsContent value="ownership" className="space-y-4">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Maturidade por Responsável</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="font-semibold">Maturidade por Responsável</h3>
+                <OwnershipHelp />
+              </div>
               <p className="text-xs text-muted-foreground mb-4">Clique para ver detalhes</p>
               <div className="space-y-4">
                 {ownershipData.map((od, idx) => (

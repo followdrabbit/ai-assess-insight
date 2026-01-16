@@ -193,6 +193,218 @@ export function NistFunctionHelp() {
   );
 }
 
+export function FrameworkCategoryHelp() {
+  return (
+    <HelpTooltip title="O que são?" modalTitle="Categorias de Frameworks">
+      <div className="space-y-3">
+        <p><strong>Categorias de Frameworks</strong> agrupam frameworks relacionados para facilitar a análise e priorização.</p>
+        <div className="space-y-2">
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="font-medium mb-1">🏛️ Frameworks Principais (Core)</p>
+            <p className="text-sm">Frameworks fundamentais como NIST AI RMF e ISO 27001 que formam a base da governança de segurança.</p>
+          </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="font-medium mb-1">⭐ Alto Valor</p>
+            <p className="text-sm">Frameworks de gestão de riscos e privacidade como ISO 23894 e LGPD que agregam valor estratégico.</p>
+          </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="font-medium mb-1">🔧 Foco Técnico</p>
+            <p className="text-sm">Frameworks técnicos como OWASP e NIST SSDF focados em implementação e desenvolvimento seguro.</p>
+          </div>
+        </div>
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="text-blue-700 dark:text-blue-300">
+            Clique nos badges de framework para filtrar a visualização por frameworks específicos.
+          </p>
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+export function CriticalityLevelsHelp() {
+  return (
+    <HelpTooltip title="Níveis de criticidade" modalTitle="Níveis de Criticidade">
+      <div className="space-y-3">
+        <p><strong>Criticidade</strong> indica a severidade do impacto caso um controle não seja implementado.</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 p-2 rounded bg-red-50 dark:bg-red-950/30">
+            <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Crítico:</span>
+              <span className="text-sm ml-1">Impacto severo na segurança, conformidade ou operação. Ação imediata necessária.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-orange-50 dark:bg-orange-950/30">
+            <span className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Alto:</span>
+              <span className="text-sm ml-1">Risco significativo que pode afetar a organização. Prioridade alta.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-blue-50 dark:bg-blue-950/30">
+            <span className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Médio:</span>
+              <span className="text-sm ml-1">Impacto moderado. Deve ser tratado no médio prazo.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
+            <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Baixo:</span>
+              <span className="text-sm ml-1">Impacto limitado. Pode ser endereçado conforme recursos disponíveis.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+export function HeatmapHelp() {
+  return (
+    <HelpTooltip title="Como ler?" modalTitle="Mapa de Calor">
+      <div className="space-y-3">
+        <p><strong>Mapa de Calor</strong> visualiza o score de maturidade por subcategoria dentro de cada domínio.</p>
+        <div className="p-3 bg-muted rounded-lg">
+          <p className="font-medium mb-2">Interpretação das cores:</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-4 rounded bg-red-500" />
+              <span className="text-sm">0-24% - Controle inexistente</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-4 rounded bg-orange-500" />
+              <span className="text-sm">25-49% - Controle inicial</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-4 rounded bg-yellow-500" />
+              <span className="text-sm">50-79% - Controle definido</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-4 rounded bg-green-500" />
+              <span className="text-sm">80-100% - Controle gerenciado</span>
+            </div>
+          </div>
+        </div>
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="text-blue-700 dark:text-blue-300">
+            Clique em qualquer célula para ver detalhes da subcategoria e navegar para as perguntas relacionadas.
+          </p>
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+export function OwnershipHelp() {
+  return (
+    <HelpTooltip title="O que significa?" modalTitle="Responsabilidade (Ownership)">
+      <div className="space-y-3">
+        <p><strong>Ownership</strong> indica qual área ou função organizacional é responsável por implementar e manter o controle.</p>
+        <div className="space-y-2">
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="font-medium mb-1">🔐 Segurança da Informação</p>
+            <p className="text-sm">Políticas, governança e controles de segurança</p>
+          </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="font-medium mb-1">💻 Desenvolvimento / Engenharia</p>
+            <p className="text-sm">Implementação técnica e ciclo de vida do software</p>
+          </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="font-medium mb-1">📊 Data Science / ML</p>
+            <p className="text-sm">Modelos, treinamento e validação de IA</p>
+          </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="font-medium mb-1">⚖️ Jurídico / Compliance</p>
+            <p className="text-sm">Conformidade regulatória e aspectos legais</p>
+          </div>
+        </div>
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">Importante:</p>
+          <p className="text-amber-700 dark:text-amber-300">
+            Filtrar por responsável ajuda a delegar tarefas e acompanhar o progresso de cada área.
+          </p>
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+export function ResponseDistributionHelp() {
+  return (
+    <HelpTooltip title="O que significa?" modalTitle="Distribuição de Respostas">
+      <div className="space-y-3">
+        <p><strong>Distribuição de Respostas</strong> mostra como os controles estão classificados em termos de implementação.</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 p-2 rounded bg-green-50 dark:bg-green-950/30">
+            <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Sim:</span>
+              <span className="text-sm ml-1">Controle totalmente implementado e operacional.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-yellow-50 dark:bg-yellow-950/30">
+            <span className="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Parcial:</span>
+              <span className="text-sm ml-1">Controle parcialmente implementado ou com limitações.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-red-50 dark:bg-red-950/30">
+            <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Não:</span>
+              <span className="text-sm ml-1">Controle não implementado. Gap identificado.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
+            <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+            <div>
+              <span className="font-medium">N/A:</span>
+              <span className="text-sm ml-1">Não aplicável ao contexto da organização.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
+            <span className="w-3 h-3 rounded-full bg-gray-300 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Pendente:</span>
+              <span className="text-sm ml-1">Pergunta ainda não respondida.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+export function DomainMetricsHelp() {
+  return (
+    <HelpTooltip title="O que são?" modalTitle="Métricas por Domínio">
+      <div className="space-y-3">
+        <p><strong>Domínios</strong> são áreas temáticas que agrupam controles de segurança relacionados.</p>
+        <div className="p-3 bg-muted rounded-lg">
+          <p className="font-medium mb-2">Métricas exibidas:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Cobertura:</strong> % de perguntas respondidas no domínio</li>
+            <li><strong>Maturidade:</strong> Score ponderado dos controles</li>
+            <li><strong>Gaps:</strong> Número de controles com score {"<"}50%</li>
+          </ul>
+        </div>
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="text-blue-700 dark:text-blue-300">
+            Clique em um domínio para expandir e ver as subcategorias com suas métricas individuais.
+          </p>
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
 // Role-based persona badges
 export type PersonaType = 'executive' | 'grc' | 'specialist';
 

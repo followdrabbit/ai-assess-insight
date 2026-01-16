@@ -686,6 +686,119 @@ export type Database = {
         }
         Relationships: []
       }
+      siem_event_queue: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_data: Json
+          id: string
+          integration_id: string | null
+          processed_at: string | null
+          retry_count: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_data: Json
+          id?: string
+          integration_id?: string | null
+          processed_at?: string | null
+          retry_count?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_data?: Json
+          id?: string
+          integration_id?: string | null
+          processed_at?: string | null
+          retry_count?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "siem_event_queue_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "siem_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      siem_integrations: {
+        Row: {
+          action_filter: string[] | null
+          auth_header: string | null
+          auth_type: string
+          auth_value_encrypted: string | null
+          created_at: string
+          endpoint_url: string
+          entity_filter: string[] | null
+          events_sent: number
+          format: string
+          id: string
+          include_device: boolean
+          include_geo: boolean
+          include_ip: boolean
+          is_enabled: boolean
+          last_error_at: string | null
+          last_error_message: string | null
+          last_success_at: string | null
+          name: string
+          severity_filter: string[] | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          action_filter?: string[] | null
+          auth_header?: string | null
+          auth_type?: string
+          auth_value_encrypted?: string | null
+          created_at?: string
+          endpoint_url: string
+          entity_filter?: string[] | null
+          events_sent?: number
+          format?: string
+          id?: string
+          include_device?: boolean
+          include_geo?: boolean
+          include_ip?: boolean
+          is_enabled?: boolean
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_success_at?: string | null
+          name: string
+          severity_filter?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_filter?: string[] | null
+          auth_header?: string | null
+          auth_type?: string
+          auth_value_encrypted?: string | null
+          created_at?: string
+          endpoint_url?: string
+          entity_filter?: string[] | null
+          events_sent?: number
+          format?: string
+          id?: string
+          include_device?: boolean
+          include_geo?: boolean
+          include_ip?: boolean
+          is_enabled?: boolean
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_success_at?: string | null
+          name?: string
+          severity_filter?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subcategories: {
         Row: {
           created_at: string | null

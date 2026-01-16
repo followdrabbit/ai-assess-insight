@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   ClipboardCheck,
@@ -61,13 +62,8 @@ const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }
   key: Key
 };
 
-const dashboardSubItems = [
-  { path: '/dashboard/executive', label: 'Executivo', icon: Briefcase, description: 'CISO / Head de Segurança' },
-  { path: '/dashboard/grc', label: 'GRC', icon: Scale, description: 'Governança, Riscos e Compliance' },
-  { path: '/dashboard/specialist', label: 'Especialista', icon: Code, description: 'Arquiteto / Engenheiro' },
-];
-
 export function AppSidebar() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { state } = useSidebar();
@@ -76,6 +72,12 @@ export function AppSidebar() {
   const { selectedSecurityDomain, setSelectedSecurityDomain } = useAnswersStore();
   const [domains, setDomains] = useState<SecurityDomain[]>([]);
   const [currentDomain, setCurrentDomain] = useState<SecurityDomain | null>(null);
+
+  const dashboardSubItems = [
+    { path: '/dashboard/executive', label: t('navigation.executive'), icon: Briefcase, description: t('dashboard.executiveDesc') },
+    { path: '/dashboard/grc', label: t('navigation.grc'), icon: Scale, description: t('dashboard.grcDesc') },
+    { path: '/dashboard/specialist', label: t('navigation.specialist'), icon: Code, description: t('dashboard.specialistDesc') },
+  ];
 
   useEffect(() => {
     const loadDomains = async () => {
@@ -98,8 +100,8 @@ export function AppSidebar() {
     if (domain.domainId !== selectedSecurityDomain) {
       await setSelectedSecurityDomain(domain.domainId);
       setCurrentDomain(domain);
-      toast.success(`Domínio alterado para ${domain.domainName}`, {
-        description: 'Os dados foram atualizados para refletir o novo contexto.',
+      toast.success(t('securityDomains.domainChanged', { domain: domain.domainName }), {
+        description: t('securityDomains.dataUpdated'),
         duration: 3000,
       });
     }
@@ -134,14 +136,14 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Domain Context - Integrated as first navigation element */}
         <SidebarGroup>
-          <SidebarGroupLabel>Contexto</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('navigation.context')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <SidebarMenuButton
-                      tooltip={currentDomain?.domainName || "Domínio de Segurança"}
+                      tooltip={currentDomain?.domainName || t('securityDomains.title')}
                       className={cn(
                         "w-full transition-colors",
                         domainColors.bg,
@@ -152,7 +154,7 @@ export function AppSidebar() {
                       {!isCollapsed && (
                         <>
                           <span className={cn("font-medium", domainColors.text)}>
-                            {currentDomain?.shortName || 'Selecionar'}
+                            {currentDomain?.shortName || t('common.select')}
                           </span>
                           <ChevronDown className={cn("ml-auto h-4 w-4", domainColors.text)} />
                         </>
@@ -165,7 +167,7 @@ export function AppSidebar() {
                     className="w-64"
                   >
                     <DropdownMenuLabel className="text-xs text-muted-foreground">
-                      Trocar Domínio de Segurança
+                      {t('securityDomains.switch')}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {domains.map((domain) => {

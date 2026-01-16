@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, UserPlus, CheckCircle } from 'lucide-react';
 
 export default function Signup() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,12 +26,12 @@ export default function Signup() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
+      setError(t('auth.passwordsNoMatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
+      setError(t('auth.passwordTooShort'));
       return;
     }
 
@@ -40,7 +42,7 @@ export default function Signup() {
       
       if (error) {
         if (error.message.includes('already registered')) {
-          setError('Este email já está cadastrado');
+          setError(t('errors.signupError'));
         } else {
           setError(error.message);
         }
@@ -52,7 +54,7 @@ export default function Signup() {
         }, 1500);
       }
     } catch (err) {
-      setError('Ocorreu um erro ao criar a conta');
+      setError(t('errors.signupError'));
     } finally {
       setLoading(false);
     }
@@ -69,10 +71,10 @@ export default function Signup() {
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-green-600 dark:text-green-400">
-              Conta criada com sucesso!
+              {t('auth.signupSuccess')}
             </CardTitle>
             <CardDescription>
-              Redirecionando para a página inicial...
+              {t('auth.redirecting')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
@@ -92,9 +94,9 @@ export default function Signup() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('auth.signupTitle')}</CardTitle>
           <CardDescription>
-            Cadastre-se para começar sua avaliação de segurança
+            {t('auth.createNewAccount')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -106,11 +108,11 @@ export default function Signup() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="seu@email.com"
+                placeholder="email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -119,7 +121,7 @@ export default function Signup() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -131,12 +133,12 @@ export default function Signup() {
                 minLength={6}
               />
               <p className="text-xs text-muted-foreground">
-                Mínimo de 6 caracteres
+                {t('auth.passwordTooShort').replace('A senha deve ter pelo menos ', '').replace(' caracteres', '')} min
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -155,20 +157,20 @@ export default function Signup() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando conta...
+                  {t('auth.signingUp')}
                 </>
               ) : (
                 <>
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Criar Conta
+                  {t('auth.signupButton')}
                 </>
               )}
             </Button>
             
             <p className="text-sm text-muted-foreground text-center">
-              Já tem uma conta?{' '}
+              {t('auth.hasAccount')}{' '}
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Entrar
+                {t('auth.login')}
               </Link>
             </p>
           </CardFooter>

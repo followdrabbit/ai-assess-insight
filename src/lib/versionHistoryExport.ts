@@ -526,11 +526,12 @@ export function generateVersionHistoryHtml(options: ExportOptions): string {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Histórico de Versões - ${escapeHtml(questionId)}</title>
+      <title>TrustLayer | Histórico de Versões - ${escapeHtml(questionId)}</title>
       ${styles}
     </head>
     <body>
       <div class="header">
+        <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem; font-weight: 500;">TrustLayer</div>
         <h1>📋 Relatório de Histórico de Versões</h1>
         <p class="subtitle">Documentação de auditoria para rastreabilidade de alterações</p>
       </div>
@@ -564,8 +565,8 @@ export function generateVersionHistoryHtml(options: ExportOptions): string {
       ${versionsHtml}
       
       <div class="footer">
-        Relatório gerado automaticamente pelo Sistema de Governança de Segurança<br>
-        ${formatDate(exportDate.toISOString())}
+        TrustLayer — Plataforma de Governança de Segurança<br>
+        Relatório gerado em ${formatDate(exportDate.toISOString())}
       </div>
     </body>
     </html>

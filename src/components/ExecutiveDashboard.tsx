@@ -32,6 +32,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Framework, getFrameworkById } from '@/lib/frameworks';
 import { getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
@@ -111,6 +119,9 @@ export function ExecutiveDashboard({
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllGaps, setShowAllGaps] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  // Modal states
+  const [selectedKpiModal, setSelectedKpiModal] = useState<'score' | 'gaps' | 'coverage' | 'evidence' | null>(null);
 
   // Calculate correct coverage based on metrics (which comes from calculateOverallMetrics)
   // The metrics object already has the accurate answered/total count
@@ -193,6 +204,90 @@ export function ExecutiveDashboard({
     
     return filtered;
   }, [filteredByFramework.gaps, criticalityFilter, nistFilter, searchQuery]);
+
+  // KPI Modal Details
+  const scoreDetails = useMemo(() => {
+    const domainScores = metrics.domainMetrics
+      .map(dm => ({
+        name: dm.domainName,
+        score: Math.round(dm.score * 100),
+        coverage: Math.round(dm.coverage * 100),
+        gaps: dm.criticalGaps,
+        color: dm.maturityLevel.color,
+      }))
+      .sort((a, b) => a.score - b.score);
+    
+    const categoryScores = metrics.frameworkCategoryMetrics
+      .filter(fc => fc.totalQuestions > 0)
+      .map(fc => ({
+        name: frameworkCategoryLabels[fc.categoryId] || fc.categoryId,
+        score: Math.round(fc.score * 100),
+        coverage: Math.round(fc.coverage * 100),
+        color: frameworkCategoryColors[fc.categoryId],
+      }))
+      .sort((a, b) => a.score - b.score);
+
+    return { domainScores, categoryScores };
+  }, [metrics]);
+
+  const gapsDetails = useMemo(() => {
+    const gaps = filteredByFramework.gaps;
+    const byCriticality = {
+      Critical: gaps.filter(g => g.criticality === 'Critical'),
+      High: gaps.filter(g => g.criticality === 'High'),
+      Medium: gaps.filter(g => g.criticality === 'Medium'),
+      Low: gaps.filter(g => g.criticality === 'Low'),
+    };
+    const byDomain: Record<string, typeof gaps> = {};
+    gaps.forEach(g => {
+      if (!byDomain[g.domainName]) byDomain[g.domainName] = [];
+      byDomain[g.domainName].push(g);
+    });
+    const byNist: Record<string, typeof gaps> = {};
+    gaps.forEach(g => {
+      const nist = g.nistFunction || 'Sem função';
+      if (!byNist[nist]) byNist[nist] = [];
+      byNist[nist].push(g);
+    });
+    return { byCriticality, byDomain, byNist, total: gaps.length };
+  }, [filteredByFramework.gaps]);
+
+  const coverageDetails = useMemo(() => {
+    const byDomain = metrics.domainMetrics.map(dm => ({
+      name: dm.domainName,
+      answered: dm.answeredQuestions,
+      total: dm.totalQuestions,
+      coverage: Math.round(dm.coverage * 100),
+      pending: dm.totalQuestions - dm.answeredQuestions,
+    })).sort((a, b) => a.coverage - b.coverage);
+
+    const byFramework = filteredByFramework.coverage.map(fc => ({
+      name: fc.framework,
+      answered: fc.answeredQuestions,
+      total: fc.totalQuestions,
+      coverage: Math.round(fc.coverage * 100),
+    })).sort((a, b) => a.coverage - b.coverage);
+
+    return { byDomain, byFramework };
+  }, [metrics, filteredByFramework.coverage]);
+
+  const evidenceDetails = useMemo(() => {
+    const domainEvidenceData = metrics.domainMetrics.map(dm => {
+      // Calculate evidence readiness per domain based on subcategory metrics
+      const subcatsWithEvidence = dm.subcategoryMetrics.filter(sm => sm.coverage > 0);
+      const avgEvidence = subcatsWithEvidence.length > 0
+        ? subcatsWithEvidence.reduce((sum, sm) => sum + sm.coverage, 0) / subcatsWithEvidence.length
+        : 0;
+      return {
+        name: dm.domainName,
+        evidenceReadiness: Math.round(avgEvidence * 100),
+        totalSubcats: dm.subcategoryMetrics.length,
+        withEvidence: subcatsWithEvidence.length,
+      };
+    }).sort((a, b) => a.evidenceReadiness - b.evidenceReadiness);
+
+    return { byDomain: domainEvidenceData };
+  }, [metrics]);
 
   // Filtered domain metrics
   const filteredDomainMetrics = useMemo(() => {
@@ -427,8 +522,9 @@ export function ExecutiveDashboard({
       {/* Executive KPI Cards - Enhanced with staggered animations and hover effects */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-primary/30"
           style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+          onClick={() => setSelectedKpiModal('score')}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
@@ -452,11 +548,13 @@ export function ExecutiveDashboard({
           <div className={cn("maturity-badge mt-2", `maturity-${metrics.maturityLevel.level}`)}>
             Nível {metrics.maturityLevel.level}: {metrics.maturityLevel.name}
           </div>
+          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
         </div>
 
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-destructive/30"
           style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
+          onClick={() => setSelectedKpiModal('gaps')}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
@@ -477,20 +575,13 @@ export function ExecutiveDashboard({
           <div className="text-sm text-muted-foreground mt-2">
             Requerem ação prioritária
           </div>
-          <div className="mt-2 text-xs">
-            <span className={cn(
-              filteredByFramework.gaps.length === 0 ? 'text-green-600' :
-              filteredByFramework.gaps.length <= 5 ? 'text-amber-600' : 'text-red-600'
-            )}>
-              {filteredByFramework.gaps.length === 0 ? 'Excelente' :
-               filteredByFramework.gaps.length <= 5 ? 'Atenção necessária' : 'Ação imediata'}
-            </span>
-          </div>
+          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
         </div>
 
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-blue-500/30"
           style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+          onClick={() => setSelectedKpiModal('coverage')}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
@@ -509,11 +600,13 @@ export function ExecutiveDashboard({
           <div className="text-sm text-muted-foreground mt-2">
             {coverageStats.answered} de {coverageStats.total} perguntas
           </div>
+          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
         </div>
 
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-green-500/30"
           style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
+          onClick={() => setSelectedKpiModal('evidence')}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
@@ -532,6 +625,7 @@ export function ExecutiveDashboard({
           <div className="text-sm text-muted-foreground mt-2">
             Preparação para auditoria
           </div>
+          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
         </div>
       </div>
 
@@ -941,6 +1035,304 @@ export function ExecutiveDashboard({
           </div>
         )}
       </div>
+
+      {/* Score Details Modal */}
+      <Dialog open={selectedKpiModal === 'score'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div 
+                className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+                style={{ backgroundColor: metrics.maturityLevel.color }}
+              >
+                {Math.round(metrics.overallScore * 100)}%
+              </div>
+              <div>
+                <DialogTitle className="text-left text-xl">Score Geral de Maturidade</DialogTitle>
+                <DialogDescription className="text-left">
+                  Nível {metrics.maturityLevel.level}: {metrics.maturityLevel.name}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            <div className="text-center p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl font-bold text-primary">{Math.round(metrics.coverage * 100)}%</div>
+              <div className="text-xs text-muted-foreground">Cobertura</div>
+            </div>
+            <div className="text-center p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl font-bold">{metrics.answeredQuestions}/{metrics.totalQuestions}</div>
+              <div className="text-xs text-muted-foreground">Respondidas</div>
+            </div>
+            <div className="text-center p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl font-bold text-destructive">{filteredByFramework.gaps.length}</div>
+              <div className="text-xs text-muted-foreground">Gaps</div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-sm mb-3">Score por Domínio</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {scoreDetails.domainScores.map((d, idx) => (
+                <div key={idx} className="flex items-center gap-3 p-2 bg-muted/30 rounded">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium truncate">{d.name}</span>
+                      <span className="text-sm font-mono" style={{ color: d.color }}>{d.score}%</span>
+                    </div>
+                    <Progress value={d.score} className="h-1.5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-sm mb-3">Score por Categoria de Framework</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {scoreDetails.categoryScores.map((c, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded">
+                  <span className="text-sm">{c.name}</span>
+                  <span className="font-mono font-medium" style={{ color: c.color }}>{c.score}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gaps Details Modal */}
+      <Dialog open={selectedKpiModal === 'gaps'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-destructive">
+                {gapsDetails.total}
+              </div>
+              <div>
+                <DialogTitle className="text-left text-xl">Gaps Críticos</DialogTitle>
+                <DialogDescription className="text-left">
+                  Itens que requerem ação prioritária
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-4 gap-3 mt-4">
+            <div className="text-center p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <div className="text-2xl font-bold text-red-600">{gapsDetails.byCriticality.Critical.length}</div>
+              <div className="text-xs text-muted-foreground">Crítico</div>
+            </div>
+            <div className="text-center p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">{gapsDetails.byCriticality.High.length}</div>
+              <div className="text-xs text-muted-foreground">Alto</div>
+            </div>
+            <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{gapsDetails.byCriticality.Medium.length}</div>
+              <div className="text-xs text-muted-foreground">Médio</div>
+            </div>
+            <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="text-2xl font-bold text-gray-600">{gapsDetails.byCriticality.Low.length}</div>
+              <div className="text-xs text-muted-foreground">Baixo</div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-sm mb-3">Gaps por Domínio</h4>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {Object.entries(gapsDetails.byDomain)
+                .sort((a, b) => b[1].length - a[1].length)
+                .slice(0, 6)
+                .map(([domain, gaps], idx) => (
+                <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                  <span className="text-sm truncate">{domain}</span>
+                  <span className="font-mono text-sm text-destructive">{gaps.length}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-sm mb-3">Gaps Críticos Prioritários</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {filteredByFramework.gaps.slice(0, 8).map((gap) => (
+                <div 
+                  key={gap.questionId} 
+                  className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setSelectedKpiModal(null);
+                    navigate(`/assessment?questionId=${gap.questionId}`);
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn("criticality-badge text-xs", `criticality-${gap.criticality.toLowerCase()}`)}>
+                        {gap.criticality}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{gap.domainName}</span>
+                    </div>
+                    <p className="text-sm line-clamp-2">{gap.questionText}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="shrink-0">Revisar</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
+            <Button onClick={() => { setSelectedKpiModal(null); navigate('/assessment'); }}>
+              Ir para Avaliação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Coverage Details Modal */}
+      <Dialog open={selectedKpiModal === 'coverage'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-blue-500">
+                {Math.round(coverageStats.coverage * 100)}%
+              </div>
+              <div>
+                <DialogTitle className="text-left text-xl">Cobertura da Avaliação</DialogTitle>
+                <DialogDescription className="text-left">
+                  {coverageStats.answered} de {coverageStats.total} perguntas respondidas
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{coverageStats.answered}</div>
+              <div className="text-xs text-muted-foreground">Respondidas</div>
+            </div>
+            <div className="text-center p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <div className="text-2xl font-bold text-amber-600">{coverageStats.pending}</div>
+              <div className="text-xs text-muted-foreground">Pendentes</div>
+            </div>
+            <div className="text-center p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl font-bold">{coverageStats.total}</div>
+              <div className="text-xs text-muted-foreground">Total</div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-sm mb-3">Cobertura por Domínio</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {coverageDetails.byDomain.map((d, idx) => (
+                <div key={idx} className="flex items-center gap-3 p-2 bg-muted/30 rounded">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium truncate">{d.name}</span>
+                      <span className="text-xs text-muted-foreground">{d.answered}/{d.total}</span>
+                    </div>
+                    <Progress value={d.coverage} className="h-1.5" />
+                  </div>
+                  <span className={cn(
+                    "font-mono text-sm min-w-[40px] text-right",
+                    d.coverage < 50 ? "text-destructive" : d.coverage < 80 ? "text-amber-600" : "text-green-600"
+                  )}>{d.coverage}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-sm mb-3">Cobertura por Framework</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {coverageDetails.byFramework.map((f, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded">
+                  <span className="text-sm truncate">{f.name}</span>
+                  <span className={cn(
+                    "font-mono font-medium",
+                    f.coverage < 50 ? "text-destructive" : f.coverage < 80 ? "text-amber-600" : "text-green-600"
+                  )}>{f.coverage}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
+            <Button onClick={() => { setSelectedKpiModal(null); navigate('/assessment'); }}>
+              Continuar Avaliação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Evidence Details Modal */}
+      <Dialog open={selectedKpiModal === 'evidence'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-green-500">
+                {Math.round(metrics.evidenceReadiness * 100)}%
+              </div>
+              <div>
+                <DialogTitle className="text-left text-xl">Prontidão de Evidências</DialogTitle>
+                <DialogDescription className="text-left">
+                  Preparação para auditoria e compliance
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <div className="text-3xl font-bold text-green-600">{Math.round(metrics.evidenceReadiness * 100)}%</div>
+              <div className="text-sm text-muted-foreground mt-1">Prontidão Geral</div>
+            </div>
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <div className="text-3xl font-bold">{metrics.domainMetrics.length}</div>
+              <div className="text-sm text-muted-foreground mt-1">Domínios Avaliados</div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-sm mb-3">Prontidão por Domínio</h4>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {evidenceDetails.byDomain.map((d, idx) => (
+                <div key={idx} className="flex items-center gap-3 p-2 bg-muted/30 rounded">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium truncate">{d.name}</span>
+                      <span className="text-xs text-muted-foreground">{d.withEvidence}/{d.totalSubcats} subcategorias</span>
+                    </div>
+                    <Progress value={d.evidenceReadiness} className="h-1.5" />
+                  </div>
+                  <span className={cn(
+                    "font-mono text-sm min-w-[40px] text-right",
+                    d.evidenceReadiness < 50 ? "text-destructive" : d.evidenceReadiness < 80 ? "text-amber-600" : "text-green-600"
+                  )}>{d.evidenceReadiness}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+            <h5 className="font-medium text-sm mb-2">O que é Prontidão de Evidências?</h5>
+            <p className="text-sm text-muted-foreground">
+              Indica o percentual de controles que possuem documentação de suporte adequada para demonstrar 
+              conformidade durante auditorias. Uma alta prontidão facilita processos de certificação e 
+              inspeções regulatórias.
+            </p>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

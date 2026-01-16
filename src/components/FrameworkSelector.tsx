@@ -5,14 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronDown, AlertTriangle, Lock, Info } from 'lucide-react';
 import { 
   SecurityDomain, 
   getSecurityDomainById, 
   getDomainDisplayInfo,
-  DEFAULT_SECURITY_DOMAINS
+  getAllSecurityDomains,
+  DEFAULT_SECURITY_DOMAINS,
+  DOMAIN_COLORS
 } from '@/lib/securityDomains';
 
 interface FrameworkSelectorProps {
@@ -35,16 +38,23 @@ const categoryColors: Record<string, string> = {
 export function FrameworkSelector({ onStartAssessment, onBackToDomainSelector }: FrameworkSelectorProps) {
   const { enabledFrameworks, selectedFrameworks, setSelectedFrameworks, selectedSecurityDomain } = useAnswersStore();
   const [currentDomain, setCurrentDomain] = useState<SecurityDomain | null>(null);
+  const [allDomains, setAllDomains] = useState<SecurityDomain[]>([]);
+  const [showUnavailable, setShowUnavailable] = useState(false);
   
   // Load domain info
   useEffect(() => {
-    const loadDomain = async () => {
+    const loadDomains = async () => {
+      const domains = await getAllSecurityDomains();
+      setAllDomains(domains);
+      
       if (selectedSecurityDomain) {
-        const domain = await getSecurityDomainById(selectedSecurityDomain);
-        setCurrentDomain(domain || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) || null);
+        const domain = domains.find(d => d.domainId === selectedSecurityDomain) 
+          || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) 
+          || null;
+        setCurrentDomain(domain);
       }
     };
-    loadDomain();
+    loadDomains();
   }, [selectedSecurityDomain]);
   
   // Local state for user selection
@@ -64,6 +74,28 @@ export function FrameworkSelector({ onStartAssessment, onBackToDomainSelector }:
       domainFrameworkIds.includes(f.frameworkId)
     );
   }, [enabledFrameworks, selectedSecurityDomain]);
+
+  // Get frameworks from disabled domains (to show as unavailable)
+  const unavailableFrameworks = useMemo(() => {
+    const disabledDomains = allDomains.filter(d => !d.isEnabled);
+    const disabledDomainIds = disabledDomains.map(d => d.domainId);
+    
+    // Frameworks that belong to disabled domains
+    const fromDisabledDomains = frameworks.filter(f => 
+      f.securityDomainId && disabledDomainIds.includes(f.securityDomainId)
+    );
+
+    // Group by domain
+    const grouped: { domain: SecurityDomain; frameworks: Framework[] }[] = [];
+    disabledDomains.forEach(domain => {
+      const domainFrameworks = fromDisabledDomains.filter(f => f.securityDomainId === domain.domainId);
+      if (domainFrameworks.length > 0) {
+        grouped.push({ domain, frameworks: domainFrameworks });
+      }
+    });
+
+    return grouped;
+  }, [allDomains]);
 
   // Group available frameworks by category
   const coreFrameworks = availableFrameworks.filter(f => f.category === 'core');
@@ -232,6 +264,72 @@ export function FrameworkSelector({ onStartAssessment, onBackToDomainSelector }:
         </div>
       )}
 
+      {/* Unavailable Frameworks from Disabled Domains */}
+      {unavailableFrameworks.length > 0 && (
+        <Collapsible open={showUnavailable} onOpenChange={setShowUnavailable}>
+          <CollapsibleTrigger className="flex items-center gap-2 w-full p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 hover:bg-muted/50 transition-colors">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground flex-1 text-left">
+              {unavailableFrameworks.reduce((acc, g) => acc + g.frameworks.length, 0)} frameworks indisponíveis 
+              (domínios desabilitados)
+            </span>
+            <ChevronDown className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform",
+              showUnavailable && "rotate-180"
+            )} />
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent className="pt-4 space-y-4">
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium">Frameworks de domínios desabilitados</p>
+                <p className="text-xs mt-1 opacity-80">
+                  Para usar estes frameworks, habilite o domínio correspondente nas configurações.
+                </p>
+              </div>
+            </div>
+
+            {unavailableFrameworks.map(({ domain, frameworks: domainFws }) => {
+              const colorStyles = DOMAIN_COLORS[domain.color];
+              return (
+                <div key={domain.domainId} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant="outline" 
+                      className={cn("text-xs", colorStyles?.border, colorStyles?.text)}
+                    >
+                      <Lock className="h-3 w-3 mr-1" />
+                      {domain.shortName}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {domainFws.length} framework{domainFws.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {domainFws.map(fw => (
+                      <UnavailableFrameworkCard 
+                        key={fw.frameworkId} 
+                        framework={fw} 
+                        domain={domain}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="text-center pt-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/settings">
+                  Gerenciar Domínios nas Configurações
+                </Link>
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
       {/* Start button */}
       <div className="flex flex-col items-center gap-4 pt-4">
         <Button 
@@ -300,6 +398,50 @@ function FrameworkCard({ framework, selected, onToggle }: FrameworkCardProps) {
               {audience}
             </Badge>
           ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface UnavailableFrameworkCardProps {
+  framework: Framework;
+  domain: SecurityDomain;
+}
+
+function UnavailableFrameworkCard({ framework, domain }: UnavailableFrameworkCardProps) {
+  const colorStyles = DOMAIN_COLORS[domain.color];
+  
+  return (
+    <Card className="opacity-50 cursor-not-allowed bg-muted/30 border-dashed">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-4 rounded border-2 border-muted-foreground/30 flex items-center justify-center">
+              <Lock className="h-2.5 w-2.5 text-muted-foreground/50" />
+            </div>
+            <div>
+              <CardTitle className="text-base text-muted-foreground">{framework.shortName}</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                {framework.frameworkName}
+              </CardDescription>
+            </div>
+          </div>
+          <Badge 
+            variant="outline" 
+            className="text-[10px] shrink-0 opacity-50"
+          >
+            {categoryLabels[framework.category]}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <p className="text-xs text-muted-foreground line-clamp-2 opacity-70">
+          {framework.description}
+        </p>
+        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+          <Info className="h-3 w-3" />
+          <span>Requer domínio "{domain.shortName}" habilitado</span>
         </div>
       </CardContent>
     </Card>

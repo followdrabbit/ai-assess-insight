@@ -69,30 +69,31 @@ export function AIAssistantPanel({ variant = 'fab', className }: AIAssistantPane
       <Button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50",
-          "hover:scale-110 transition-transform",
+          "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg z-50",
+          "hover:scale-110 transition-transform active:scale-95",
           isOpen && "hidden",
           className
         )}
         size="icon"
       >
-        <Bot className="h-6 w-6" />
+        <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
 
       {/* Chat Panel */}
       <div className={cn(
-        "fixed bottom-6 right-6 z-50 transition-all duration-300",
-        "w-[400px] max-w-[calc(100vw-48px)]",
+        "fixed z-50 transition-all duration-300",
+        "bottom-4 right-4 sm:bottom-6 sm:right-6",
+        "w-[calc(100vw-32px)] sm:w-[400px] max-w-[400px]",
         isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"
       )}>
         <div className="relative">
           <Button
             variant="ghost"
             size="icon"
-            className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md z-10"
+            className="absolute -top-2 -right-2 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-background shadow-md z-10 active:scale-95"
             onClick={() => setIsOpen(false)}
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <AIAssistantChat />
         </div>

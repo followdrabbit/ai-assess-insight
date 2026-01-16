@@ -35,7 +35,10 @@
     "of": "de",
     "answered": "respondidas",
     "myAccount": "Mi Cuenta",
-    "cloudSync": "Datos sincronizados con la nube"
+    "cloudSync": "Datos sincronizados con la nube",
+    "refresh": "Actualizar",
+    "days": "días",
+    "unknown": "Desconocido"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -1090,6 +1093,48 @@
     "devsecopsTitle": "Prácticas DevSecOps",
     "devsecopsDescription": "Madurez en las prácticas de seguridad de desarrollo",
     "filter": "Filtro"
+  },
+  "auditLogs": {
+    "title": "Logs de Auditoría",
+    "description": "Rastrea todos los cambios y actividad de usuarios",
+    "totalEvents": "Total de Eventos",
+    "uniqueUsers": "Usuarios Únicos",
+    "uniqueIPs": "IPs Únicos",
+    "period": "Período",
+    "byAction": "Por Acción",
+    "byEntityType": "Por Tipo de Entidad",
+    "byDevice": "Por Dispositivo",
+    "eventLog": "Log de Eventos",
+    "showingEvents": "Mostrando {{count}} eventos",
+    "searchPlaceholder": "Buscar por ID, IP o acción...",
+    "dateTime": "Fecha/Hora",
+    "actionColumn": "Acción",
+    "entityColumn": "Entidad",
+    "entityId": "ID de Entidad",
+    "ipAddress": "Dirección IP",
+    "deviceInfo": "Info del Dispositivo",
+    "noEvents": "No se encontraron eventos de auditoría",
+    "action": {
+      "all": "Todas las Acciones",
+      "create": "Crear",
+      "update": "Actualizar",
+      "delete": "Eliminar",
+      "enable": "Habilitar",
+      "disable": "Deshabilitar"
+    },
+    "entity": {
+      "all": "Todas las Entidades",
+      "framework": "Framework",
+      "question": "Pregunta",
+      "setting": "Configuración",
+      "answer": "Respuesta"
+    },
+    "device": {
+      "all": "Todos los Dispositivos",
+      "desktop": "Escritorio",
+      "mobile": "Móvil",
+      "tablet": "Tableta"
+    }
   },
   "errors": {
     "generic": "Ocurrió un error",

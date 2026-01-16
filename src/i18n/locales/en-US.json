@@ -35,7 +35,10 @@
     "of": "of",
     "answered": "answered",
     "myAccount": "My Account",
-    "cloudSync": "Data synced with cloud"
+    "cloudSync": "Data synced with cloud",
+    "refresh": "Refresh",
+    "days": "days",
+    "unknown": "Unknown"
   },
   "auth": {
     "login": "Sign In",
@@ -1090,6 +1093,48 @@
     "devsecopsTitle": "DevSecOps Practices",
     "devsecopsDescription": "Maturity in secure development practices",
     "filter": "Filter"
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "description": "Track all changes and user activity",
+    "totalEvents": "Total Events",
+    "uniqueUsers": "Unique Users",
+    "uniqueIPs": "Unique IPs",
+    "period": "Period",
+    "byAction": "By Action",
+    "byEntityType": "By Entity Type",
+    "byDevice": "By Device",
+    "eventLog": "Event Log",
+    "showingEvents": "Showing {{count}} events",
+    "searchPlaceholder": "Search by ID, IP or action...",
+    "dateTime": "Date/Time",
+    "actionColumn": "Action",
+    "entityColumn": "Entity",
+    "entityId": "Entity ID",
+    "ipAddress": "IP Address",
+    "deviceInfo": "Device Info",
+    "noEvents": "No audit events found",
+    "action": {
+      "all": "All Actions",
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete",
+      "enable": "Enable",
+      "disable": "Disable"
+    },
+    "entity": {
+      "all": "All Entities",
+      "framework": "Framework",
+      "question": "Question",
+      "setting": "Setting",
+      "answer": "Answer"
+    },
+    "device": {
+      "all": "All Devices",
+      "desktop": "Desktop",
+      "mobile": "Mobile",
+      "tablet": "Tablet"
+    }
   },
   "errors": {
     "generic": "An error occurred",

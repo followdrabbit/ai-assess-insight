@@ -39,8 +39,10 @@ import {
   BookOpen,
   Database,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  Activity
 } from 'lucide-react';
+import { AuditLogsPanel } from '@/components/settings/AuditLogsPanel';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -61,6 +63,11 @@ export default function Settings() {
       label: t('settings.systemTab'), 
       icon: Cog,
       description: t('settings.exportAndGeneralDesc')
+    },
+    audit: {
+      label: t('auditLogs.title'),
+      icon: Activity,
+      description: t('auditLogs.description')
     },
   };
 
@@ -346,7 +353,7 @@ export default function Settings() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
           {Object.entries(TAB_CONFIG).map(([key, config]) => {
             const Icon = config.icon;
             return (
@@ -889,6 +896,24 @@ export default function Settings() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* ========== AUDIT LOGS TAB ========== */}
+        <TabsContent value="audit" className="space-y-6">
+          {/* Tab Header */}
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold">{t('auditLogs.title')}</h2>
+              <p className="text-sm text-muted-foreground">
+                {t('auditLogs.description')}
+              </p>
+            </div>
+          </div>
+
+          <AuditLogsPanel />
         </TabsContent>
       </Tabs>
     </div>

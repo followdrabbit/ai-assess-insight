@@ -163,6 +163,7 @@ const Sidebar = React.forwardRef<
             } as React.CSSProperties
           }
           side={side}
+          onSwipeClose={() => setOpenMobile(false)}
         >
           <div className="flex h-full w-full flex-col overflow-y-auto overscroll-contain">{children}</div>
         </SheetContent>

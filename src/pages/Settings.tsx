@@ -43,15 +43,10 @@ import {
 
 // Tab configuration with clear labels
 const TAB_CONFIG = {
-  structure: { 
-    label: 'Domínios', 
-    icon: Layers,
-    description: 'Gerenciar domínios de segurança'
-  },
-  library: { 
+  content: { 
     label: 'Conteúdo', 
     icon: BookMarked,
-    description: 'Frameworks e perguntas'
+    description: 'Domínios, frameworks e perguntas'
   },
   assessment: { 
     label: 'Avaliação', 
@@ -75,7 +70,7 @@ export default function Settings() {
   const { enabledFrameworks, setEnabledFrameworks, answers, clearAnswers, generateDemoData } = useAnswersStore();
   const [pendingFrameworks, setPendingFrameworks] = useState<string[]>(enabledFrameworks);
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState('structure');
+  const [activeTab, setActiveTab] = useState('content');
   const [assessmentName, setAssessmentName] = useState('Avaliação de Maturidade em Segurança');
   const [organizationName, setOrganizationName] = useState('');
   const [reassessmentInterval, setReassessmentInterval] = useState('quarterly');
@@ -349,7 +344,7 @@ export default function Settings() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
           {Object.entries(TAB_CONFIG).map(([key, config]) => {
             const Icon = config.icon;
             return (
@@ -365,60 +360,36 @@ export default function Settings() {
           })}
         </TabsList>
 
-        {/* ========== STRUCTURE TAB ========== */}
-        <TabsContent value="structure" className="space-y-6">
+        {/* ========== CONTENT TAB ========== */}
+        <TabsContent value="content" className="space-y-6">
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Layers className="h-5 w-5 text-primary" />
+              <BookMarked className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-semibold">Domínios de Segurança</h2>
+              <h2 className="font-semibold">Gerenciar Conteúdo</h2>
               <p className="text-sm text-muted-foreground">
-                Gerencie os domínios disponíveis na plataforma
-              </p>
-            </div>
-          </div>
-
-          {/* Domain Management */}
-          <div ref={setSectionRef('domains')}>
-            <Card className={cn(
-              "transition-all duration-500",
-              highlightedSection === 'domains' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Layers className="h-4 w-4" />
-                  Gerenciar Domínios de Segurança
-                </CardTitle>
-                <CardDescription>
-                  Criar, editar, importar e exportar domínios de segurança
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DomainManagement />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* ========== LIBRARY TAB ========== */}
-        <TabsContent value="library" className="space-y-6">
-          {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg border border-blue-500/10">
-            <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <BookMarked className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="font-semibold">Conteúdo</h2>
-              <p className="text-sm text-muted-foreground">
-                Gerencie os frameworks e perguntas disponíveis no sistema
+                Domínios de segurança, frameworks e perguntas
               </p>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Layers className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Domínios</p>
+                    <p className="text-xl font-bold">3</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             <Card>
               <CardContent className="pt-4 pb-3">
                 <div className="flex items-center gap-3">
@@ -447,6 +418,27 @@ export default function Settings() {
             </Card>
           </div>
 
+          {/* Domain Management */}
+          <div ref={setSectionRef('domains')}>
+            <Card className={cn(
+              "transition-all duration-500",
+              highlightedSection === 'domains' && "ring-2 ring-primary ring-offset-2"
+            )}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  Domínios de Segurança
+                </CardTitle>
+                <CardDescription>
+                  Criar, editar e gerenciar domínios de segurança
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DomainManagement />
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Framework Management */}
           <div ref={setSectionRef('frameworks-management')}>
             <Card className={cn(
@@ -456,7 +448,7 @@ export default function Settings() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Gerenciar Frameworks
+                  Frameworks
                 </CardTitle>
                 <CardDescription>
                   Criar, editar e excluir frameworks de avaliação
@@ -477,7 +469,7 @@ export default function Settings() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
-                  Gerenciar Perguntas
+                  Perguntas
                 </CardTitle>
                 <CardDescription>
                   Criar, editar, importar e versionar perguntas

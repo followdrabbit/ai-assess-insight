@@ -11,41 +11,39 @@ interface SearchableItem {
   title: string;
   description: string;
   keywords: string[];
-  tab: 'structure' | 'library' | 'assessment' | 'system';
+  tab: 'content' | 'assessment' | 'system';
   section?: string;
   icon: React.ElementType;
 }
 
 // Define all searchable items in settings
 const SEARCHABLE_ITEMS: SearchableItem[] = [
-  // Structure Tab
+  // Content Tab
   {
     id: 'domains',
     title: 'Domínios de Segurança',
     description: 'Gerenciar domínios como AI Security, Cloud Security, DevSecOps',
     keywords: ['domínio', 'security domain', 'ai security', 'cloud security', 'devsecops', 'habilitar', 'desabilitar'],
-    tab: 'structure',
-    section: 'Gerenciar Domínios de Segurança',
+    tab: 'content',
+    section: 'Domínios de Segurança',
     icon: Layers,
   },
-  
-  // Library Tab
   {
     id: 'frameworks-management',
-    title: 'Gerenciar Frameworks',
+    title: 'Frameworks',
     description: 'Criar, editar, importar e excluir frameworks de avaliação',
     keywords: ['framework', 'nist', 'iso', 'cis', 'owasp', 'criar framework', 'importar framework', 'excluir framework'],
-    tab: 'library',
-    section: 'Gerenciar Frameworks',
+    tab: 'content',
+    section: 'Frameworks',
     icon: Shield,
   },
   {
     id: 'questions-management',
-    title: 'Gerenciar Perguntas',
+    title: 'Perguntas',
     description: 'Criar, editar, importar, versionar e pesquisar perguntas',
     keywords: ['pergunta', 'questão', 'criar pergunta', 'importar perguntas', 'versão', 'histórico'],
-    tab: 'library',
-    section: 'Gerenciar Perguntas',
+    tab: 'content',
+    section: 'Perguntas',
     icon: BookOpen,
   },
   
@@ -118,8 +116,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
 ];
 
 const TAB_CONFIG = {
-  structure: { label: 'Domínios', icon: Layers, color: 'bg-purple-500/10 text-purple-700' },
-  library: { label: 'Conteúdo', icon: BookMarked, color: 'bg-blue-500/10 text-blue-700' },
+  content: { label: 'Conteúdo', icon: BookMarked, color: 'bg-primary/10 text-primary' },
   assessment: { label: 'Avaliação', icon: ClipboardList, color: 'bg-amber-500/10 text-amber-700' },
   system: { label: 'Geral', icon: Settings, color: 'bg-gray-500/10 text-gray-700' },
 };

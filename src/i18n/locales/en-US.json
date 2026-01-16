@@ -277,7 +277,15 @@
     "percentOfTotal": "({{percent}}% of total)",
     "allDomainsOption": "All Domains",
     "allOwnersOption": "All Owners",
-    "heatmapTitle": "Heatmap by Subcategory"
+    "heatmapTitle": "Heatmap by Subcategory",
+    "frameworkCategoryLabel": "Framework Category",
+    "frameworkLabel": "Framework",
+    "questionsOfTotal": "{{answered}} of {{total}} questions",
+    "gapsIdentifiedCount": "Gaps Identified ({{count}})",
+    "gapsByDomain": "Gaps by Domain ({{count}})",
+    "showingOfGaps": "Showing {{showing}} of {{total}} gaps",
+    "startEvaluation": "Start Evaluation",
+    "close": "Close"
   },
   "assessment": {
     "title": "Security Assessment",

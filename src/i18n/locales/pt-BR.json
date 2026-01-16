@@ -277,7 +277,15 @@
     "percentOfTotal": "({{percent}}% do total)",
     "allDomainsOption": "Todos Domínios",
     "allOwnersOption": "Todos Responsáveis",
-    "heatmapTitle": "Mapa de Calor por Subcategoria"
+    "heatmapTitle": "Mapa de Calor por Subcategoria",
+    "frameworkCategoryLabel": "Categoria de Framework",
+    "frameworkLabel": "Framework",
+    "questionsOfTotal": "{{answered}} de {{total}} perguntas",
+    "gapsIdentifiedCount": "Gaps Identificados ({{count}})",
+    "gapsByDomain": "Gaps por Domínio ({{count}})",
+    "showingOfGaps": "Mostrando {{showing}} de {{total}} gaps",
+    "startEvaluation": "Iniciar Avaliação",
+    "close": "Fechar"
   },
   "assessment": {
     "title": "Avaliação de Segurança",

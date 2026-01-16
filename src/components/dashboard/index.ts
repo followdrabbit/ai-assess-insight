@@ -12,3 +12,4 @@ export { DashboardChartCard } from './DashboardChartCard';
 export { DashboardGapsList } from './DashboardGapsList';
 export { DashboardRoadmap } from './DashboardRoadmap';
 export { DashboardRoadmapGrid } from './DashboardRoadmapGrid';
+export { PeriodComparisonCard } from './PeriodComparisonCard';

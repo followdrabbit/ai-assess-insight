@@ -10,16 +10,11 @@ import { cn } from '@/lib/utils';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { DomainSpecificIndicators } from '@/components/DomainSpecificIndicators';
 import { 
-  CoverageHelp,
   CriticalityLevelsHelp,
   HeatmapHelp,
   FrameworkCategoryHelp,
   DomainMetricsHelpAware,
-  DomainFunctionHelp,
-  DomainRiskDistributionHelp,
-  DomainFrameworkCoverageHelp,
   DomainResponseDistributionHelp,
-  DomainCriticalGapsHelp,
   DomainRoadmapHelp,
 } from '@/components/HelpTooltip';
 import { Input } from '@/components/ui/input';
@@ -38,12 +33,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import {
   Dialog,
   DialogContent,
@@ -57,7 +46,6 @@ import { downloadHtmlReport } from '@/lib/htmlReportExport';
 import {
   DashboardHeader,
   DashboardFrameworkSelector,
-  DashboardFilterBar,
   DashboardKPIGrid,
   DashboardKPICard,
   DashboardSection,
@@ -106,16 +94,13 @@ export default function DashboardSpecialist() {
     currentDomainInfo,
     answers,
     enabledFrameworks,
-    enabledFrameworkIds,
     selectedFrameworkIds,
     questionsForDashboard,
     metrics,
     criticalGaps: allCriticalGaps,
     frameworkCoverage,
     roadmap,
-    handleFrameworkSelectionChange,
     toggleFramework,
-    clearFrameworkSelection,
   } = useDashboardMetrics();
 
   // Filter and search states (local to this dashboard)
@@ -133,20 +118,6 @@ export default function DashboardSpecialist() {
   const [selectedFrameworkCategory, setSelectedFrameworkCategory] = useState<string | null>(null);
   const [selectedFramework, setSelectedFramework] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-
-  // Group frameworks by category
-  const frameworksByCategory = useMemo(() => {
-    const groups: Record<string, Framework[]> = {
-      'core': [],
-      'high-value': [],
-      'tech-focused': []
-    };
-    enabledFrameworks.forEach(fw => {
-      const cat = fw.category || 'core';
-      if (groups[cat]) groups[cat].push(fw);
-    });
-    return groups;
-  }, [enabledFrameworks]);
 
   const categoryLabels: Record<string, string> = {
     'core': 'Frameworks Principais',

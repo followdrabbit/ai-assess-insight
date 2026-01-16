@@ -45,7 +45,7 @@ import { Framework, getFrameworkById } from '@/lib/frameworks';
 import { getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
 
-// NIST AI RMF function display names
+// NIST AI RMF function display names (for AI_SECURITY domain)
 const nistFunctionLabels: Record<string, string> = {
   GOVERN: 'Governar',
   MAP: 'Mapear',
@@ -58,6 +58,41 @@ const nistFunctionColors: Record<string, string> = {
   MAP: 'hsl(var(--chart-2))',
   MEASURE: 'hsl(var(--chart-3))',
   MANAGE: 'hsl(var(--chart-4))',
+};
+
+// Cloud Security domain functions (for CLOUD_SECURITY domain)
+const cloudFunctionLabels: Record<string, string> = {
+  GOVERN: 'Governança',
+  MANAGE: 'Gerenciamento',
+  MEASURE: 'Monitoramento',
+  MAP: 'Mapeamento',
+};
+
+// DevSecOps domain functions (for DEVSECOPS domain)
+const devsecOpsFunctionLabels: Record<string, string> = {
+  GOVERN: 'Políticas',
+  MANAGE: 'Proteção',
+  MEASURE: 'Detecção',
+  MAP: 'Preparação',
+};
+
+// Domain-specific chart titles and descriptions
+const domainChartConfig: Record<string, { title: string; description: string; functionLabels: Record<string, string> }> = {
+  AI_SECURITY: {
+    title: 'Funções NIST AI RMF',
+    description: 'Maturidade nas funções do framework de gestão de riscos de IA',
+    functionLabels: nistFunctionLabels,
+  },
+  CLOUD_SECURITY: {
+    title: 'Pilares Cloud Security',
+    description: 'Maturidade nos pilares de segurança cloud (CSA CCM)',
+    functionLabels: cloudFunctionLabels,
+  },
+  DEVSECOPS: {
+    title: 'Práticas DevSecOps',
+    description: 'Maturidade nas práticas de segurança de desenvolvimento',
+    functionLabels: devsecOpsFunctionLabels,
+  },
 };
 
 // Rationalized Framework Categories - Authoritative Set Only
@@ -98,6 +133,7 @@ interface ExecutiveDashboardProps {
   onFrameworkSelectionChange: (frameworkIds: string[]) => void;
   activeQuestions: ActiveQuestion[];
   domainSwitcher?: React.ReactNode;
+  securityDomainId?: string; // Current security domain context
 }
 
 type CriticalityFilter = 'all' | 'Critical' | 'High' | 'Medium' | 'Low';
@@ -112,7 +148,8 @@ export function ExecutiveDashboard({
   selectedFrameworkIds,
   onFrameworkSelectionChange,
   activeQuestions,
-  domainSwitcher
+  domainSwitcher,
+  securityDomainId = 'AI_SECURITY'
 }: ExecutiveDashboardProps) {
   const navigate = useNavigate();
   
@@ -315,8 +352,11 @@ export function ExecutiveDashboard({
     criticalGaps: dm.criticalGaps,
   }));
 
+  // Get domain-specific chart configuration
+  const currentDomainConfig = domainChartConfig[securityDomainId] || domainChartConfig.AI_SECURITY;
+
   const nistFunctionData = metrics.nistFunctionMetrics.map(nf => ({
-    function: nistFunctionLabels[nf.function] || nf.function,
+    function: currentDomainConfig.functionLabels[nf.function] || nf.function,
     functionId: nf.function,
     score: Math.round(nf.score * 100),
     fullMark: 100,
@@ -460,6 +500,24 @@ export function ExecutiveDashboard({
     });
   }, [metrics, filteredGaps, filteredByFramework, enabledFrameworks, selectedFrameworkIds, frameworkCategoryData, nistFunctionData, riskDistribution, coverageStats]);
 
+  // Domain-specific header configuration
+  const domainHeaderConfig: Record<string, { title: string; subtitle: string }> = {
+    AI_SECURITY: {
+      title: 'Resumo Executivo - Maturidade em Segurança de IA',
+      subtitle: 'Visão consolidada para tomada de decisão estratégica',
+    },
+    CLOUD_SECURITY: {
+      title: 'Resumo Executivo - Maturidade em Cloud Security',
+      subtitle: 'Postura de segurança cloud e conformidade com CSA CCM',
+    },
+    DEVSECOPS: {
+      title: 'Resumo Executivo - Maturidade em DevSecOps',
+      subtitle: 'Segurança no ciclo de desenvolvimento de software',
+    },
+  };
+
+  const headerConfig = domainHeaderConfig[securityDomainId] || domainHeaderConfig.AI_SECURITY;
+
   return (
     <div className="space-y-6">
       {/* Executive Summary Header with Framework Selector */}
@@ -467,9 +525,9 @@ export function ExecutiveDashboard({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-primary">Resumo Executivo - Maturidade em Segurança de IA</h2>
+              <h2 className="text-lg font-semibold text-primary">{headerConfig.title}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Visão consolidada para tomada de decisão estratégica
+                {headerConfig.subtitle}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -637,13 +695,16 @@ export function ExecutiveDashboard({
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* NIST AI RMF Radar */}
+        {/* Domain-specific Function Radar (NIST AI RMF / Cloud Pillars / DevSecOps Practices) */}
         <div 
           className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
           style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-sm">Funções NIST AI RMF</h3>
+            <div>
+              <h3 className="font-semibold text-sm">{currentDomainConfig.title}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{currentDomainConfig.description}</p>
+            </div>
             <NistFunctionHelp />
           </div>
           <div className="h-56">

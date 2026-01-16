@@ -1253,6 +1253,25 @@
     "suggestedQuestion3": "How can I improve my maturity level?",
     "sttNotSupported": "Voice input not supported in this browser"
   },
+  "voiceCommands": {
+    "title": "Voice Commands",
+    "description": "Say or type these commands to control the app",
+    "navigationCategory": "Navigation",
+    "dataCategory": "Data",
+    "executed": "Command executed: {{command}}",
+    "goToHome": "Go to Home",
+    "goToDashboard": "Go to Dashboard",
+    "goToGRC": "Go to GRC Dashboard",
+    "goToSpecialist": "Go to Specialist Dashboard",
+    "goToAssessment": "Go to Assessment",
+    "goToSettings": "Go to Settings",
+    "goToProfile": "Go to Profile",
+    "showGaps": "Show Critical Gaps",
+    "showSummary": "Summarize Security Posture",
+    "showScore": "Show Score",
+    "showMaturity": "Show Maturity Level",
+    "showCoverage": "Show Coverage"
+  },
   "errors": {
     "generic": "An error occurred",
     "loadProfile": "Error loading profile",

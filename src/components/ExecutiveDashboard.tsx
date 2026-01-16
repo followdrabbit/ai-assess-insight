@@ -96,6 +96,7 @@ interface ExecutiveDashboardProps {
   selectedFrameworkIds: string[];
   onFrameworkSelectionChange: (frameworkIds: string[]) => void;
   activeQuestions: ActiveQuestion[];
+  domainSwitcher?: React.ReactNode;
 }
 
 type CriticalityFilter = 'all' | 'Critical' | 'High' | 'Medium' | 'Low';
@@ -109,7 +110,8 @@ export function ExecutiveDashboard({
   enabledFrameworks,
   selectedFrameworkIds,
   onFrameworkSelectionChange,
-  activeQuestions
+  activeQuestions,
+  domainSwitcher
 }: ExecutiveDashboardProps) {
   const navigate = useNavigate();
   
@@ -470,6 +472,7 @@ export function ExecutiveDashboard({
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {domainSwitcher}
               <Button 
                 variant="outline" 
                 size="sm"

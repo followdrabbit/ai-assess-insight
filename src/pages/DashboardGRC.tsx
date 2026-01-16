@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { cn } from '@/lib/utils';
@@ -567,8 +568,9 @@ export default function DashboardGRC() {
                 variant="outline" 
                 size="sm"
                 onClick={handleExportReport}
-                className="h-7 rounded-full px-3 text-xs"
+                className="h-7 rounded-full px-3 text-xs gap-1.5"
               >
+                <Download className="h-3.5 w-3.5" />
                 Exportar Relatório
               </Button>
             </div>

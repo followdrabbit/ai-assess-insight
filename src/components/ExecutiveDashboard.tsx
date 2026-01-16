@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie } from 'recharts';
+import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   MaturityScoreHelp, 
@@ -477,8 +478,9 @@ export function ExecutiveDashboard({
                 variant="outline" 
                 size="sm"
                 onClick={handleExportReport}
-                className="h-7 rounded-full px-3 text-xs"
+                className="h-7 rounded-full px-3 text-xs gap-1.5"
               >
+                <Download className="h-3.5 w-3.5" />
                 Exportar Relatório
               </Button>
             </div>

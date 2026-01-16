@@ -1,6 +1,7 @@
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
+import { DomainSwitcher } from '@/components/DomainSwitcher';
 
 export default function DashboardExecutive() {
   const {
@@ -29,6 +30,7 @@ export default function DashboardExecutive() {
             Visão estratégica para CISO e liderança de segurança
           </p>
         </div>
+        <DomainSwitcher variant="badge" />
       </div>
 
       <ExecutiveDashboard 

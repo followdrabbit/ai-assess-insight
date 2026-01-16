@@ -14,9 +14,9 @@ export default function Layout() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <SidebarInset className="flex flex-col flex-1">
-          {/* Header */}
-          <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 px-4">
+        <SidebarInset className="flex flex-col flex-1 min-w-0">
+          {/* Header - Mobile optimized */}
+          <header className="sticky top-0 z-50 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 px-2 sm:px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
             <LanguageSelector />
@@ -24,8 +24,8 @@ export default function Layout() {
             <UserMenu />
           </header>
 
-          {/* Main content */}
-          <main className="flex-1 overflow-auto p-6">
+          {/* Main content - Mobile optimized padding */}
+          <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
             <Outlet />
           </main>
 

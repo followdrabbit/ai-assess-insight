@@ -26,33 +26,36 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   return (
     <div className={cn(
-      "card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20",
+      "card-elevated p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20",
       className
     )}>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Title row */}
+          <div className="flex items-start sm:items-center gap-3">
             {Icon && (
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Icon className="h-5 w-5 text-primary" />
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 shrink-0">
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
             )}
-            <div>
-              <h2 className="text-lg font-semibold text-primary">{title}</h2>
-              <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-lg font-semibold text-primary truncate">{title}</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">{subtitle}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          {/* Actions row - stacks on mobile */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {domainSwitcher}
             {onExport && (
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={onExport}
-                className="h-7 rounded-full px-3 text-xs gap-1.5"
+                className="h-7 rounded-full px-2 sm:px-3 text-xs gap-1 sm:gap-1.5"
               >
-                <Download className="h-3.5 w-3.5" />
-                {exportLabel}
+                <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden xs:inline">{exportLabel}</span>
+                <span className="xs:hidden">Export</span>
               </Button>
             )}
           </div>

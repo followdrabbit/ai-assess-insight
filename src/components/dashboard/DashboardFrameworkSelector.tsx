@@ -21,16 +21,16 @@ export function DashboardFrameworkSelector({
   const selectionCount = selectedIds.length;
   
   return (
-    <div className={cn("border-t pt-4", className)}>
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-sm font-medium">Frameworks em Análise</span>
+    <div className={cn("border-t pt-3 sm:pt-4", className)}>
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+        <span className="text-xs sm:text-sm font-medium">Frameworks em Análise</span>
         {helpTooltip}
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[10px] sm:text-xs text-muted-foreground">
           ({selectionCount === 0 ? 'Todos' : `${selectionCount} selecionados`})
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
         {frameworks.map(fw => {
           const isSelected = selectionCount === 0 || selectedIds.includes(fw.frameworkId);
           return (
@@ -38,7 +38,7 @@ export function DashboardFrameworkSelector({
               key={fw.frameworkId}
               variant={isSelected ? "default" : "outline"}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md",
+                "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md text-[10px] sm:text-xs py-0.5 px-1.5 sm:px-2",
                 isSelected 
                   ? "bg-primary hover:bg-primary/90" 
                   : "opacity-50 hover:opacity-100 hover:border-primary/50"
@@ -51,7 +51,7 @@ export function DashboardFrameworkSelector({
         })}
       </div>
 
-      <p className="text-xs text-muted-foreground mt-2">
+      <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2">
         Clique nos frameworks acima para filtrar os dados exibidos.
         {selectionCount > 0 && ` (${selectionCount} selecionados)`}
       </p>

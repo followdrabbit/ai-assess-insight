@@ -1,9 +1,13 @@
 import { Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { UserMenu } from '@/components/auth/UserMenu';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Layout() {
+  const { t } = useTranslation();
+  
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -14,8 +18,9 @@ export default function Layout() {
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
             <div className="text-xs text-muted-foreground hidden sm:block">
-              Dados sincronizados com a nuvem
+              {t('common.cloudSync')}
             </div>
+            <ThemeToggle />
             <UserMenu />
           </header>
 
@@ -27,7 +32,7 @@ export default function Layout() {
           {/* Footer */}
           <footer className="border-t border-border py-3 px-4">
             <div className="text-center text-xs text-muted-foreground">
-              TrustLayer — Plataforma de Governança de Segurança
+              TrustLayer — {t('home.subtitle')}
             </div>
           </footer>
         </SidebarInset>

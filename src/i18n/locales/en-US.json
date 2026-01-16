@@ -34,7 +34,8 @@
     "changeFrameworks": "Change Frameworks",
     "of": "of",
     "answered": "answered",
-    "myAccount": "My Account"
+    "myAccount": "My Account",
+    "cloudSync": "Data synced with cloud"
   },
   "auth": {
     "login": "Sign In",

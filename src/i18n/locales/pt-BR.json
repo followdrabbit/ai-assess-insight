@@ -1112,6 +1112,9 @@
     "entityColumn": "Entidade",
     "entityId": "ID da Entidade",
     "ipAddress": "Endereço IP",
+    "location": "Localização",
+    "country": "País",
+    "city": "Cidade",
     "deviceInfo": "Info do Dispositivo",
     "noEvents": "Nenhum evento de auditoria encontrado",
     "action": {

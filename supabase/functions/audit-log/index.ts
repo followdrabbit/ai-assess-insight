@@ -14,6 +14,15 @@ interface AuditLogRequest {
   sessionId?: string;
 }
 
+interface GeoLocation {
+  country: string | null;
+  countryCode: string | null;
+  city: string | null;
+  region: string | null;
+  timezone: string | null;
+  isp: string | null;
+}
+
 function parseUserAgent(ua: string): { deviceType: string; browserName: string; osName: string } {
   let deviceType = 'desktop';
   let browserName = 'Unknown';
@@ -60,6 +69,64 @@ function getClientIp(req: Request): string | null {
   }
 
   return null;
+}
+
+/**
+ * Fetch geolocation data for an IP address using ip-api.com (free, no API key required)
+ * Rate limit: 45 requests per minute for free tier
+ */
+async function getGeoLocation(ip: string | null): Promise<GeoLocation> {
+  const defaultGeo: GeoLocation = {
+    country: null,
+    countryCode: null,
+    city: null,
+    region: null,
+    timezone: null,
+    isp: null,
+  };
+
+  if (!ip) return defaultGeo;
+
+  // Skip private/local IPs
+  if (ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('172.') || 
+      ip === '127.0.0.1' || ip === 'localhost' || ip === '::1') {
+    return { ...defaultGeo, country: 'Local Network', city: 'Private' };
+  }
+
+  try {
+    // Using ip-api.com - free for non-commercial use, no API key needed
+    // Fields: country, countryCode, region, regionName, city, timezone, isp
+    const response = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,timezone,isp`,
+      { 
+        signal: AbortSignal.timeout(3000) // 3 second timeout
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(`Geo lookup failed for ${ip}: HTTP ${response.status}`);
+      return defaultGeo;
+    }
+
+    const data = await response.json();
+
+    if (data.status === 'fail') {
+      console.warn(`Geo lookup failed for ${ip}: ${data.message}`);
+      return defaultGeo;
+    }
+
+    return {
+      country: data.country || null,
+      countryCode: data.countryCode || null,
+      city: data.city || null,
+      region: data.regionName || data.region || null,
+      timezone: data.timezone || null,
+      isp: data.isp || null,
+    };
+  } catch (error) {
+    console.warn(`Geo lookup error for ${ip}:`, error);
+    return defaultGeo;
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -111,7 +178,10 @@ Deno.serve(async (req: Request) => {
     const sessionId = req.headers.get("x-session-id") || body.sessionId;
     const { deviceType, browserName, osName } = parseUserAgent(userAgent);
 
-    // Insert audit log with detailed metadata
+    // Fetch geolocation data (non-blocking, with timeout)
+    const geoLocation = await getGeoLocation(ipAddress);
+
+    // Insert audit log with detailed metadata including geolocation
     const { data, error } = await supabase
       .from("change_logs")
       .insert({
@@ -126,6 +196,8 @@ Deno.serve(async (req: Request) => {
         device_type: deviceType,
         browser_name: browserName,
         os_name: osName,
+        geo_country: geoLocation.country,
+        geo_city: geoLocation.city,
       })
       .select("id, request_id")
       .single();
@@ -142,7 +214,8 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ 
         success: true, 
         id: data.id,
-        requestId: data.request_id 
+        requestId: data.request_id,
+        geo: geoLocation
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

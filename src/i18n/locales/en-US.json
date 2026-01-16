@@ -1236,6 +1236,23 @@
       "unknown": "Unknown"
     }
   },
+  "aiAssistant": {
+    "title": "Security AI Assistant",
+    "subtitle": "Ask questions about your security posture",
+    "openButton": "AI Assistant",
+    "placeholder": "Type your question...",
+    "listening": "Listening...",
+    "thinking": "Thinking...",
+    "clearChat": "Clear chat",
+    "enableAutoSpeak": "Enable auto-speak",
+    "disableAutoSpeak": "Disable auto-speak",
+    "welcomeTitle": "Welcome to the Security AI Assistant",
+    "welcomeMessage": "I can analyze your security assessment, explain frameworks, and provide recommendations based on your current maturity level.",
+    "suggestedQuestion1": "What are my top priority gaps?",
+    "suggestedQuestion2": "Summarize my security posture",
+    "suggestedQuestion3": "How can I improve my maturity level?",
+    "sttNotSupported": "Voice input not supported in this browser"
+  },
   "errors": {
     "generic": "An error occurred",
     "loadProfile": "Error loading profile",

@@ -1236,6 +1236,23 @@
       "unknown": "Desconocido"
     }
   },
+  "aiAssistant": {
+    "title": "Asistente de Seguridad IA",
+    "subtitle": "Haz preguntas sobre tu postura de seguridad",
+    "openButton": "Asistente IA",
+    "placeholder": "Escribe tu pregunta...",
+    "listening": "Escuchando...",
+    "thinking": "Pensando...",
+    "clearChat": "Limpiar chat",
+    "enableAutoSpeak": "Activar lectura automática",
+    "disableAutoSpeak": "Desactivar lectura automática",
+    "welcomeTitle": "Bienvenido al Asistente de Seguridad IA",
+    "welcomeMessage": "Puedo analizar tu evaluación de seguridad, explicar frameworks y proporcionar recomendaciones basadas en tu nivel de madurez actual.",
+    "suggestedQuestion1": "¿Cuáles son mis brechas prioritarias?",
+    "suggestedQuestion2": "Resume mi postura de seguridad",
+    "suggestedQuestion3": "¿Cómo puedo mejorar mi nivel de madurez?",
+    "sttNotSupported": "Entrada de voz no soportada en este navegador"
+  },
   "errors": {
     "generic": "Ocurrió un error",
     "loadProfile": "Error al cargar perfil",

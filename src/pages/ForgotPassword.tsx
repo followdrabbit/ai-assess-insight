@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ export default function ForgotPassword() {
         setSuccess(true);
       }
     } catch (err) {
-      setError('Ocorreu um erro ao enviar o email de recuperação');
+      setError(t('errors.resetError'));
     } finally {
       setLoading(false);
     }
@@ -46,22 +48,21 @@ export default function ForgotPassword() {
                 <CheckCircle className="h-8 w-8 text-green-500" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold">Email Enviado</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth.resetLinkSent')}</CardTitle>
             <CardDescription>
-              Verifique sua caixa de entrada para redefinir sua senha
+              {t('auth.checkInbox')}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center text-muted-foreground">
             <p>
-              Enviamos um link de recuperação para <strong>{email}</strong>. 
-              Clique no link para criar uma nova senha.
+              {t('forgotPassword.emailSentTo', { email })}
             </p>
           </CardContent>
           <CardFooter className="flex justify-center">
             <Link to="/login">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para Login
+                {t('forgotPassword.backToLogin')}
               </Button>
             </Link>
           </CardFooter>
@@ -79,9 +80,9 @@ export default function ForgotPassword() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Esqueceu a Senha?</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('forgotPassword.title')}</CardTitle>
           <CardDescription>
-            Digite seu email para receber um link de recuperação
+            {t('forgotPassword.description')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -93,11 +94,11 @@ export default function ForgotPassword() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="seu@email.com"
+                placeholder={t('forgotPassword.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -111,12 +112,12 @@ export default function ForgotPassword() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando...
+                  {t('forgotPassword.sending')}
                 </>
               ) : (
                 <>
                   <Mail className="mr-2 h-4 w-4" />
-                  Enviar Link de Recuperação
+                  {t('auth.sendResetLink')}
                 </>
               )}
             </Button>
@@ -124,7 +125,7 @@ export default function ForgotPassword() {
             <Link to="/login" className="w-full">
               <Button variant="outline" className="w-full" type="button">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para Login
+                {t('forgotPassword.backToLogin')}
               </Button>
             </Link>
           </CardFooter>

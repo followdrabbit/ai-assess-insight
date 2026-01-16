@@ -7,10 +7,14 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -156,6 +160,86 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
     return Array.from(frameworks.entries());
   }, [snapshots]);
 
+  // Period comparison data (current month vs previous month)
+  const periodComparison = useMemo(() => {
+    if (snapshots.length === 0) return null;
+
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
+    const previousMonthStart = startOfMonth(subMonths(now, 1));
+    const previousMonthEnd = endOfMonth(subMonths(now, 1));
+
+    const currentMonthSnapshots = snapshots.filter(s => {
+      const date = parseISO(s.snapshotDate);
+      return isWithinInterval(date, { start: currentMonthStart, end: currentMonthEnd });
+    });
+
+    const previousMonthSnapshots = snapshots.filter(s => {
+      const date = parseISO(s.snapshotDate);
+      return isWithinInterval(date, { start: previousMonthStart, end: previousMonthEnd });
+    });
+
+    if (currentMonthSnapshots.length === 0 && previousMonthSnapshots.length === 0) {
+      return null;
+    }
+
+    const avgMetric = (snaps: MaturitySnapshot[], key: 'overallScore' | 'overallCoverage' | 'evidenceReadiness' | 'criticalGaps') => {
+      if (snaps.length === 0) return 0;
+      return snaps.reduce((sum, s) => sum + (key === 'criticalGaps' ? s[key] : s[key] * 100), 0) / snaps.length;
+    };
+
+    const currentMonth = {
+      label: format(currentMonthStart, 'MMMM yyyy', { locale: ptBR }),
+      score: Math.round(avgMetric(currentMonthSnapshots, 'overallScore')),
+      coverage: Math.round(avgMetric(currentMonthSnapshots, 'overallCoverage')),
+      evidence: Math.round(avgMetric(currentMonthSnapshots, 'evidenceReadiness')),
+      gaps: Math.round(avgMetric(currentMonthSnapshots, 'criticalGaps')),
+      dataPoints: currentMonthSnapshots.length
+    };
+
+    const previousMonth = {
+      label: format(previousMonthStart, 'MMMM yyyy', { locale: ptBR }),
+      score: Math.round(avgMetric(previousMonthSnapshots, 'overallScore')),
+      coverage: Math.round(avgMetric(previousMonthSnapshots, 'overallCoverage')),
+      evidence: Math.round(avgMetric(previousMonthSnapshots, 'evidenceReadiness')),
+      gaps: Math.round(avgMetric(previousMonthSnapshots, 'criticalGaps')),
+      dataPoints: previousMonthSnapshots.length
+    };
+
+    const variation = {
+      score: currentMonth.score - previousMonth.score,
+      coverage: currentMonth.coverage - previousMonth.coverage,
+      evidence: currentMonth.evidence - previousMonth.evidence,
+      gaps: currentMonth.gaps - previousMonth.gaps
+    };
+
+    // Chart data for bar comparison
+    const barChartData = [
+      { metric: 'Maturidade', current: currentMonth.score, previous: previousMonth.score },
+      { metric: 'Cobertura', current: currentMonth.coverage, previous: previousMonth.coverage },
+      { metric: 'Evidências', current: currentMonth.evidence, previous: previousMonth.evidence },
+    ];
+
+    return { currentMonth, previousMonth, variation, barChartData };
+  }, [snapshots]);
+
+  // Render trend indicator
+  const TrendIndicator = ({ value, inverted = false }: { value: number; inverted?: boolean }) => {
+    const isPositive = inverted ? value < 0 : value > 0;
+    const isNeutral = value === 0;
+    
+    if (isNeutral) {
+      return <Minus className="h-4 w-4 text-muted-foreground" />;
+    }
+    
+    return isPositive ? (
+      <ArrowUpRight className="h-4 w-4 text-green-600" />
+    ) : (
+      <ArrowDownRight className="h-4 w-4 text-red-600" />
+    );
+  };
+
   if (loading) {
     return (
       <Card className={cn("p-6", className)}>
@@ -205,6 +289,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="overall">Score Geral</TabsTrigger>
+          <TabsTrigger value="comparison">Comparativo</TabsTrigger>
           <TabsTrigger value="domains">Por Domínio</TabsTrigger>
           <TabsTrigger value="frameworks">Por Framework</TabsTrigger>
         </TabsList>
@@ -310,6 +395,143 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                   {overallChartData[overallChartData.length - 1].gaps - overallChartData[0].gaps}
                 </div>
               </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="comparison">
+          {periodComparison ? (
+            <div className="space-y-6">
+              {/* Period Labels */}
+              <div className="flex items-center justify-center gap-8 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <span className="capitalize">{periodComparison.currentMonth.label}</span>
+                  <span className="text-muted-foreground">({periodComparison.currentMonth.dataPoints} pontos)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-muted-foreground/50" />
+                  <span className="capitalize">{periodComparison.previousMonth.label}</span>
+                  <span className="text-muted-foreground">({periodComparison.previousMonth.dataPoints} pontos)</span>
+                </div>
+              </div>
+
+              {/* Bar Chart Comparison */}
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={periodComparison.barChartData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={true} vertical={false} />
+                    <XAxis 
+                      type="number" 
+                      domain={[0, 100]} 
+                      tickFormatter={(value) => `${value}%`}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis 
+                      type="category" 
+                      dataKey="metric" 
+                      tick={{ fontSize: 12 }}
+                      width={80}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--popover))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value: number) => [`${value}%`]}
+                    />
+                    <Bar dataKey="previous" name={periodComparison.previousMonth.label} fill="hsl(var(--muted-foreground))" opacity={0.4} radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="current" name={periodComparison.currentMonth.label} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Detailed Metrics Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Score */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Maturidade</span>
+                    <TrendIndicator value={periodComparison.variation.score} />
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold">{periodComparison.currentMonth.score}%</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.score}%</span>
+                  </div>
+                  <div className={cn(
+                    "text-sm font-medium mt-1",
+                    periodComparison.variation.score > 0 ? "text-green-600" : 
+                    periodComparison.variation.score < 0 ? "text-red-600" : "text-muted-foreground"
+                  )}>
+                    {periodComparison.variation.score > 0 ? '+' : ''}{periodComparison.variation.score}pp
+                  </div>
+                </div>
+
+                {/* Coverage */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Cobertura</span>
+                    <TrendIndicator value={periodComparison.variation.coverage} />
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold">{periodComparison.currentMonth.coverage}%</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.coverage}%</span>
+                  </div>
+                  <div className={cn(
+                    "text-sm font-medium mt-1",
+                    periodComparison.variation.coverage > 0 ? "text-green-600" : 
+                    periodComparison.variation.coverage < 0 ? "text-red-600" : "text-muted-foreground"
+                  )}>
+                    {periodComparison.variation.coverage > 0 ? '+' : ''}{periodComparison.variation.coverage}pp
+                  </div>
+                </div>
+
+                {/* Evidence */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Evidências</span>
+                    <TrendIndicator value={periodComparison.variation.evidence} />
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold">{periodComparison.currentMonth.evidence}%</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.evidence}%</span>
+                  </div>
+                  <div className={cn(
+                    "text-sm font-medium mt-1",
+                    periodComparison.variation.evidence > 0 ? "text-green-600" : 
+                    periodComparison.variation.evidence < 0 ? "text-red-600" : "text-muted-foreground"
+                  )}>
+                    {periodComparison.variation.evidence > 0 ? '+' : ''}{periodComparison.variation.evidence}pp
+                  </div>
+                </div>
+
+                {/* Gaps */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Gaps Críticos</span>
+                    <TrendIndicator value={periodComparison.variation.gaps} inverted />
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold">{periodComparison.currentMonth.gaps}</span>
+                    <span className="text-sm text-muted-foreground">vs {periodComparison.previousMonth.gaps}</span>
+                  </div>
+                  <div className={cn(
+                    "text-sm font-medium mt-1",
+                    periodComparison.variation.gaps < 0 ? "text-green-600" : 
+                    periodComparison.variation.gaps > 0 ? "text-red-600" : "text-muted-foreground"
+                  )}>
+                    {periodComparison.variation.gaps > 0 ? '+' : ''}{periodComparison.variation.gaps}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <p className="text-muted-foreground mb-2">Dados insuficientes para comparação.</p>
+              <p className="text-sm text-muted-foreground">
+                É necessário ter dados em pelo menos dois meses para visualizar a comparação.
+              </p>
             </div>
           )}
         </TabsContent>

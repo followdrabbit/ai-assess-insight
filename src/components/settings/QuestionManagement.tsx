@@ -38,8 +38,19 @@ import {
   ParsedQuestion,
   ExportableQuestion
 } from '@/lib/questionBulkImport';
+import {
+  saveQuestionVersion,
+  getQuestionVersions,
+  getQuestionsVersionCounts,
+  deleteQuestionVersions,
+  compareVersions,
+  QuestionVersion,
+  VersionDiff,
+  CHANGE_TYPE_LABELS,
+  formatVersionDate
+} from '@/lib/questionVersioning';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -138,6 +149,16 @@ export function QuestionManagement() {
   const [exporting, setExporting] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportDomainId, setExportDomainId] = useState<string>('');
+
+  // Versioning state
+  const [showVersionDialog, setShowVersionDialog] = useState(false);
+  const [versioningQuestionId, setVersioningQuestionId] = useState<string>('');
+  const [versioningQuestionText, setVersioningQuestionText] = useState<string>('');
+  const [versions, setVersions] = useState<QuestionVersion[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<QuestionVersion | null>(null);
+  const [versionCounts, setVersionCounts] = useState<Map<string, number>>(new Map());
+  const [reverting, setReverting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -317,6 +338,13 @@ export function QuestionManagement() {
       };
 
       if (editingQuestion) {
+        // Save version before updating
+        await saveQuestionVersion(
+          editingQuestion.questionId,
+          questionData,
+          'update',
+          'Atualização manual'
+        );
         await updateCustomQuestion(editingQuestion.questionId, questionData);
         toast.success('Pergunta atualizada com sucesso');
       } else if (isEditingDefault) {
@@ -325,9 +353,23 @@ export function QuestionManagement() {
           ...questionData,
           isDisabled: false
         });
+        // Save initial version
+        await saveQuestionVersion(
+          formData.questionId,
+          questionData,
+          'create',
+          'Substituição de pergunta padrão'
+        );
         toast.success('Pergunta padrão substituída por versão personalizada');
       } else {
         await createCustomQuestion(questionData);
+        // Save initial version
+        await saveQuestionVersion(
+          formData.questionId,
+          questionData,
+          'create',
+          'Criação inicial'
+        );
         toast.success('Pergunta criada com sucesso');
       }
       await loadData();
@@ -343,6 +385,8 @@ export function QuestionManagement() {
     try {
       if (isCustom) {
         await deleteCustomQuestion(questionId);
+        // Also delete version history
+        await deleteQuestionVersions(questionId);
         toast.success('Pergunta personalizada removida com sucesso');
       } else {
         await disableDefaultQuestion(questionId);
@@ -352,6 +396,74 @@ export function QuestionManagement() {
     } catch (error) {
       toast.error('Erro ao remover pergunta');
       console.error(error);
+    }
+  };
+
+  // Version history handlers
+  const openVersionHistory = async (questionId: string, questionText: string) => {
+    setVersioningQuestionId(questionId);
+    setVersioningQuestionText(questionText);
+    setShowVersionDialog(true);
+    setLoadingVersions(true);
+    setSelectedVersion(null);
+
+    try {
+      const versionHistory = await getQuestionVersions(questionId);
+      setVersions(versionHistory);
+    } catch (error) {
+      console.error('Error loading versions:', error);
+      toast.error('Erro ao carregar histórico de versões');
+    } finally {
+      setLoadingVersions(false);
+    }
+  };
+
+  const handleRevertToVersion = async (version: QuestionVersion) => {
+    if (!version) return;
+
+    setReverting(true);
+    try {
+      // Update the question with the version data
+      await updateCustomQuestion(version.questionId, {
+        questionText: version.questionText,
+        domainId: version.domainId,
+        subcatId: version.subcatId || '',
+        criticality: version.criticality as CriticalityType | undefined,
+        ownershipType: version.ownershipType as OwnershipType | undefined,
+        riskSummary: version.riskSummary || '',
+        expectedEvidence: version.expectedEvidence || '',
+        imperativeChecks: version.imperativeChecks || '',
+        frameworks: version.frameworks || [],
+        securityDomainId: version.securityDomainId || undefined
+      });
+
+      // Save the revert as a new version
+      await saveQuestionVersion(
+        version.questionId,
+        {
+          questionText: version.questionText,
+          domainId: version.domainId,
+          subcatId: version.subcatId,
+          criticality: version.criticality,
+          ownershipType: version.ownershipType,
+          riskSummary: version.riskSummary,
+          expectedEvidence: version.expectedEvidence,
+          imperativeChecks: version.imperativeChecks,
+          frameworks: version.frameworks,
+          securityDomainId: version.securityDomainId
+        },
+        'revert',
+        `Revertido para versão ${version.versionNumber}`
+      );
+
+      toast.success(`Revertido para versão ${version.versionNumber}`);
+      setShowVersionDialog(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error reverting:', error);
+      toast.error('Erro ao reverter versão');
+    } finally {
+      setReverting(false);
     }
   };
 
@@ -683,6 +795,7 @@ export function QuestionManagement() {
             onDelete={handleDelete}
             onToggleDisable={handleToggleDisable}
             onDuplicate={handleDuplicate}
+            onViewHistory={openVersionHistory}
           />
         </TabsContent>
 
@@ -693,6 +806,7 @@ export function QuestionManagement() {
             onDelete={handleDelete}
             onToggleDisable={handleToggleDisable}
             onDuplicate={handleDuplicate}
+            onViewHistory={openVersionHistory}
           />
         </TabsContent>
 
@@ -703,6 +817,7 @@ export function QuestionManagement() {
             onDelete={handleDelete}
             onToggleDisable={handleToggleDisable}
             onDuplicate={handleDuplicate}
+            onViewHistory={openVersionHistory}
           />
         </TabsContent>
       </Tabs>
@@ -1270,6 +1385,150 @@ export function QuestionManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Version History Dialog */}
+      <Dialog open={showVersionDialog} onOpenChange={setShowVersionDialog}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Histórico de Versões
+            </DialogTitle>
+            <DialogDescription className="line-clamp-2">
+              {versioningQuestionText}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {loadingVersions ? (
+              <div className="py-8 text-center text-muted-foreground">
+                Carregando versões...
+              </div>
+            ) : versions.length === 0 ? (
+              <div className="py-8 text-center">
+                <History className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">Nenhuma versão registrada</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  O histórico de versões começa a partir da próxima edição
+                </p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-3 pr-4">
+                  {versions.map((version, index) => (
+                    <Card 
+                      key={version.id} 
+                      className={cn(
+                        "cursor-pointer transition-all hover:border-primary/50",
+                        selectedVersion?.id === version.id && "border-primary bg-primary/5"
+                      )}
+                      onClick={() => setSelectedVersion(version)}
+                    >
+                      <CardContent className="py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="text-xs">
+                                v{version.versionNumber}
+                              </Badge>
+                              <Badge 
+                                variant="secondary" 
+                                className={cn(
+                                  "text-xs",
+                                  version.changeType === 'create' && "bg-green-500/10 text-green-600",
+                                  version.changeType === 'update' && "bg-blue-500/10 text-blue-600",
+                                  version.changeType === 'revert' && "bg-orange-500/10 text-orange-600"
+                                )}
+                              >
+                                {CHANGE_TYPE_LABELS[version.changeType]}
+                              </Badge>
+                              {index === 0 && (
+                                <Badge variant="default" className="text-xs">
+                                  Atual
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm line-clamp-2 text-muted-foreground">
+                              {version.questionText}
+                            </p>
+                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              <span>{formatVersionDate(version.createdAt)}</span>
+                              {version.changeSummary && (
+                                <span className="text-muted-foreground/70">• {version.changeSummary}</span>
+                              )}
+                            </div>
+                          </div>
+                          {index > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRevertToVersion(version);
+                              }}
+                              disabled={reverting}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Reverter
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+
+            {/* Version Details */}
+            {selectedVersion && (
+              <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Detalhes da Versão {selectedVersion.versionNumber}</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedVersion(null)}
+                  >
+                    Fechar
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Área:</span>{' '}
+                    {selectedVersion.domainId}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Criticidade:</span>{' '}
+                    {selectedVersion.criticality || 'Não definida'}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Responsável:</span>{' '}
+                    {selectedVersion.ownershipType || 'Não definido'}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Frameworks:</span>{' '}
+                    {(selectedVersion.frameworks || []).join(', ') || 'Nenhum'}
+                  </div>
+                </div>
+                {selectedVersion.expectedEvidence && (
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Evidência:</span>{' '}
+                    <span className="line-clamp-2">{selectedVersion.expectedEvidence}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowVersionDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1293,9 +1552,10 @@ interface QuestionsListProps {
   onDelete: (questionId: string, isCustom: boolean) => void;
   onToggleDisable: (questionId: string, isDisabled: boolean, isCustom: boolean) => void;
   onDuplicate: (question: QuestionsListProps['questions'][0]) => void;
+  onViewHistory?: (questionId: string, questionText: string) => void;
 }
 
-function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplicate }: QuestionsListProps) {
+function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplicate, onViewHistory }: QuestionsListProps) {
   if (questions.length === 0) {
     return (
       <Card className="border-dashed">
@@ -1348,6 +1608,16 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                   </div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
+                  {q.isCustom && onViewHistory && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => onViewHistory(q.questionId, q.questionText)}
+                      title="Ver histórico de versões"
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="sm"

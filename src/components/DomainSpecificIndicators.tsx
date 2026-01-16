@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
-import { Cloud, Brain, GitBranch, Server, Shield, Workflow, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Cloud, Brain, GitBranch, Server, Shield, Workflow, AlertTriangle, CheckCircle2, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActiveQuestion } from '@/lib/scoring';
 import { Answer } from '@/lib/database';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { DomainIndicatorsTrendChart } from '@/components/DomainIndicatorsTrendChart';
 
 interface DomainSpecificIndicatorsProps {
   securityDomainId: string;
@@ -378,69 +380,92 @@ export function DomainSpecificIndicators({ securityDomainId, questions, answers 
     }
   }, [securityDomainId]);
 
+  const [showTrend, setShowTrend] = useState(false);
+
   return (
-    <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-muted-foreground">{domainLabel}</h3>
-        <DomainHelpPopover securityDomainId={securityDomainId} />
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {indicators.map((indicator) => (
-          <TooltipProvider key={indicator.id}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={cn(
-                  "p-4 rounded-lg border transition-all hover:shadow-md hover:scale-[1.02] cursor-help",
-                  indicator.bgColor
-                )}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={cn("p-1.5 rounded-md", indicator.bgColor, indicator.color)}>
-                      {indicator.icon}
+    <div className="space-y-4">
+      <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-muted-foreground">{domainLabel}</h3>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowTrend(!showTrend)}
+            >
+              {showTrend ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {showTrend ? 'Ocultar tendência' : 'Ver tendência'}
+            </Button>
+            <DomainHelpPopover securityDomainId={securityDomainId} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {indicators.map((indicator) => (
+            <TooltipProvider key={indicator.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={cn(
+                    "p-4 rounded-lg border transition-all hover:shadow-md hover:scale-[1.02] cursor-help",
+                    indicator.bgColor
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={cn("p-1.5 rounded-md", indicator.bgColor, indicator.color)}>
+                        {indicator.icon}
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground truncate">
+                        {indicator.label}
+                      </span>
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground truncate">
-                      {indicator.label}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={cn("text-2xl font-bold", indicator.color)}>
-                      {Math.round(indicator.percentage)}%
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({indicator.value}/{indicator.total})
-                    </span>
-                  </div>
-                  {indicator.frameworkRef && (
-                    <div className="text-[10px] text-muted-foreground/70 mt-1 truncate">
-                      {indicator.frameworkRef}
+                    <div className="flex items-baseline gap-1.5">
+                      <span className={cn("text-2xl font-bold", indicator.color)}>
+                        {Math.round(indicator.percentage)}%
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({indicator.value}/{indicator.total})
+                      </span>
                     </div>
-                  )}
-                  <div className="mt-2 w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className={cn("h-full rounded-full transition-all duration-500")}
-                      style={{ 
-                        width: `${indicator.percentage}%`,
-                        backgroundColor: `hsl(var(--${indicator.color.replace('text-', '').split('-')[0]}-500))` 
-                      }}
-                    />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-sm p-3">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{indicator.label}</p>
-                  <p className="text-xs text-muted-foreground">{indicator.detailedHelp || indicator.description}</p>
-                  <div className="flex items-center justify-between text-xs pt-1 border-t">
-                    <span className="text-muted-foreground">{indicator.value} de {indicator.total} questões atendidas</span>
                     {indicator.frameworkRef && (
-                      <span className="text-primary/70 font-mono text-[10px]">{indicator.frameworkRef}</span>
+                      <div className="text-[10px] text-muted-foreground/70 mt-1 truncate">
+                        {indicator.frameworkRef}
+                      </div>
                     )}
+                    <div className="mt-2 w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={cn("h-full rounded-full transition-all duration-500")}
+                        style={{ 
+                          width: `${indicator.percentage}%`,
+                          backgroundColor: `hsl(var(--${indicator.color.replace('text-', '').split('-')[0]}-500))` 
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ))}
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-sm p-3">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">{indicator.label}</p>
+                    <p className="text-xs text-muted-foreground">{indicator.detailedHelp || indicator.description}</p>
+                    <div className="flex items-center justify-between text-xs pt-1 border-t">
+                      <span className="text-muted-foreground">{indicator.value} de {indicator.total} questões atendidas</span>
+                      {indicator.frameworkRef && (
+                        <span className="text-primary/70 font-mono text-[10px]">{indicator.frameworkRef}</span>
+                      )}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
+        </div>
       </div>
+
+      {/* Trend Chart - Collapsible */}
+      {showTrend && (
+        <DomainIndicatorsTrendChart 
+          securityDomainId={securityDomainId}
+          className="animate-in fade-in-0 slide-in-from-top-4 duration-300"
+        />
+      )}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Briefcase } from 'lucide-react';
 
 export default function DashboardExecutive() {
+  const { t } = useTranslation();
   const {
     isLoading,
     questionsLoading,
@@ -24,7 +26,7 @@ export default function DashboardExecutive() {
   } = useDashboardMetrics();
 
   if (isLoading || questionsLoading) {
-    return <div className="flex items-center justify-center h-64">Carregando...</div>;
+    return <div className="flex items-center justify-center h-64">{t('dashboard.loading')}</div>;
   }
 
   return (
@@ -37,8 +39,8 @@ export default function DashboardExecutive() {
       {/* Breadcrumb */}
       <PageBreadcrumb 
         items={[
-          { label: 'Dashboards', href: '/dashboard' },
-          { label: 'Executivo', icon: Briefcase }
+          { label: t('dashboard.dashboards'), href: '/dashboard' },
+          { label: t('navigation.executive'), icon: Briefcase }
         ]} 
       />
 

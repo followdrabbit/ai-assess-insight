@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Wrench, Download } from 'lucide-react';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -69,6 +70,7 @@ const criticalityOrder: Record<string, number> = {
 
 export default function DashboardSpecialist() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Use centralized dashboard metrics hook
   const {
@@ -694,7 +696,7 @@ export default function DashboardSpecialist() {
   };
 
   if (isLoading || questionsLoading) {
-    return <div className="flex items-center justify-center h-64">Carregando...</div>;
+    return <div className="flex items-center justify-center h-64">{t('dashboard.loading')}</div>;
   }
 
   return (
@@ -707,15 +709,15 @@ export default function DashboardSpecialist() {
       {/* Breadcrumb */}
       <PageBreadcrumb 
         items={[
-          { label: 'Dashboards', href: '/dashboard' },
-          { label: 'Especialista', icon: Wrench }
+          { label: t('dashboard.dashboards'), href: '/dashboard' },
+          { label: t('navigation.specialist'), icon: Wrench }
         ]} 
       />
 
       {/* Header with Domain Switcher and Framework Selector */}
       <DashboardHeader
-        title="Dashboard Especialista - Detalhes Técnicos"
-        subtitle="Arquiteto / Engenheiro - Implementação e gaps técnicos"
+        title={t('dashboard.specialistTitle')}
+        subtitle={t('dashboard.specialistSubtitle')}
         icon={Wrench}
         domainSwitcher={<DomainSwitcher variant="badge" />}
         onExport={handleExportReport}
@@ -736,7 +738,7 @@ export default function DashboardSpecialist() {
           className="cursor-pointer transition-all duration-200 hover:scale-105"
           onClick={() => setCriticalityFilter('all')}
         >
-          Todos Gaps ({quickStats.totalGaps})
+          {t('dashboard.allGaps')} ({quickStats.totalGaps})
         </Badge>
         <Badge 
           variant={criticalityFilter === 'Critical' ? 'default' : 'outline'}
@@ -746,7 +748,7 @@ export default function DashboardSpecialist() {
           )}
           onClick={() => setCriticalityFilter('Critical')}
         >
-          Críticos ({quickStats.criticalCount})
+          {t('dashboard.critical')} ({quickStats.criticalCount})
         </Badge>
         <Badge 
           variant={criticalityFilter === 'High' ? 'default' : 'outline'}
@@ -756,7 +758,7 @@ export default function DashboardSpecialist() {
           )}
           onClick={() => setCriticalityFilter('High')}
         >
-          Alto ({quickStats.highCount})
+          {t('dashboard.high')} ({quickStats.highCount})
         </Badge>
         <span className="border-l border-border mx-2" />
         <Badge 
@@ -767,7 +769,7 @@ export default function DashboardSpecialist() {
           )}
           onClick={() => setResponseFilter(responseFilter === 'Não respondido' ? 'all' : 'Não respondido')}
         >
-          Pendentes ({quickStats.notRespondedCount})
+          {t('dashboard.pending')} ({quickStats.notRespondedCount})
         </Badge>
         <Badge 
           variant={responseFilter === 'Não' ? 'default' : 'outline'}
@@ -777,7 +779,7 @@ export default function DashboardSpecialist() {
           )}
           onClick={() => setResponseFilter(responseFilter === 'Não' ? 'all' : 'Não')}
         >
-          Ausentes ({quickStats.noCount})
+          {t('dashboard.absent')} ({quickStats.noCount})
         </Badge>
         <Badge 
           variant={responseFilter === 'Parcial' ? 'default' : 'outline'}
@@ -787,39 +789,39 @@ export default function DashboardSpecialist() {
           )}
           onClick={() => setResponseFilter(responseFilter === 'Parcial' ? 'all' : 'Parcial')}
         >
-          Parciais ({quickStats.partialCount})
+          {t('dashboard.partial')} ({quickStats.partialCount})
         </Badge>
       </div>
 
       {/* Specialist KPIs - Standardized */}
       <DashboardKPIGrid columns={4}>
         <DashboardKPICard
-          label="Total de Perguntas"
+          label={t('dashboard.totalQuestions')}
           value={metrics.totalQuestions}
-          subtitle={`Em ${metrics.domainMetrics.length} domínios`}
+          subtitle={t('dashboard.inDomains', { count: metrics.domainMetrics.length })}
           animationDelay={0}
         />
         <DashboardKPICard
-          label="Respondidas"
+          label={t('dashboard.responseAnswers')}
           value={metrics.answeredQuestions}
           progress={metrics.coverage * 100}
-          subtitle={`${Math.round(metrics.coverage * 100)}% de cobertura`}
+          subtitle={`${Math.round(metrics.coverage * 100)}% ${t('dashboard.coverage').toLowerCase()}`}
           animationDelay={75}
           variant="success"
         />
         <DashboardKPICard
-          label="Controles Ausentes"
+          label={t('dashboard.missingControls')}
           value={quickStats.noCount + quickStats.notRespondedCount}
           progress={metrics.totalQuestions > 0 ? ((quickStats.noCount + quickStats.notRespondedCount) / metrics.totalQuestions) * 100 : 0}
-          subtitle='Resposta "Não" ou pendente'
+          subtitle={t('dashboard.noOrUnanswered')}
           animationDelay={150}
           variant="danger"
         />
         <DashboardKPICard
-          label="Controles Parciais"
+          label={t('dashboard.partialControls')}
           value={quickStats.partialCount}
           progress={metrics.totalQuestions > 0 ? (quickStats.partialCount / metrics.totalQuestions) * 100 : 0}
-          subtitle="Implementação incompleta"
+          subtitle={t('dashboard.incompleteImplementation')}
           animationDelay={225}
           variant="warning"
         />
@@ -835,25 +837,25 @@ export default function DashboardSpecialist() {
       {/* Technical Roadmap - Standardized */}
       <DashboardRoadmapGrid
         items={roadmap}
-        title="Roadmap Técnico"
-        subtitle="Remediações priorizadas por impacto técnico"
+        title={t('dashboard.technicalRoadmap')}
+        subtitle={t('dashboard.technicalRoadmapSubtitle')}
         helpTooltip={<DomainRoadmapHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />}
         animationDelay={300}
         maxItemsPerColumn={6}
         columnConfig={{
-          immediate: { label: 'Urgente (0-30 dias)' },
-          short: { label: 'Curto prazo (30-60 dias)' },
-          medium: { label: 'Médio prazo (60-90 dias)' },
+          immediate: { label: t('dashboard.urgentDays') },
+          short: { label: t('dashboard.shortTermDays') },
+          medium: { label: t('dashboard.mediumTermDays') },
         }}
       />
 
       {/* Tabs for different views */}
       <Tabs defaultValue="gaps" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="gaps">Gaps Técnicos</TabsTrigger>
-          <TabsTrigger value="heatmap">Mapa de Calor</TabsTrigger>
-          <TabsTrigger value="domains">Por Domínio</TabsTrigger>
-          <TabsTrigger value="frameworks">Frameworks</TabsTrigger>
+          <TabsTrigger value="gaps">{t('dashboard.technicalGaps')}</TabsTrigger>
+          <TabsTrigger value="heatmap">{t('dashboard.subcategoryHeatmap')}</TabsTrigger>
+          <TabsTrigger value="domains">{t('dashboard.byDomain')}</TabsTrigger>
+          <TabsTrigger value="frameworks">{t('dashboard.byFramework')}</TabsTrigger>
         </TabsList>
 
         {/* Technical Gaps Tab */}

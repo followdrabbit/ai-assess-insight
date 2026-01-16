@@ -302,7 +302,6 @@ export async function setSelectedSecurityDomain(domainId: string): Promise<void>
   
   if (error) throw error;
 }
-}
 
 // ============ CUSTOM FRAMEWORKS CRUD ============
 export async function getAllCustomFrameworks(): Promise<CustomFramework[]> {

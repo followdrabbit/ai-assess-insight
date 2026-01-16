@@ -34,7 +34,8 @@
     "changeFrameworks": "Cambiar Frameworks",
     "of": "de",
     "answered": "respondidas",
-    "myAccount": "Mi Cuenta"
+    "myAccount": "Mi Cuenta",
+    "cloudSync": "Datos sincronizados con la nube"
   },
   "auth": {
     "login": "Iniciar Sesión",

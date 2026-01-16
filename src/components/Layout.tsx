@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/s
 import { AppSidebar } from '@/components/AppSidebar';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 export default function Layout() {
   const { t } = useTranslation();
@@ -20,6 +21,7 @@ export default function Layout() {
             <div className="text-xs text-muted-foreground hidden sm:block">
               {t('common.cloudSync')}
             </div>
+            <LanguageSelector />
             <ThemeToggle />
             <UserMenu />
           </header>

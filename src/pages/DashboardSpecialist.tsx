@@ -2047,7 +2047,7 @@ export default function DashboardSpecialist() {
                   <div>
                     <DialogTitle className="text-left">{selectedFrameworkCategoryDetails.name}</DialogTitle>
                     <DialogDescription className="text-left">
-                      Categoria de Framework · {selectedFrameworkCategoryDetails.maturityLevel.name}
+                      {t('dashboard.frameworkCategoryLabel')} · {selectedFrameworkCategoryDetails.maturityLevel.name}
                     </DialogDescription>
                   </div>
                 </div>
@@ -2059,25 +2059,25 @@ export default function DashboardSpecialist() {
                   <div className="text-2xl font-bold" style={{ color: selectedFrameworkCategoryDetails.color }}>
                     {selectedFrameworkCategoryDetails.score}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.maturity')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedFrameworkCategoryDetails.coverage}%</div>
-                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.coverage')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedFrameworkCategoryDetails.answeredQuestions}/{selectedFrameworkCategoryDetails.totalQuestions}</div>
-                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.answeredCount')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold text-destructive">{selectedFrameworkCategoryDetails.gaps.length}</div>
-                  <div className="text-xs text-muted-foreground">Gaps</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.gaps')}</div>
                 </div>
               </div>
 
               {/* Response Breakdown */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
-                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <h4 className="font-medium text-sm mb-2">{t('dashboard.responseDistributionTitle')}</h4>
                 <div className="flex gap-2 flex-wrap">
                   {Object.entries(selectedFrameworkCategoryDetails.responseBreakdown).map(([key, value]) => (
                     value > 0 && (
@@ -2102,7 +2102,7 @@ export default function DashboardSpecialist() {
               {/* Gaps by Criticality */}
               {selectedFrameworkCategoryDetails.gaps.length > 0 && (
                 <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
-                  <h4 className="font-medium text-sm mb-2">Gaps por Criticidade</h4>
+                  <h4 className="font-medium text-sm mb-2">{t('dashboard.gapsByCriticality')}</h4>
                   <div className="flex gap-2 flex-wrap">
                     {Object.entries(selectedFrameworkCategoryDetails.gapsByCriticality).map(([key, value]) => (
                       value > 0 && (
@@ -2122,7 +2122,7 @@ export default function DashboardSpecialist() {
               {selectedFrameworkCategoryDetails.gaps.length > 0 && (
                 <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
                   <h4 className="font-medium text-sm mb-2">
-                    Gaps Identificados ({selectedFrameworkCategoryDetails.gaps.length})
+                    {t('dashboard.gapsIdentifiedCount', { count: selectedFrameworkCategoryDetails.gaps.length })}
                   </h4>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {selectedFrameworkCategoryDetails.gaps.slice(0, 20).map((gap, idx) => (
@@ -2157,13 +2157,13 @@ export default function DashboardSpecialist() {
                             navigate(`/assessment?questionId=${gap.questionId}`);
                           }}
                         >
-                          Revisar
+                          {t('dashboard.review')}
                         </Button>
                       </div>
                     ))}
                     {selectedFrameworkCategoryDetails.gaps.length > 20 && (
                       <p className="text-xs text-muted-foreground text-center py-2">
-                        Mostrando 20 de {selectedFrameworkCategoryDetails.gaps.length} gaps
+                        {t('dashboard.showingOfGaps', { showing: 20, total: selectedFrameworkCategoryDetails.gaps.length })}
                       </p>
                     )}
                   </div>
@@ -2176,7 +2176,7 @@ export default function DashboardSpecialist() {
                   variant="outline" 
                   onClick={() => setSelectedFrameworkCategory(null)}
                 >
-                  Fechar
+                  {t('dashboard.close')}
                 </Button>
               </div>
             </>
@@ -2199,7 +2199,7 @@ export default function DashboardSpecialist() {
                   <div>
                     <DialogTitle className="text-left">{selectedFrameworkDetails.name}</DialogTitle>
                     <DialogDescription className="text-left">
-                      Framework · {selectedFrameworkDetails.answeredQuestions} de {selectedFrameworkDetails.totalQuestions} perguntas
+                      {t('dashboard.frameworkLabel')} · {t('dashboard.questionsOfTotal', { answered: selectedFrameworkDetails.answeredQuestions, total: selectedFrameworkDetails.totalQuestions })}
                     </DialogDescription>
                   </div>
                 </div>
@@ -2211,34 +2211,34 @@ export default function DashboardSpecialist() {
                   <div className="text-2xl font-bold text-primary">
                     {Math.round(selectedFrameworkDetails.score * 100)}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.maturity')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{Math.round(selectedFrameworkDetails.coverage * 100)}%</div>
-                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.coverage')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold">{selectedFrameworkDetails.answeredQuestions}/{selectedFrameworkDetails.totalQuestions}</div>
-                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.answeredCount')}</div>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 slide-in-from-bottom-2 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
                   <div className="text-2xl font-bold text-destructive">{selectedFrameworkDetails.gaps.length}</div>
-                  <div className="text-xs text-muted-foreground">Gaps</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.gaps')}</div>
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
                 <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Progresso da Avaliação</span>
-                  <span className="font-medium">{selectedFrameworkDetails.answeredQuestions} de {selectedFrameworkDetails.totalQuestions}</span>
+                  <span className="text-muted-foreground">{t('dashboard.assessmentProgress')}</span>
+                  <span className="font-medium">{selectedFrameworkDetails.answeredQuestions} {t('dashboard.of')} {selectedFrameworkDetails.totalQuestions}</span>
                 </div>
                 <Progress value={selectedFrameworkDetails.coverage * 100} className="h-2" />
               </div>
 
               {/* Response Breakdown */}
               <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
-                <h4 className="font-medium text-sm mb-2">Distribuição de Respostas</h4>
+                <h4 className="font-medium text-sm mb-2">{t('dashboard.responseDistributionTitle')}</h4>
                 <div className="flex gap-2 flex-wrap">
                   {Object.entries(selectedFrameworkDetails.responseBreakdown).map(([key, value]) => (
                     value > 0 && (
@@ -2264,7 +2264,7 @@ export default function DashboardSpecialist() {
               {selectedFrameworkDetails.gaps.length > 0 && (
                 <div className="mt-4 animate-in fade-in-0 duration-300" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
                   <h4 className="font-medium text-sm mb-2">
-                    Gaps por Domínio ({selectedFrameworkDetails.gaps.length})
+                    {t('dashboard.gapsByDomain', { count: selectedFrameworkDetails.gaps.length })}
                   </h4>
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {Object.entries(selectedFrameworkDetails.byDomain).map(([domainName, gaps], domainIdx) => (
@@ -2311,7 +2311,7 @@ export default function DashboardSpecialist() {
                                     navigate(`/assessment?questionId=${gap.questionId}`);
                                   }}
                                 >
-                                  Revisar
+                                  {t('dashboard.review')}
                                 </Button>
                               </div>
                             ))}
@@ -2329,7 +2329,7 @@ export default function DashboardSpecialist() {
                   variant="outline" 
                   onClick={() => setSelectedFramework(null)}
                 >
-                  Fechar
+                  {t('dashboard.close')}
                 </Button>
                 {selectedFrameworkDetails.questions.length > 0 && (
                   <Button 
@@ -2338,7 +2338,7 @@ export default function DashboardSpecialist() {
                       navigate(`/assessment?questionId=${selectedFrameworkDetails.questions[0].questionId}`);
                     }}
                   >
-                    Iniciar Avaliação
+                    {t('dashboard.startEvaluation')}
                   </Button>
                 )}
               </div>

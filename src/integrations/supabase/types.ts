@@ -602,6 +602,12 @@ export type Database = {
           role: string | null
           updated_at: string
           user_id: string
+          voice_auto_speak: boolean | null
+          voice_language: string | null
+          voice_name: string | null
+          voice_pitch: number | null
+          voice_rate: number | null
+          voice_volume: number | null
         }
         Insert: {
           created_at?: string
@@ -617,6 +623,12 @@ export type Database = {
           role?: string | null
           updated_at?: string
           user_id: string
+          voice_auto_speak?: boolean | null
+          voice_language?: string | null
+          voice_name?: string | null
+          voice_pitch?: number | null
+          voice_rate?: number | null
+          voice_volume?: number | null
         }
         Update: {
           created_at?: string
@@ -632,6 +644,12 @@ export type Database = {
           role?: string | null
           updated_at?: string
           user_id?: string
+          voice_auto_speak?: boolean | null
+          voice_language?: string | null
+          voice_name?: string | null
+          voice_pitch?: number | null
+          voice_rate?: number | null
+          voice_volume?: number | null
         }
         Relationships: []
       }

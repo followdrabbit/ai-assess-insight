@@ -373,7 +373,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         <TabsContent value="overall">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={overallChartData}>
+              <LineChart key={`${activeTab}-${daysBack}-${snapshots.length}`} data={overallChartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="dateFormatted" 
@@ -410,6 +410,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                   stroke="hsl(var(--primary))" 
                   strokeWidth={2}
                   dot={{ r: 3 }}
+                  connectNulls
+                  isAnimationActive={false}
                   name="Maturidade"
                 />
                 <Line 
@@ -758,7 +760,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         <TabsContent value="domains">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={domainChartData}>
+              <LineChart key={`${activeTab}-${daysBack}-${snapshots.length}`} data={domainChartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="dateFormatted" 
@@ -800,7 +802,7 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         <TabsContent value="frameworks">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={frameworkChartData}>
+              <LineChart key={`${activeTab}-${daysBack}-${snapshots.length}`} data={frameworkChartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="dateFormatted" 

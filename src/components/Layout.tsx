@@ -19,9 +19,6 @@ export default function Layout() {
           <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
-            <div className="text-xs text-muted-foreground hidden sm:block">
-              {t('common.cloudSync')}
-            </div>
             <LanguageSelector />
             <ThemeToggle />
             <UserMenu />

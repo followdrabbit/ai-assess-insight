@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import {
   Shield,
   ClipboardCheck,
@@ -12,8 +13,12 @@ import {
   ArrowRight,
   PlayCircle,
   Sparkles,
+  Home as HomeIcon,
 } from 'lucide-react';
 
+const breadcrumbItems = [
+  { label: 'Início', icon: HomeIcon }
+];
 const features = [
   {
     icon: ClipboardCheck,
@@ -78,6 +83,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-12 py-8">
+      {/* Breadcrumb */}
+      <PageBreadcrumb items={breadcrumbItems} className="mb-2" />
+
       {/* Hero Section */}
       <section className="text-center space-y-6 py-12">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">

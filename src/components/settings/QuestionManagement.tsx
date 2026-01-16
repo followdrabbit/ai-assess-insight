@@ -230,10 +230,23 @@ export function QuestionManagement() {
     ...customFrameworksList
   ], [customFrameworksList]);
 
-  // Enabled frameworks only (for filter dropdown)
+  // Frameworks that have at least one question (for filter dropdown)
+  const frameworksWithQuestions = useMemo(() => {
+    const allQs = [...defaultQuestions, ...customQuestions];
+    const fwSet = new Set<string>();
+    allQs.forEach(q => {
+      q.frameworks.forEach(fw => fwSet.add(fw.toUpperCase()));
+    });
+    return fwSet;
+  }, [customQuestions]);
+
+  // Enabled frameworks only, filtered to those with questions
   const enabledFrameworkOptions = useMemo(() => {
-    return allFrameworkOptions.filter(fw => enabledFrameworkIds.includes(fw.frameworkId));
-  }, [allFrameworkOptions, enabledFrameworkIds]);
+    return allFrameworkOptions.filter(fw => 
+      enabledFrameworkIds.includes(fw.frameworkId) && 
+      frameworksWithQuestions.has(fw.frameworkId.toUpperCase())
+    );
+  }, [allFrameworkOptions, enabledFrameworkIds, frameworksWithQuestions]);
 
   // Get domains for selected security domain in form
   const filteredTaxonomyDomains = useMemo(() => {

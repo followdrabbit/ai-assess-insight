@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Users, Download } from 'lucide-react';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -62,6 +63,7 @@ type SortOrder = 'asc' | 'desc';
 
 export default function DashboardGRC() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Use centralized dashboard metrics hook
   const {
@@ -507,7 +509,7 @@ export default function DashboardGRC() {
   };
 
   if (isLoading || questionsLoading) {
-    return <div className="flex items-center justify-center h-64">Carregando...</div>;
+    return <div className="flex items-center justify-center h-64">{t('dashboard.loading')}</div>;
   }
   return (
     <div 
@@ -519,15 +521,15 @@ export default function DashboardGRC() {
       {/* Breadcrumb */}
       <PageBreadcrumb 
         items={[
-          { label: 'Dashboards', href: '/dashboard' },
-          { label: 'GRC', icon: Users }
+          { label: t('dashboard.dashboards'), href: '/dashboard' },
+          { label: t('navigation.grc'), icon: Users }
         ]} 
       />
 
       {/* Header with Domain Switcher and Framework Selector */}
       <DashboardHeader
-        title="Dashboard GRC - Governança, Riscos e Compliance"
-        subtitle="Foco em cobertura e evidências"
+        title={t('dashboard.grcTitle')}
+        subtitle={t('dashboard.grcSubtitle')}
         icon={Users}
         domainSwitcher={<DomainSwitcher variant="badge" />}
         onExport={handleExportReport}
@@ -548,7 +550,7 @@ export default function DashboardGRC() {
           className="cursor-pointer transition-all duration-200 hover:scale-105"
           onClick={() => setStatusFilter('all')}
         >
-          Todos ({quickStats.totalDomains})
+          {t('dashboard.all')} ({quickStats.totalDomains})
         </Badge>
         <Badge 
           variant={statusFilter === 'incomplete' ? 'default' : 'outline'}
@@ -558,7 +560,7 @@ export default function DashboardGRC() {
           )}
           onClick={() => setStatusFilter('incomplete')}
         >
-          Incompletos ({quickStats.incompleteCount})
+          {t('dashboard.incomplete')} ({quickStats.incompleteCount})
         </Badge>
         <Badge 
           variant={statusFilter === 'at-risk' ? 'default' : 'outline'}
@@ -568,7 +570,7 @@ export default function DashboardGRC() {
           )}
           onClick={() => setStatusFilter('at-risk')}
         >
-          Em Risco ({quickStats.atRiskCount})
+          {t('dashboard.atRisk')} ({quickStats.atRiskCount})
         </Badge>
         <Badge 
           variant={statusFilter === 'on-track' ? 'default' : 'outline'}
@@ -578,45 +580,45 @@ export default function DashboardGRC() {
           )}
           onClick={() => setStatusFilter('on-track')}
         >
-          Adequados ({quickStats.onTrackCount})
+          {t('dashboard.onTrack')} ({quickStats.onTrackCount})
         </Badge>
       </div>
 
       {/* GRC KPI Cards - Standardized */}
       <DashboardKPIGrid columns={4}>
         <DashboardKPICard
-          label="Cobertura Geral"
+          label={t('dashboard.overallCoverage')}
           value={Math.round(metrics.coverage * 100)}
           suffix="%"
           helpTooltip={<CoverageHelp />}
           progress={metrics.coverage * 100}
-          subtitle={`${metrics.answeredQuestions} de ${metrics.totalQuestions}`}
+          subtitle={`${metrics.answeredQuestions} ${t('dashboard.of')} ${metrics.totalQuestions}`}
           animationDelay={0}
         />
         <DashboardKPICard
-          label="Prontidão de Evidências"
+          label={t('dashboard.evidenceReadiness')}
           value={Math.round(metrics.evidenceReadiness * 100)}
           suffix="%"
           helpTooltip={<EvidenceReadinessHelp />}
           progress={metrics.evidenceReadiness * 100}
-          subtitle="Para auditoria"
+          subtitle={t('dashboard.forAudit')}
           animationDelay={75}
           variant="success"
         />
         <DashboardKPICard
-          label="Score Geral"
+          label={t('dashboard.overallScore')}
           value={Math.round(metrics.overallScore * 100)}
           suffix="%"
           helpTooltip={<MaturityScoreHelp />}
-          subtitle={`Meta recomendada: 70%+`}
+          subtitle={t('dashboard.recommendedGoal')}
           animationDelay={150}
           variant="warning"
         />
         <DashboardKPICard
-          label="Gaps Críticos"
+          label={t('dashboard.criticalGaps')}
           value={quickStats.criticalGapsCount}
           helpTooltip={<DomainCriticalGapsHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />}
-          subtitle={quickStats.criticalGapsCount > 0 ? 'Ação prioritária necessária' : 'Nenhum gap crítico'}
+          subtitle={quickStats.criticalGapsCount > 0 ? t('dashboard.priorityActionNeeded') : t('dashboard.noCriticalGaps')}
           animationDelay={225}
           variant="danger"
         />
@@ -632,8 +634,8 @@ export default function DashboardGRC() {
       {/* Strategic Roadmap - Standardized */}
       <DashboardRoadmapGrid
         items={roadmap}
-        title="Roadmap Estratégico"
-        subtitle="Ações prioritárias para os próximos 90 dias"
+        title={t('dashboard.strategicRoadmap')}
+        subtitle={t('dashboard.roadmapSubtitle')}
         helpTooltip={<DomainRoadmapHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />}
         animationDelay={300}
         maxItemsPerColumn={5}
@@ -642,10 +644,10 @@ export default function DashboardGRC() {
       {/* Tabs for different views */}
       <Tabs defaultValue="domains" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="domains" className="gap-1">Por Domínio</TabsTrigger>
-          <TabsTrigger value="frameworks">Por Framework</TabsTrigger>
-          <TabsTrigger value="gaps">Gaps Críticos</TabsTrigger>
-          <TabsTrigger value="ownership">Por Responsável</TabsTrigger>
+          <TabsTrigger value="domains" className="gap-1">{t('dashboard.byDomain')}</TabsTrigger>
+          <TabsTrigger value="frameworks">{t('dashboard.byFramework')}</TabsTrigger>
+          <TabsTrigger value="gaps">{t('dashboard.criticalGaps')}</TabsTrigger>
+          <TabsTrigger value="ownership">{t('dashboard.byOwner')}</TabsTrigger>
         </TabsList>
 
         {/* Domains Tab */}

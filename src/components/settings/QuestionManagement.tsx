@@ -142,6 +142,7 @@ export function QuestionManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDomain, setFilterDomain] = useState<string>('all');
   const [filterSecurityDomain, setFilterSecurityDomain] = useState<string>('all');
+  const [filterFramework, setFilterFramework] = useState<string>('all');
 
   // Bulk import state
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
@@ -256,9 +257,11 @@ export function QuestionManagement() {
       const matchesSecurityDomain = filterSecurityDomain === 'all' || 
         (q as any).securityDomainId === filterSecurityDomain ||
         taxonomyDomains.find(d => d.domainId === q.domainId)?.securityDomainId === filterSecurityDomain;
-      return matchesSearch && matchesDomain && matchesSecurityDomain;
+      const matchesFramework = filterFramework === 'all' || 
+        q.frameworks.some(fw => fw.toLowerCase().includes(filterFramework.toLowerCase()));
+      return matchesSearch && matchesDomain && matchesSecurityDomain && matchesFramework;
     });
-  }, [allQuestions, searchQuery, filterDomain, filterSecurityDomain, taxonomyDomains]);
+  }, [allQuestions, searchQuery, filterDomain, filterSecurityDomain, filterFramework, taxonomyDomains]);
 
   const getSecurityDomainInfo = (domainId: string) => {
     const taxDomain = taxonomyDomains.find(d => d.domainId === domainId);
@@ -735,16 +738,29 @@ export function QuestionManagement() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
-        <div className="flex-1">
+      <div className="flex gap-4 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
           <Input
             placeholder="Buscar por texto ou ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        <Select value={filterFramework} onValueChange={setFilterFramework}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filtrar por framework" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os frameworks</SelectItem>
+            {allFrameworkOptions.map(fw => (
+              <SelectItem key={fw.frameworkId} value={fw.frameworkId}>
+                {fw.shortName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={filterDomain} onValueChange={setFilterDomain}>
-          <SelectTrigger className="w-56">
+          <SelectTrigger className="w-48">
             <SelectValue placeholder="Filtrar por área" />
           </SelectTrigger>
           <SelectContent>

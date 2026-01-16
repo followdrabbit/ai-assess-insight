@@ -70,8 +70,9 @@ export async function saveQuestionVersion(
       return null;
     }
 
-    const nextVersion = existingVersions && existingVersions.length > 0 
-      ? existingVersions[0].version_number + 1 
+    const versionsList = existingVersions as unknown as { version_number: number }[] | null;
+    const nextVersion = versionsList && versionsList.length > 0 
+      ? versionsList[0].version_number + 1 
       : 1;
 
     // Insert the new version

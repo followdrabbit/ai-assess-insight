@@ -23,47 +23,45 @@ import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
 import { SettingsSearch } from '@/components/settings/SettingsSearch';
 import { 
-  FolderTree, 
-  Library, 
-  SlidersHorizontal, 
-  Wrench,
+  Layers, 
+  BookMarked, 
+  ClipboardList, 
+  Cog,
   Settings2, 
   FileDown, 
   Trash2, 
   RefreshCw, 
   Building2, 
-  Calendar, 
   Shield, 
   Home, 
   ChevronRight,
   BookOpen,
   Database,
   Info,
-  CheckCircle2,
-  ArrowRight
+  CheckCircle2
 } from 'lucide-react';
 
 // Tab configuration with clear labels
 const TAB_CONFIG = {
   structure: { 
     label: 'Domínios', 
-    icon: FolderTree,
+    icon: Layers,
     description: 'Gerenciar domínios de segurança'
   },
   library: { 
-    label: 'Biblioteca', 
-    icon: Library,
+    label: 'Conteúdo', 
+    icon: BookMarked,
     description: 'Frameworks e perguntas'
   },
   assessment: { 
     label: 'Avaliação', 
-    icon: SlidersHorizontal,
+    icon: ClipboardList,
     description: 'Configurar avaliação atual'
   },
   system: { 
-    label: 'Sistema', 
-    icon: Wrench,
-    description: 'Dados, exportação e informações'
+    label: 'Geral', 
+    icon: Cog,
+    description: 'Exportação e configurações gerais'
   },
 };
 
@@ -372,7 +370,7 @@ export default function Settings() {
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FolderTree className="h-5 w-5 text-primary" />
+              <Layers className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h2 className="font-semibold">Domínios de Segurança</h2>
@@ -390,7 +388,7 @@ export default function Settings() {
             )}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <FolderTree className="h-4 w-4" />
+                  <Layers className="h-4 w-4" />
                   Gerenciar Domínios de Segurança
                 </CardTitle>
                 <CardDescription>
@@ -409,10 +407,10 @@ export default function Settings() {
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg border border-blue-500/10">
             <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <Library className="h-5 w-5 text-blue-600" />
+              <BookMarked className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="font-semibold">Biblioteca de Conteúdo</h2>
+              <h2 className="font-semibold">Conteúdo</h2>
               <p className="text-sm text-muted-foreground">
                 Gerencie os frameworks e perguntas disponíveis no sistema
               </p>
@@ -497,7 +495,7 @@ export default function Settings() {
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-500/5 to-transparent rounded-lg border border-amber-500/10">
             <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-              <SlidersHorizontal className="h-5 w-5 text-amber-600" />
+              <ClipboardList className="h-5 w-5 text-amber-600" />
             </div>
             <div>
               <h2 className="font-semibold">Configurar Avaliação</h2>
@@ -652,12 +650,12 @@ export default function Settings() {
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-500/5 to-transparent rounded-lg border border-gray-500/10">
             <div className="h-10 w-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
-              <Wrench className="h-5 w-5 text-gray-600" />
+              <Cog className="h-5 w-5 text-gray-600" />
             </div>
             <div>
-              <h2 className="font-semibold">Sistema</h2>
+              <h2 className="font-semibold">Geral</h2>
               <p className="text-sm text-muted-foreground">
-                Exportação de dados, backup e informações do sistema
+                Exportação de dados, backup e informações gerais
               </p>
             </div>
           </div>

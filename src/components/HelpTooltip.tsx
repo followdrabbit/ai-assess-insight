@@ -160,37 +160,92 @@ export function CriticalGapsHelp() {
   );
 }
 
-export function NistFunctionHelp() {
+// Domain-aware help content configuration
+const domainHelpConfig: Record<string, {
+  title: string;
+  modalTitle: string;
+  frameworkName: string;
+  frameworkDescription: string;
+  functions: { name: string; label: string; description: string }[];
+  sourceUrl: string;
+  sourceName: string;
+}> = {
+  AI_SECURITY: {
+    title: 'Sobre NIST AI RMF',
+    modalTitle: 'NIST AI Risk Management Framework',
+    frameworkName: 'NIST AI Risk Management Framework',
+    frameworkDescription: 'organiza a gestão de riscos de IA em 4 funções principais:',
+    functions: [
+      { name: 'GOVERN', label: 'Governar', description: 'Cultura, políticas, papéis e accountability para IA responsável. Define a estrutura organizacional e as responsabilidades.' },
+      { name: 'MAP', label: 'Mapear', description: 'Identificação e categorização de riscos no contexto de uso. Entende onde e como a IA é utilizada.' },
+      { name: 'MEASURE', label: 'Medir', description: 'Análise, avaliação e monitoramento de riscos identificados. Quantifica e acompanha os riscos ao longo do tempo.' },
+      { name: 'MANAGE', label: 'Gerenciar', description: 'Priorização, resposta e tratamento de riscos. Implementa controles e mitiga as vulnerabilidades.' },
+    ],
+    sourceUrl: 'https://www.nist.gov/itl/ai-risk-management-framework',
+    sourceName: 'NIST AI RMF',
+  },
+  CLOUD_SECURITY: {
+    title: 'Sobre CSA CCM',
+    modalTitle: 'Cloud Security Alliance - Cloud Controls Matrix',
+    frameworkName: 'CSA Cloud Controls Matrix (CCM)',
+    frameworkDescription: 'organiza os controles de segurança cloud em 4 pilares principais:',
+    functions: [
+      { name: 'GOVERN', label: 'Governança', description: 'Políticas, procedimentos e estrutura de governança para segurança cloud. Define responsabilidades compartilhadas entre provedor e cliente.' },
+      { name: 'MANAGE', label: 'Gerenciamento', description: 'Gestão de identidades, acessos, configurações e recursos cloud. Controla permissões e configurações de segurança.' },
+      { name: 'MEASURE', label: 'Monitoramento', description: 'Logging, auditoria e detecção de ameaças em ambientes cloud. Visibilidade contínua de eventos de segurança.' },
+      { name: 'MAP', label: 'Mapeamento', description: 'Inventário de ativos, classificação de dados e mapeamento de riscos cloud. Conhecimento do ambiente e exposições.' },
+    ],
+    sourceUrl: 'https://cloudsecurityalliance.org/research/cloud-controls-matrix',
+    sourceName: 'CSA CCM',
+  },
+  DEVSECOPS: {
+    title: 'Sobre NIST SSDF',
+    modalTitle: 'NIST Secure Software Development Framework',
+    frameworkName: 'NIST Secure Software Development Framework (SSDF)',
+    frameworkDescription: 'organiza as práticas de desenvolvimento seguro em 4 grupos principais:',
+    functions: [
+      { name: 'GOVERN', label: 'Políticas (PO)', description: 'Preparar a Organização: Definir requisitos de segurança, políticas e papéis. Estabelece a fundação para desenvolvimento seguro.' },
+      { name: 'MAP', label: 'Preparação (PS)', description: 'Proteger o Software: Proteger código, builds e artefatos contra acesso não autorizado e adulteração.' },
+      { name: 'MEASURE', label: 'Detecção (PW)', description: 'Produzir Software Bem Protegido: Práticas de código seguro, análise de vulnerabilidades e testes de segurança.' },
+      { name: 'MANAGE', label: 'Resposta (RV)', description: 'Responder a Vulnerabilidades: Identificar, analisar e remediar vulnerabilidades descobertas em produção.' },
+    ],
+    sourceUrl: 'https://csrc.nist.gov/Projects/ssdf',
+    sourceName: 'NIST SSDF',
+  },
+};
+
+interface DomainFunctionHelpProps {
+  securityDomainId?: string;
+}
+
+export function DomainFunctionHelp({ securityDomainId = 'AI_SECURITY' }: DomainFunctionHelpProps) {
+  const config = domainHelpConfig[securityDomainId] || domainHelpConfig.AI_SECURITY;
+  
   return (
-    <HelpTooltip title="Sobre NIST AI RMF" modalTitle="NIST AI Risk Management Framework">
+    <HelpTooltip title={config.title} modalTitle={config.modalTitle}>
       <div className="space-y-3">
-        <p><strong>NIST AI Risk Management Framework</strong> organiza a gestão de riscos de IA em 4 funções principais:</p>
+        <p><strong>{config.frameworkName}</strong> {config.frameworkDescription}</p>
         <div className="space-y-3">
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium text-primary mb-1">GOVERN (Governar)</p>
-            <p>Cultura, políticas, papéis e accountability para IA responsável. Define a estrutura organizacional e as responsabilidades.</p>
-          </div>
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium text-primary mb-1">MAP (Mapear)</p>
-            <p>Identificação e categorização de riscos no contexto de uso. Entende onde e como a IA é utilizada.</p>
-          </div>
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium text-primary mb-1">MEASURE (Medir)</p>
-            <p>Análise, avaliação e monitoramento de riscos identificados. Quantifica e acompanha os riscos ao longo do tempo.</p>
-          </div>
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="font-medium text-primary mb-1">MANAGE (Gerenciar)</p>
-            <p>Priorização, resposta e tratamento de riscos. Implementa controles e mitiga as vulnerabilidades.</p>
-          </div>
+          {config.functions.map((func) => (
+            <div key={func.name} className="p-3 bg-muted rounded-lg">
+              <p className="font-medium text-primary mb-1">{func.name} ({func.label})</p>
+              <p>{func.description}</p>
+            </div>
+          ))}
         </div>
         <div className="pt-2 border-t">
           <p className="text-sm">
-            Fonte: <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">NIST AI RMF</a>
+            Fonte: <a href={config.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">{config.sourceName}</a>
           </p>
         </div>
       </div>
     </HelpTooltip>
   );
+}
+
+// Legacy export for backward compatibility - now defaults to AI_SECURITY
+export function NistFunctionHelp() {
+  return <DomainFunctionHelp securityDomainId="AI_SECURITY" />;
 }
 
 export function FrameworkCategoryHelp() {

@@ -10,7 +10,7 @@ import {
   CoverageHelp, 
   EvidenceReadinessHelp, 
   CriticalGapsHelp,
-  NistFunctionHelp 
+  DomainFunctionHelp 
 } from '@/components/HelpTooltip';
 import { OverallMetrics, CriticalGap, RoadmapItem, FrameworkCoverage } from '@/lib/scoring';
 import { FrameworkCategoryId } from '@/lib/dataset';
@@ -716,7 +716,7 @@ export function ExecutiveDashboard({
               <h3 className="font-semibold text-sm">{currentDomainConfig.title}</h3>
               <p className="text-xs text-muted-foreground mt-0.5">{currentDomainConfig.description}</p>
             </div>
-            <NistFunctionHelp />
+            <DomainFunctionHelp securityDomainId={securityDomainId} />
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">

@@ -53,7 +53,8 @@ import {
 import { VersionComparisonView } from './VersionComparisonView';
 import { VersionAnnotations } from './VersionAnnotations';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare } from 'lucide-react';
+import { downloadVersionHistoryHtml, openVersionHistoryPrintView } from '@/lib/versionHistoryExport';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -1568,7 +1569,35 @@ export function QuestionManagement() {
             </Tabs>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {versions.length > 0 && (
+              <div className="flex gap-2 mr-auto">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => downloadVersionHistoryHtml({
+                    questionId: versioningQuestionId,
+                    questionText: versioningQuestionText,
+                    versions
+                  })}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exportar HTML
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => openVersionHistoryPrintView({
+                    questionId: versioningQuestionId,
+                    questionText: versioningQuestionText,
+                    versions
+                  })}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Imprimir/PDF
+                </Button>
+              </div>
+            )}
             <Button variant="outline" onClick={() => setShowVersionDialog(false)}>
               Fechar
             </Button>

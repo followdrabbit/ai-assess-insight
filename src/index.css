@@ -383,6 +383,89 @@
     }
   }
 
+  /* Tab transition animations */
+  @keyframes tabContentIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes tabContentOut {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  .tab-content-animated {
+    animation: tabContentIn 0.3s ease-out;
+  }
+
+  /* Enhanced card hover transitions */
+  .card-interactive {
+    @apply card-elevated transition-all duration-300;
+  }
+
+  .card-interactive:hover {
+    @apply border-primary/30;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Smooth filter transitions */
+  .filter-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Badge pulse animation for active filters */
+  .badge-pulse {
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes badgePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Staggered list animation helper */
+  .stagger-animation > * {
+    animation: slideUp 0.4s ease-out backwards;
+  }
+
+  .stagger-animation > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-animation > *:nth-child(2) { animation-delay: 50ms; }
+  .stagger-animation > *:nth-child(3) { animation-delay: 100ms; }
+  .stagger-animation > *:nth-child(4) { animation-delay: 150ms; }
+  .stagger-animation > *:nth-child(5) { animation-delay: 200ms; }
+  .stagger-animation > *:nth-child(6) { animation-delay: 250ms; }
+  .stagger-animation > *:nth-child(7) { animation-delay: 300ms; }
+  .stagger-animation > *:nth-child(8) { animation-delay: 350ms; }
+
+  /* Chart animation */
+  .chart-animated {
+    animation: chartFadeIn 0.6s ease-out;
+  }
+
+  @keyframes chartFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
   /* Scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAnswersStore } from '@/lib/stores';
 import { frameworks, Framework } from '@/lib/frameworks';
 import { questions } from '@/lib/dataset';
@@ -14,13 +15,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
 import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
-import { Layers, BookOpen, Database, Settings2, Info, FileDown, Trash2, RefreshCw, Building2, Calendar, Shield, ExternalLink } from 'lucide-react';
+import { Layers, BookOpen, Database, Settings2, Info, FileDown, Trash2, RefreshCw, Building2, Calendar, Shield, ExternalLink, Home, ChevronRight } from 'lucide-react';
+
+const TAB_LABELS: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+  taxonomy: { label: 'Taxonomia', icon: Layers },
+  content: { label: 'Conteúdo', icon: BookOpen },
+  data: { label: 'Dados', icon: Database },
+  about: { label: 'Sobre', icon: Info },
+};
 
 const categoryLabels: Record<string, { label: string; description: string }> = {
   core: { 
@@ -47,6 +56,7 @@ export default function Settings() {
   const { enabledFrameworks, setEnabledFrameworks, answers, clearAnswers, generateDemoData } = useAnswersStore();
   const [pendingFrameworks, setPendingFrameworks] = useState<string[]>(enabledFrameworks);
   const [hasChanges, setHasChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState('taxonomy');
   const [assessmentName, setAssessmentName] = useState('Avaliação de Maturidade em Segurança de IA');
   const [organizationName, setOrganizationName] = useState('');
   const [reassessmentInterval, setReassessmentInterval] = useState('quarterly');
@@ -255,6 +265,41 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
+                <Home className="h-3.5 w-3.5" />
+                Início
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbLink className="flex items-center gap-1.5 text-muted-foreground">
+              <Settings2 className="h-3.5 w-3.5" />
+              Configurações
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbPage className="flex items-center gap-1.5 font-medium">
+              {(() => {
+                const TabIcon = TAB_LABELS[activeTab]?.icon;
+                return TabIcon ? <TabIcon className="h-3.5 w-3.5" /> : null;
+              })()}
+              {TAB_LABELS[activeTab]?.label || 'Taxonomia'}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -278,7 +323,7 @@ export default function Settings() {
         )}
       </div>
 
-      <Tabs defaultValue="taxonomy" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="flex flex-wrap h-auto gap-1 p-1 bg-muted/50">
           <TabsTrigger value="taxonomy" className="flex items-center gap-1.5 data-[state=active]:bg-background">
             <Layers className="h-3.5 w-3.5" />

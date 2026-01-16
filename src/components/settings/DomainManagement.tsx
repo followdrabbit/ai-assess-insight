@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, Save, Plus, Trash2, AlertTriangle, FolderTree, BookOpen, HelpCircle, Download, Upload, FileJson, CheckCircle2, XCircle, Search, X } from 'lucide-react';
 import { questions } from '@/lib/dataset';
 import { frameworks } from '@/lib/frameworks';
+import { CardActionButtons, createEditAction, createDeleteAction, createExportAction } from './CardActionButtons';
 
 const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
   brain: Brain,
@@ -612,37 +613,24 @@ export function DomainManagement() {
             </Badge>
           </div>
 
-          <div className="flex items-center gap-1 pt-2 border-t">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => handleExportDomain(domain)}
-              className="h-7 px-2 text-xs gap-1"
-              disabled={exporting === domain.domainId}
-            >
-              <Download className={cn("h-3 w-3", exporting === domain.domainId && "animate-pulse")} />
-              Exportar
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => openEditDialog(domain)}
-              className="h-7 px-2 text-xs gap-1"
-            >
-              <Pencil className="h-3 w-3" />
-              Editar
-            </Button>
-            {!isCore && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setDeletingDomain(domain)}
-                className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive ml-auto"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
+          <CardActionButtons
+            actions={[
+              createExportAction(
+                () => handleExportDomain(domain),
+                exporting === domain.domainId
+              ),
+              createEditAction(() => openEditDialog(domain)),
+              createDeleteAction(
+                () => setDeletingDomain(domain),
+                {
+                  hidden: isCore,
+                  itemName: domain.domainName,
+                  requiresConfirmation: false,
+                  className: 'ml-auto',
+                }
+              ),
+            ]}
+          />
         </CardContent>
       </Card>
     );

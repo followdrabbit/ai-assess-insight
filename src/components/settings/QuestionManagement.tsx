@@ -57,6 +57,7 @@ import { VersionFiltersBar, filterVersions, useVersionFilters, VersionFilters } 
 import { supabase } from '@/integrations/supabase/client';
 import { downloadVersionHistoryHtml, openVersionHistoryPrintView } from '@/lib/versionHistoryExport';
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter as FilterIcon, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag, X } from 'lucide-react';
+import { CardActionButtons, createEditAction, createDeleteAction, createDuplicateAction, createToggleAction, createHistoryAction } from './CardActionButtons';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -1790,66 +1791,32 @@ function QuestionsList({ questions, onEdit, onDelete, onToggleDisable, onDuplica
                     )}
                   </div>
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  {q.isCustom && onViewHistory && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => onViewHistory(q.questionId, q.questionText)}
-                      title="Ver histórico de versões"
-                    >
-                      <History className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => onDuplicate(q)}
-                  >
-                    Duplicar
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => onToggleDisable(q.questionId, q.isDisabled, q.isCustom)}
-                  >
-                    {q.isDisabled ? 'Habilitar' : 'Desabilitar'}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => onEdit(q)}
-                  >
-                    Editar
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                        Excluir
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          {q.isCustom ? 'Excluir pergunta?' : 'Desabilitar pergunta padrão?'}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {q.isCustom ? (
-                            'Você deseja excluir permanentemente esta pergunta personalizada? Esta ação não pode ser desfeita.'
-                          ) : (
-                            'Você deseja desabilitar esta pergunta padrão? Ela será removida da avaliação mas poderá ser restaurada posteriormente.'
-                          )}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(q.questionId, q.isCustom)}>
-                          {q.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                <CardActionButtons
+                  withBorder={false}
+                  actions={[
+                    createHistoryAction(
+                      () => onViewHistory?.(q.questionId, q.questionText),
+                      { hidden: !q.isCustom || !onViewHistory }
+                    ),
+                    createDuplicateAction(() => onDuplicate(q)),
+                    createToggleAction(
+                      () => onToggleDisable(q.questionId, q.isDisabled, q.isCustom),
+                      !q.isDisabled
+                    ),
+                    createEditAction(() => onEdit(q)),
+                    createDeleteAction(
+                      () => onDelete(q.questionId, q.isCustom),
+                      {
+                        isDefault: !q.isCustom,
+                        confirmTitle: q.isCustom ? 'Excluir pergunta?' : 'Desabilitar pergunta padrão?',
+                        confirmDescription: q.isCustom
+                          ? 'Você deseja excluir permanentemente esta pergunta personalizada? Esta ação não pode ser desfeita.'
+                          : 'Você deseja desabilitar esta pergunta padrão? Ela será removida da avaliação mas poderá ser restaurada posteriormente.',
+                        confirmActionLabel: q.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar',
+                      }
+                    ),
+                  ]}
+                />
               </div>
             </CardContent>
           </Card>

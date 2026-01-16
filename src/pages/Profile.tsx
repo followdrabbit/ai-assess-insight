@@ -3,7 +3,8 @@ import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { useSyncedSpeechSynthesis } from '@/hooks/useSyncedSpeechSynthesis';
+import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,7 +51,8 @@ export default function Profile() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
-  const { voices, speak, stop, isSpeaking } = useSpeechSynthesis();
+  const { voices, speak, stop, isSpeaking } = useSyncedSpeechSynthesis();
+  const { updateSettings: updateVoiceSettingsContext } = useVoiceSettings();
   
   const [profile, setProfile] = useState<Profile>({
     display_name: '',
@@ -303,6 +305,9 @@ export default function Profile() {
         .eq('user_id', user.id);
       
       if (error) throw error;
+      
+      // Sync with context so other components get the update
+      updateVoiceSettingsContext({ [key]: value });
       
       toast.success(t('profile.voiceSettingsSaved', 'Voice setting saved!'));
     } catch (err: any) {

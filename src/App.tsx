@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useAnswersStore } from "@/lib/stores";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { VoiceSettingsProvider } from "@/contexts/VoiceSettingsContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Assessment from "./pages/Assessment";
@@ -68,9 +69,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
+        <VoiceSettingsProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </VoiceSettingsProvider>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

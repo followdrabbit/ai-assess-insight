@@ -25,7 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, Save, Plus, Trash2, AlertTriangle, FolderTree, BookOpen, HelpCircle, Download, Upload, FileJson, CheckCircle2, XCircle } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Pencil, Save, Plus, Trash2, AlertTriangle, FolderTree, BookOpen, HelpCircle, Download, Upload, FileJson, CheckCircle2, XCircle, Search, X } from 'lucide-react';
 import { questions } from '@/lib/dataset';
 import { frameworks } from '@/lib/frameworks';
 
@@ -95,6 +95,7 @@ export function DomainManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createStep, setCreateStep] = useState<'basics' | 'taxonomy' | 'review'>('basics');
   const [deletingDomain, setDeletingDomain] = useState<SecurityDomain | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Import/Export state
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -714,11 +715,53 @@ export function DomainManagement() {
             </div>
           </div>
 
+          {/* Search Filter */}
+          {domains.length > 3 && (
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar domínios por nome ou descrição..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            {domains.map(domain => (
-              <DomainCard key={domain.domainId} domain={domain} />
-            ))}
+            {domains
+              .filter(domain => {
+                if (!searchTerm.trim()) return true;
+                const term = searchTerm.toLowerCase();
+                return (
+                  domain.domainName.toLowerCase().includes(term) ||
+                  domain.shortName.toLowerCase().includes(term) ||
+                  domain.description.toLowerCase().includes(term)
+                );
+              })
+              .map(domain => (
+                <DomainCard key={domain.domainId} domain={domain} />
+              ))}
           </div>
+          
+          {searchTerm && domains.filter(d => 
+            d.domainName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            d.shortName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            d.description.toLowerCase().includes(searchTerm.toLowerCase())
+          ).length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Nenhum domínio encontrado para "{searchTerm}"</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

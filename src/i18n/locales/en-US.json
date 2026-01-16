@@ -1208,6 +1208,34 @@
       "required": "Name and endpoint are required"
     }
   },
+  "siemHealth": {
+    "title": "Health Monitoring",
+    "description": "Performance metrics and status of SIEM integrations",
+    "allIntegrations": "All Integrations",
+    "lastHour": "Last hour",
+    "last6Hours": "Last 6 hours",
+    "last24Hours": "Last 24 hours",
+    "last7Days": "Last 7 days",
+    "totalEvents": "Total Events",
+    "successRate": "Success Rate",
+    "avgLatency": "Avg Latency",
+    "p95Latency": "P95 Latency",
+    "latencyTrend": "Latency Trend",
+    "successRateTrend": "Success Rate Trend",
+    "integrationStatus": "Integration Status",
+    "integrationStatusDesc": "Health overview for each integration",
+    "noData": "No data for the selected period",
+    "latency": "Latency",
+    "sent": "Sent",
+    "failures": "Failures",
+    "lastSuccess": "Last success",
+    "status": {
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "unhealthy": "Unhealthy",
+      "unknown": "Unknown"
+    }
+  },
   "errors": {
     "generic": "An error occurred",
     "loadProfile": "Error loading profile",

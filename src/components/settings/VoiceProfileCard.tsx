@@ -198,9 +198,32 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
 
           {/* Recording Status */}
           {isRecording && (
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-4">
+              {/* Sound Wave Animation */}
+              <div className="flex items-center justify-center gap-1 h-16">
+                {[...Array(12)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 bg-destructive rounded-full"
+                    style={{
+                      height: '100%',
+                      animation: `soundWave 0.8s ease-in-out infinite`,
+                      animationDelay: `${i * 0.05}s`,
+                    }}
+                  />
+                ))}
+              </div>
+              <style>
+                {`
+                  @keyframes soundWave {
+                    0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+                    50% { transform: scaleY(1); opacity: 1; }
+                  }
+                `}
+              </style>
+              
               <div className="flex items-center gap-2 text-destructive">
-                <div className="h-4 w-4 rounded-full bg-destructive animate-pulse" />
+                <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
                 <span className="text-lg font-medium">Gravando... {recordingDuration}s</span>
               </div>
               <p className="text-xs text-muted-foreground text-center">

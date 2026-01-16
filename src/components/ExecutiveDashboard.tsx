@@ -15,6 +15,7 @@ import {
   DomainMetricsHelpAware,
   DomainCriticalGapsHelp,
   DomainRoadmapHelp,
+  FrameworkCategoryHelp,
 } from '@/components/HelpTooltip';
 import { OverallMetrics, CriticalGap, RoadmapItem, FrameworkCoverage } from '@/lib/scoring';
 import { FrameworkCategoryId } from '@/lib/dataset';
@@ -50,6 +51,17 @@ import { Progress } from "@/components/ui/progress";
 import { Framework, getFrameworkById } from '@/lib/frameworks';
 import { getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
+import {
+  DashboardHeader,
+  DashboardFrameworkSelector,
+  DashboardSection,
+  DashboardKPIGrid,
+  DashboardKPICard,
+  DashboardChartsGrid,
+  DashboardChartCard,
+  DashboardGapsList,
+  DashboardRoadmap,
+} from '@/components/dashboard';
 
 // NIST AI RMF function display names (for AI_SECURITY domain)
 const nistFunctionLabels: Record<string, string> = {
@@ -529,67 +541,19 @@ export function ExecutiveDashboard({
   return (
     <div className="space-y-6">
       {/* Executive Summary Header with Framework Selector */}
-      <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-primary">{headerConfig.title}</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {headerConfig.subtitle}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {domainSwitcher}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleExportReport}
-                className="h-7 rounded-full px-3 text-xs gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Exportar Relatório
-              </Button>
-            </div>
-          </div>
-
-          {/* Framework Selector */}
-          <div className="border-t pt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-medium">Frameworks em Análise</span>
-              <span className="text-xs text-muted-foreground">
-                ({selectedFrameworkIds.length === 0 ? 'Todos' : `${selectedFrameworkIds.length} selecionados`})
-              </span>
-            </div>
-
-            {/* Framework Pills */}
-            <div className="flex flex-wrap gap-2">
-              {enabledFrameworks.map(fw => {
-                const isSelected = selectedFrameworkIds.length === 0 || selectedFrameworkIds.includes(fw.frameworkId);
-                return (
-                  <Badge
-                    key={fw.frameworkId}
-                    variant={isSelected ? "default" : "outline"}
-                    className={cn(
-                      "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md",
-                      isSelected 
-                        ? "bg-primary hover:bg-primary/90" 
-                        : "opacity-50 hover:opacity-100 hover:border-primary/50"
-                    )}
-                    onClick={() => toggleFramework(fw.frameworkId)}
-                  >
-                    {fw.shortName}
-                  </Badge>
-                );
-              })}
-            </div>
-
-            <p className="text-xs text-muted-foreground mt-2">
-              Clique nos frameworks acima para filtrar os dados exibidos.
-              {selectedFrameworkIds.length > 0 && ` (${selectedFrameworkIds.length} selecionados)`}
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardHeader
+        title={headerConfig.title}
+        subtitle={headerConfig.subtitle}
+        domainSwitcher={domainSwitcher}
+        onExport={handleExportReport}
+      >
+        <DashboardFrameworkSelector
+          frameworks={enabledFrameworks}
+          selectedIds={selectedFrameworkIds}
+          onToggle={toggleFramework}
+          helpTooltip={<FrameworkCategoryHelp />}
+        />
+      </DashboardHeader>
 
       {/* Executive KPI Cards - Enhanced with staggered animations and hover effects */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

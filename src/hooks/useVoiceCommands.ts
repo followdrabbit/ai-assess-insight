@@ -1,9 +1,11 @@
 import { useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useDashboardMetrics } from './useDashboardMetrics';
 import { useAnswersStore } from '@/lib/stores';
 import { toast } from 'sonner';
+import { downloadHtmlReport } from '@/lib/htmlReportExport';
+import { exportAnswersToXLSX, downloadXLSX } from '@/lib/xlsxExport';
 
 export interface VoiceCommand {
   id: string;
@@ -21,8 +23,9 @@ export interface CommandResult {
 
 export function useVoiceCommands() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
-  const { criticalGaps, metrics, currentDomainInfo } = useDashboardMetrics();
+  const { criticalGaps, metrics, currentDomainInfo, enabledFrameworks, selectedFrameworkIds, frameworkCoverage, roadmap, answers } = useDashboardMetrics();
   const setSelectedSecurityDomain = useAnswersStore(state => state.setSelectedSecurityDomain);
 
   // Generate summary text for the current security posture
@@ -55,6 +58,59 @@ export function useVoiceCommands() {
         `${i + 1}. **[${g.domainName}]** ${g.questionText}\n   - Criticidade: ${g.criticality} | Resposta: ${g.response}`
       ).join('\n\n');
   }, [criticalGaps]);
+
+  // Get current dashboard type from location
+  const getCurrentDashboardType = useCallback((): 'executive' | 'grc' | 'specialist' | null => {
+    if (location.pathname.includes('/dashboard/executive')) return 'executive';
+    if (location.pathname.includes('/dashboard/grc')) return 'grc';
+    if (location.pathname.includes('/dashboard/specialist')) return 'specialist';
+    return null;
+  }, [location.pathname]);
+
+  // Export HTML report
+  const handleExportHtmlReport = useCallback((): void => {
+    const dashboardType = getCurrentDashboardType();
+    if (!dashboardType) {
+      toast.error(t('voiceCommands.notOnDashboard', 'Navegue para um dashboard primeiro'));
+      return;
+    }
+
+    const selectedFws = selectedFrameworkIds.length > 0 
+      ? enabledFrameworks.filter(f => selectedFrameworkIds.includes(f.frameworkId))
+      : enabledFrameworks;
+
+    try {
+      downloadHtmlReport({
+        dashboardType,
+        metrics,
+        criticalGaps,
+        frameworkCoverage,
+        selectedFrameworks: selectedFws,
+        roadmap,
+        generatedAt: new Date(),
+      });
+      toast.success(t('voiceCommands.htmlExported', 'Relatório HTML exportado com sucesso'));
+    } catch (error) {
+      toast.error(t('voiceCommands.exportError', 'Erro ao exportar relatório'));
+      console.error('Export error:', error);
+    }
+  }, [getCurrentDashboardType, selectedFrameworkIds, enabledFrameworks, metrics, criticalGaps, frameworkCoverage, roadmap, t]);
+
+  // Export Excel report
+  const handleExportExcelReport = useCallback(async (): Promise<void> => {
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const domainName = currentDomainInfo?.shortName || 'assessment';
+      const filename = `avaliacao-${domainName.toLowerCase().replace(/\s+/g, '-')}-${dateStr}.xlsx`;
+      
+      const blob = await exportAnswersToXLSX(answers);
+      downloadXLSX(blob, filename);
+      toast.success(t('voiceCommands.excelExported', 'Relatório Excel exportado com sucesso'));
+    } catch (error) {
+      toast.error(t('voiceCommands.exportError', 'Erro ao exportar relatório'));
+      console.error('Export error:', error);
+    }
+  }, [answers, currentDomainInfo, t]);
 
   // Define commands
   const commands: VoiceCommand[] = useMemo(() => [
@@ -204,7 +260,41 @@ export function useVoiceCommands() {
       description: t('voiceCommands.switchToDevSecOps', 'Mudar para DevSecOps'),
       category: 'domain',
     },
-  ], [navigate, t, setSelectedSecurityDomain]);
+    // Export commands
+    {
+      id: 'export_html',
+      patterns: [
+        /exportar\s*(relatório)?\s*html/i,
+        /gerar\s*(relatório)?\s*html/i,
+        /baixar\s*(relatório)?\s*html/i,
+        /export\s*(report)?\s*html/i,
+        /download\s*html\s*(report)?/i,
+        /relatório\s*html/i,
+        /html\s*report/i,
+      ],
+      action: () => handleExportHtmlReport(),
+      description: t('voiceCommands.exportHtml', 'Exportar Relatório HTML'),
+      category: 'ui',
+    },
+    {
+      id: 'export_excel',
+      patterns: [
+        /exportar\s*(relatório)?\s*(para)?\s*excel/i,
+        /exportar\s*(relatório)?\s*(para)?\s*xlsx/i,
+        /gerar\s*(relatório)?\s*excel/i,
+        /baixar\s*(relatório)?\s*excel/i,
+        /export\s*(report)?\s*(to)?\s*excel/i,
+        /download\s*excel\s*(report)?/i,
+        /relatório\s*excel/i,
+        /excel\s*report/i,
+        /planilha/i,
+        /spreadsheet/i,
+      ],
+      action: async () => await handleExportExcelReport(),
+      description: t('voiceCommands.exportExcel', 'Exportar Relatório Excel'),
+      category: 'ui',
+    },
+  ], [navigate, t, setSelectedSecurityDomain, handleExportHtmlReport, handleExportExcelReport]);
 
   // Data commands that return text instead of navigating
   const dataCommands = useMemo(() => [

@@ -220,8 +220,11 @@ export async function getEnabledFrameworks(): Promise<string[]> {
 export async function setEnabledFrameworks(frameworkIds: string[]): Promise<void> {
   const { error } = await supabase
     .from('assessment_meta')
-    .update({ enabled_frameworks: frameworkIds })
-    .eq('id', 'current');
+    .upsert({ 
+      id: 'current', 
+      enabled_frameworks: frameworkIds,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
   
   if (error) throw error;
 }
@@ -240,8 +243,11 @@ export async function getSelectedFrameworks(): Promise<string[]> {
 export async function setSelectedFrameworks(frameworkIds: string[]): Promise<void> {
   const { error } = await supabase
     .from('assessment_meta')
-    .update({ selected_frameworks: frameworkIds })
-    .eq('id', 'current');
+    .upsert({ 
+      id: 'current', 
+      selected_frameworks: frameworkIds,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
   
   if (error) throw error;
 }
@@ -261,8 +267,11 @@ export async function getSelectedSecurityDomain(): Promise<string | null> {
 export async function setSelectedSecurityDomain(domainId: string): Promise<void> {
   const { error } = await supabase
     .from('assessment_meta')
-    .update({ security_domain_id: domainId })
-    .eq('id', 'current');
+    .upsert({ 
+      id: 'current', 
+      security_domain_id: domainId,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
   
   if (error) throw error;
 }

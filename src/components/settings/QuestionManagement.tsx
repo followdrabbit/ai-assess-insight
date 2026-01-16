@@ -59,6 +59,7 @@ import { downloadVersionHistoryHtml, openVersionHistoryPrintView } from '@/lib/v
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter as FilterIcon, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare, FileText, Printer, Tag, X } from 'lucide-react';
 import { CardActionButtons, createEditAction, createDeleteAction, createDuplicateAction, createToggleAction, createHistoryAction } from './CardActionButtons';
 import { CardLoadingOverlay } from './CardLoadingOverlay';
+import { FilterBar, createSecurityDomainBadges } from './FilterBar';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -728,93 +729,53 @@ export function QuestionManagement() {
         </div>
       </div>
 
-      {/* Security Domain Filter */}
-      <div className="flex items-center gap-3">
-        <FilterIcon className="h-4 w-4 text-muted-foreground" />
-        <div className="flex gap-2 flex-wrap">
-          <Badge
-            variant={filterSecurityDomain === 'all' ? 'default' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => setFilterSecurityDomain('all')}
-          >
-            Todos os Domínios
-          </Badge>
-          {securityDomains.filter(d => d.isEnabled).map(domain => {
-            const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
-            const colorStyles = DOMAIN_COLORS[domain.color];
-            return (
-              <Badge
-                key={domain.domainId}
-                variant={filterSecurityDomain === domain.domainId ? 'default' : 'outline'}
-                className={cn(
-                  "cursor-pointer flex items-center gap-1",
-                  filterSecurityDomain === domain.domainId && colorStyles?.bg,
-                  filterSecurityDomain === domain.domainId && colorStyles?.text
-                )}
-                onClick={() => setFilterSecurityDomain(domain.domainId)}
-              >
-                <IconComp className="h-3 w-3" />
-                {domain.shortName}
-              </Badge>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4 flex-wrap items-center">
-        <div className="flex-1 min-w-[200px]">
-          <Input
-            placeholder="Buscar por texto ou ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select value={filterFramework} onValueChange={setFilterFramework}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por framework" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os frameworks</SelectItem>
-            {enabledFrameworkOptions.map(fw => (
-              <SelectItem key={fw.frameworkId} value={fw.frameworkId}>
-                {fw.shortName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterDomain} onValueChange={setFilterDomain}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por área" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as áreas</SelectItem>
-            {taxonomyDomains
+      <FilterBar
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Buscar por texto ou ID..."
+        domainBadges={{
+          value: filterSecurityDomain,
+          onChange: setFilterSecurityDomain,
+          options: createSecurityDomainBadges(
+            securityDomains,
+            ICON_COMPONENTS,
+            DOMAIN_COLORS
+          ),
+          allLabel: 'Todos os Domínios',
+        }}
+        selectFilters={[
+          {
+            id: 'framework',
+            value: filterFramework,
+            onChange: setFilterFramework,
+            placeholder: 'Filtrar por framework',
+            allLabel: 'Todos os frameworks',
+            options: enabledFrameworkOptions.map(fw => ({
+              value: fw.frameworkId,
+              label: fw.shortName,
+            })),
+          },
+          {
+            id: 'domain',
+            value: filterDomain,
+            onChange: setFilterDomain,
+            placeholder: 'Filtrar por área',
+            allLabel: 'Todas as áreas',
+            options: taxonomyDomains
               .filter(d => filterSecurityDomain === 'all' || d.securityDomainId === filterSecurityDomain)
-              .map(d => (
-                <SelectItem key={d.domainId} value={d.domainId}>
-                  {d.domainName}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-        {(searchQuery || filterFramework !== 'all' || filterDomain !== 'all' || filterSecurityDomain !== 'all') && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSearchQuery('');
-              setFilterFramework('all');
-              setFilterDomain('all');
-              setFilterSecurityDomain('all');
-            }}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4 mr-1" />
-            Limpar filtros
-          </Button>
-        )}
-      </div>
+              .map(d => ({
+                value: d.domainId,
+                label: d.domainName,
+              })),
+          },
+        ]}
+        onClearAll={() => {
+          setSearchQuery('');
+          setFilterFramework('all');
+          setFilterDomain('all');
+          setFilterSecurityDomain('all');
+        }}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">

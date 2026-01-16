@@ -567,6 +567,7 @@ export default function DashboardGRC() {
                 variant="outline" 
                 size="sm"
                 onClick={handleExportReport}
+                className="h-7 rounded-full px-3 text-xs"
               >
                 Exportar Relatório
               </Button>

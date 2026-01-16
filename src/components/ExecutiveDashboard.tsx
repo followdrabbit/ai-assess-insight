@@ -1039,10 +1039,10 @@ export function ExecutiveDashboard({
       {/* Score Details Modal */}
       <Dialog open={selectedKpiModal === 'score'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
             <div className="flex items-center gap-3 mb-2">
               <div 
-                className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+                className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg animate-in zoom-in-50 duration-500"
                 style={{ backgroundColor: metrics.maturityLevel.color }}
               >
                 {Math.round(metrics.overallScore * 100)}%
@@ -1057,25 +1057,31 @@ export function ExecutiveDashboard({
           </DialogHeader>
 
           <div className="grid grid-cols-3 gap-3 mt-4">
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="text-2xl font-bold text-primary">{Math.round(metrics.coverage * 100)}%</div>
-              <div className="text-xs text-muted-foreground">Cobertura</div>
-            </div>
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="text-2xl font-bold">{metrics.answeredQuestions}/{metrics.totalQuestions}</div>
-              <div className="text-xs text-muted-foreground">Respondidas</div>
-            </div>
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="text-2xl font-bold text-destructive">{filteredByFramework.gaps.length}</div>
-              <div className="text-xs text-muted-foreground">Gaps</div>
-            </div>
+            {[
+              { value: `${Math.round(metrics.coverage * 100)}%`, label: 'Cobertura', colorClass: 'text-primary' },
+              { value: `${metrics.answeredQuestions}/${metrics.totalQuestions}`, label: 'Respondidas', colorClass: '' },
+              { value: filteredByFramework.gaps.length, label: 'Gaps', colorClass: 'text-destructive' }
+            ].map((item, idx) => (
+              <div 
+                key={idx}
+                className="text-center p-3 bg-muted/50 rounded-lg animate-in fade-in-0 zoom-in-95 duration-300"
+                style={{ animationDelay: `${100 + idx * 50}ms`, animationFillMode: 'backwards' }}
+              >
+                <div className={cn("text-2xl font-bold", item.colorClass)}>{item.value}</div>
+                <div className="text-xs text-muted-foreground">{item.label}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 animate-in fade-in-0 slide-in-from-bottom-3 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
             <h4 className="font-medium text-sm mb-3">Score por Domínio</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {scoreDetails.domainScores.map((d, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2 bg-muted/30 rounded">
+                <div 
+                  key={idx} 
+                  className="flex items-center gap-3 p-2 bg-muted/30 rounded animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                  style={{ animationDelay: `${250 + idx * 30}ms`, animationFillMode: 'backwards' }}
+                >
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium truncate">{d.name}</span>
@@ -1088,11 +1094,15 @@ export function ExecutiveDashboard({
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 animate-in fade-in-0 slide-in-from-bottom-3 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
             <h4 className="font-medium text-sm mb-3">Score por Categoria de Framework</h4>
             <div className="grid grid-cols-2 gap-2">
               {scoreDetails.categoryScores.map((c, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded">
+                <div 
+                  key={idx} 
+                  className="flex items-center justify-between p-3 bg-muted/30 rounded animate-in fade-in-0 zoom-in-95 duration-200"
+                  style={{ animationDelay: `${400 + idx * 30}ms`, animationFillMode: 'backwards' }}
+                >
                   <span className="text-sm">{c.name}</span>
                   <span className="font-mono font-medium" style={{ color: c.color }}>{c.score}%</span>
                 </div>
@@ -1100,7 +1110,7 @@ export function ExecutiveDashboard({
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end animate-in fade-in-0 duration-300" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
             <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
           </div>
         </DialogContent>
@@ -1109,9 +1119,9 @@ export function ExecutiveDashboard({
       {/* Gaps Details Modal */}
       <Dialog open={selectedKpiModal === 'gaps'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-destructive">
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-destructive animate-in zoom-in-50 duration-500">
                 {gapsDetails.total}
               </div>
               <div>
@@ -1124,32 +1134,35 @@ export function ExecutiveDashboard({
           </DialogHeader>
 
           <div className="grid grid-cols-4 gap-3 mt-4">
-            <div className="text-center p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">{gapsDetails.byCriticality.Critical.length}</div>
-              <div className="text-xs text-muted-foreground">Crítico</div>
-            </div>
-            <div className="text-center p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">{gapsDetails.byCriticality.High.length}</div>
-              <div className="text-xs text-muted-foreground">Alto</div>
-            </div>
-            <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{gapsDetails.byCriticality.Medium.length}</div>
-              <div className="text-xs text-muted-foreground">Médio</div>
-            </div>
-            <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <div className="text-2xl font-bold text-gray-600">{gapsDetails.byCriticality.Low.length}</div>
-              <div className="text-xs text-muted-foreground">Baixo</div>
-            </div>
+            {[
+              { value: gapsDetails.byCriticality.Critical.length, label: 'Crítico', bgClass: 'bg-red-100 dark:bg-red-900/30', textClass: 'text-red-600' },
+              { value: gapsDetails.byCriticality.High.length, label: 'Alto', bgClass: 'bg-orange-100 dark:bg-orange-900/30', textClass: 'text-orange-600' },
+              { value: gapsDetails.byCriticality.Medium.length, label: 'Médio', bgClass: 'bg-blue-100 dark:bg-blue-900/30', textClass: 'text-blue-600' },
+              { value: gapsDetails.byCriticality.Low.length, label: 'Baixo', bgClass: 'bg-gray-100 dark:bg-gray-800', textClass: 'text-gray-600' }
+            ].map((item, idx) => (
+              <div 
+                key={idx}
+                className={cn("text-center p-3 rounded-lg animate-in fade-in-0 zoom-in-95 duration-300", item.bgClass)}
+                style={{ animationDelay: `${100 + idx * 50}ms`, animationFillMode: 'backwards' }}
+              >
+                <div className={cn("text-2xl font-bold", item.textClass)}>{item.value}</div>
+                <div className="text-xs text-muted-foreground">{item.label}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 animate-in fade-in-0 slide-in-from-bottom-3 duration-300" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
             <h4 className="font-medium text-sm mb-3">Gaps por Domínio</h4>
             <div className="space-y-2 max-h-32 overflow-y-auto">
               {Object.entries(gapsDetails.byDomain)
                 .sort((a, b) => b[1].length - a[1].length)
                 .slice(0, 6)
                 .map(([domain, gaps], idx) => (
-                <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                <div 
+                  key={idx} 
+                  className="flex items-center justify-between p-2 bg-muted/30 rounded animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                  style={{ animationDelay: `${300 + idx * 30}ms`, animationFillMode: 'backwards' }}
+                >
                   <span className="text-sm truncate">{domain}</span>
                   <span className="font-mono text-sm text-destructive">{gaps.length}</span>
                 </div>
@@ -1157,13 +1170,14 @@ export function ExecutiveDashboard({
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 animate-in fade-in-0 slide-in-from-bottom-3 duration-300" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
             <h4 className="font-medium text-sm mb-3">Gaps Críticos Prioritários</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {filteredByFramework.gaps.slice(0, 8).map((gap) => (
+              {filteredByFramework.gaps.slice(0, 8).map((gap, idx) => (
                 <div 
                   key={gap.questionId} 
-                  className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors cursor-pointer"
+                  className="p-3 bg-muted/20 rounded-lg flex items-start justify-between gap-3 hover:bg-muted/40 transition-colors cursor-pointer animate-in fade-in-0 slide-in-from-right-2 duration-200"
+                  style={{ animationDelay: `${450 + idx * 40}ms`, animationFillMode: 'backwards' }}
                   onClick={() => {
                     setSelectedKpiModal(null);
                     navigate(`/assessment?questionId=${gap.questionId}`);
@@ -1184,7 +1198,7 @@ export function ExecutiveDashboard({
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
+          <div className="mt-6 flex justify-end gap-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '600ms', animationFillMode: 'backwards' }}>
             <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
             <Button onClick={() => { setSelectedKpiModal(null); navigate('/assessment'); }}>
               Ir para Avaliação
@@ -1196,9 +1210,9 @@ export function ExecutiveDashboard({
       {/* Coverage Details Modal */}
       <Dialog open={selectedKpiModal === 'coverage'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-blue-500">
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-blue-500 animate-in zoom-in-50 duration-500">
                 {Math.round(coverageStats.coverage * 100)}%
               </div>
               <div>
@@ -1211,25 +1225,31 @@ export function ExecutiveDashboard({
           </DialogHeader>
 
           <div className="grid grid-cols-3 gap-3 mt-4">
-            <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{coverageStats.answered}</div>
-              <div className="text-xs text-muted-foreground">Respondidas</div>
-            </div>
-            <div className="text-center p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-              <div className="text-2xl font-bold text-amber-600">{coverageStats.pending}</div>
-              <div className="text-xs text-muted-foreground">Pendentes</div>
-            </div>
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="text-2xl font-bold">{coverageStats.total}</div>
-              <div className="text-xs text-muted-foreground">Total</div>
-            </div>
+            {[
+              { value: coverageStats.answered, label: 'Respondidas', bgClass: 'bg-green-100 dark:bg-green-900/30', textClass: 'text-green-600' },
+              { value: coverageStats.pending, label: 'Pendentes', bgClass: 'bg-amber-100 dark:bg-amber-900/30', textClass: 'text-amber-600' },
+              { value: coverageStats.total, label: 'Total', bgClass: 'bg-muted/50', textClass: '' }
+            ].map((item, idx) => (
+              <div 
+                key={idx}
+                className={cn("text-center p-3 rounded-lg animate-in fade-in-0 zoom-in-95 duration-300", item.bgClass)}
+                style={{ animationDelay: `${100 + idx * 50}ms`, animationFillMode: 'backwards' }}
+              >
+                <div className={cn("text-2xl font-bold", item.textClass)}>{item.value}</div>
+                <div className="text-xs text-muted-foreground">{item.label}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 animate-in fade-in-0 slide-in-from-bottom-3 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
             <h4 className="font-medium text-sm mb-3">Cobertura por Domínio</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {coverageDetails.byDomain.map((d, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2 bg-muted/30 rounded">
+                <div 
+                  key={idx} 
+                  className="flex items-center gap-3 p-2 bg-muted/30 rounded animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                  style={{ animationDelay: `${250 + idx * 30}ms`, animationFillMode: 'backwards' }}
+                >
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium truncate">{d.name}</span>
@@ -1246,11 +1266,15 @@ export function ExecutiveDashboard({
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 animate-in fade-in-0 slide-in-from-bottom-3 duration-300" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
             <h4 className="font-medium text-sm mb-3">Cobertura por Framework</h4>
             <div className="grid grid-cols-2 gap-2">
               {coverageDetails.byFramework.map((f, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded">
+                <div 
+                  key={idx} 
+                  className="flex items-center justify-between p-3 bg-muted/30 rounded animate-in fade-in-0 zoom-in-95 duration-200"
+                  style={{ animationDelay: `${400 + idx * 30}ms`, animationFillMode: 'backwards' }}
+                >
                   <span className="text-sm truncate">{f.name}</span>
                   <span className={cn(
                     "font-mono font-medium",
@@ -1261,7 +1285,7 @@ export function ExecutiveDashboard({
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
+          <div className="mt-6 flex justify-end gap-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
             <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
             <Button onClick={() => { setSelectedKpiModal(null); navigate('/assessment'); }}>
               Continuar Avaliação
@@ -1273,9 +1297,9 @@ export function ExecutiveDashboard({
       {/* Evidence Details Modal */}
       <Dialog open={selectedKpiModal === 'evidence'} onOpenChange={(open) => !open && setSelectedKpiModal(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-green-500">
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-lg bg-green-500 animate-in zoom-in-50 duration-500">
                 {Math.round(metrics.evidenceReadiness * 100)}%
               </div>
               <div>
@@ -1288,21 +1312,30 @@ export function ExecutiveDashboard({
           </DialogHeader>
 
           <div className="grid grid-cols-2 gap-3 mt-4">
-            <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <div className="text-3xl font-bold text-green-600">{Math.round(metrics.evidenceReadiness * 100)}%</div>
-              <div className="text-sm text-muted-foreground mt-1">Prontidão Geral</div>
-            </div>
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <div className="text-3xl font-bold">{metrics.domainMetrics.length}</div>
-              <div className="text-sm text-muted-foreground mt-1">Domínios Avaliados</div>
-            </div>
+            {[
+              { value: `${Math.round(metrics.evidenceReadiness * 100)}%`, label: 'Prontidão Geral', bgClass: 'bg-green-100 dark:bg-green-900/30', textClass: 'text-green-600' },
+              { value: metrics.domainMetrics.length, label: 'Domínios Avaliados', bgClass: 'bg-muted/50', textClass: '' }
+            ].map((item, idx) => (
+              <div 
+                key={idx}
+                className={cn("text-center p-4 rounded-lg animate-in fade-in-0 zoom-in-95 duration-300", item.bgClass)}
+                style={{ animationDelay: `${100 + idx * 50}ms`, animationFillMode: 'backwards' }}
+              >
+                <div className={cn("text-3xl font-bold", item.textClass)}>{item.value}</div>
+                <div className="text-sm text-muted-foreground mt-1">{item.label}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 animate-in fade-in-0 slide-in-from-bottom-3 duration-300" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
             <h4 className="font-medium text-sm mb-3">Prontidão por Domínio</h4>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {evidenceDetails.byDomain.map((d, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2 bg-muted/30 rounded">
+                <div 
+                  key={idx} 
+                  className="flex items-center gap-3 p-2 bg-muted/30 rounded animate-in fade-in-0 slide-in-from-left-2 duration-200"
+                  style={{ animationDelay: `${250 + idx * 30}ms`, animationFillMode: 'backwards' }}
+                >
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium truncate">{d.name}</span>
@@ -1319,7 +1352,10 @@ export function ExecutiveDashboard({
             </div>
           </div>
 
-          <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+          <div 
+            className="mt-4 p-4 bg-muted/30 rounded-lg animate-in fade-in-0 slide-in-from-bottom-3 duration-300"
+            style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}
+          >
             <h5 className="font-medium text-sm mb-2">O que é Prontidão de Evidências?</h5>
             <p className="text-sm text-muted-foreground">
               Indica o percentual de controles que possuem documentação de suporte adequada para demonstrar 
@@ -1328,7 +1364,7 @@ export function ExecutiveDashboard({
             </p>
           </div>
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end animate-in fade-in-0 duration-300" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
             <Button variant="outline" onClick={() => setSelectedKpiModal(null)}>Fechar</Button>
           </div>
         </DialogContent>

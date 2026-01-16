@@ -37,14 +37,23 @@ export default function Assessment() {
   const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
   const [currentDomainInfo, setCurrentDomainInfo] = useState<SecurityDomain | null>(null);
 
-  // Load domain info when security domain changes
+  // Track previous domain to detect changes
+  const [prevDomain, setPrevDomain] = useState<string>(selectedSecurityDomain);
+
+  // Load domain info and handle domain changes
   useEffect(() => {
     const loadDomainInfo = async () => {
       const domainInfo = await getSecurityDomainById(selectedSecurityDomain);
       setCurrentDomainInfo(domainInfo || DEFAULT_SECURITY_DOMAINS.find(d => d.domainId === selectedSecurityDomain) || null);
     };
     loadDomainInfo();
-  }, [selectedSecurityDomain]);
+
+    // If domain changed while on questions step, go back to framework selection
+    if (prevDomain !== selectedSecurityDomain && currentStep === 'questions') {
+      setCurrentStep('framework');
+    }
+    setPrevDomain(selectedSecurityDomain);
+  }, [selectedSecurityDomain, prevDomain, currentStep]);
 
   // Filter questions based on selected frameworks
   const filteredQuestions = useMemo(() => {

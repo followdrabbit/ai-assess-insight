@@ -96,6 +96,7 @@ export default function DashboardGRC() {
     metrics,
     criticalGaps,
     frameworkCoverage,
+    roadmap,
     handleFrameworkSelectionChange,
     toggleFramework,
     clearFrameworkSelection,
@@ -768,6 +769,72 @@ export default function DashboardGRC() {
         questions={questionsForDashboard}
         answers={answers}
       />
+
+      {/* Strategic Roadmap */}
+      {roadmap.length > 0 && (
+        <div 
+          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">Roadmap Estratégico</h3>
+              <DomainRoadmapHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
+            </div>
+            <div className="flex items-center gap-4">
+              <p className="text-xs text-muted-foreground hidden md:block">Ações prioritárias para os próximos 90 dias</p>
+              <div className="flex gap-2 text-xs">
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500" /> 0-30d
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" /> 30-60d
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" /> 60-90d
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {['immediate', 'short', 'medium'].map((priority, idx) => {
+              const items = roadmap.filter(r => r.priority === priority);
+              const config = {
+                immediate: { label: '0-30 dias', color: 'border-red-500', bg: 'bg-red-50 dark:bg-red-950/20' },
+                short: { label: '30-60 dias', color: 'border-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/20' },
+                medium: { label: '60-90 dias', color: 'border-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/20' },
+              }[priority]!;
+              
+              return (
+                <div 
+                  key={priority} 
+                  className={cn(
+                    "rounded-lg p-4 border-l-4 animate-in fade-in-0 slide-in-from-left-4 duration-400",
+                    config.color, 
+                    config.bg
+                  )}
+                  style={{ animationDelay: `${350 + idx * 100}ms`, animationFillMode: 'backwards' }}
+                >
+                  <h4 className="font-medium text-sm mb-3">{config.label}</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {items.length > 0 ? items.slice(0, 5).map((item, itemIdx) => (
+                      <div key={itemIdx} className="text-xs">
+                        <p className="font-medium line-clamp-2">{item.action}</p>
+                        <p className="text-muted-foreground mt-0.5">{item.domain} · {item.ownershipType}</p>
+                      </div>
+                    )) : (
+                      <p className="text-xs text-muted-foreground">Nenhuma ação pendente</p>
+                    )}
+                    {items.length > 5 && (
+                      <p className="text-xs text-primary">+{items.length - 5} mais ações</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tabs for different views */}
       <Tabs defaultValue="domains" className="space-y-4">

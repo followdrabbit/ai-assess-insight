@@ -30,6 +30,7 @@ import { questions } from '@/lib/dataset';
 import { frameworks } from '@/lib/frameworks';
 import { CardActionButtons, createEditAction, createDeleteAction, createExportAction } from './CardActionButtons';
 import { CardLoadingOverlay } from './CardLoadingOverlay';
+import { FilterBar } from './FilterBar';
 
 const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
   brain: Brain,
@@ -713,23 +714,13 @@ export function DomainManagement() {
 
           {/* Search Filter */}
           {domains.length > 3 && (
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar domínios por nome ou descrição..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-9"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            <FilterBar
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Buscar domínios por nome ou descrição..."
+              showClearButton={false}
+              className="mb-4"
+            />
           )}
 
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">

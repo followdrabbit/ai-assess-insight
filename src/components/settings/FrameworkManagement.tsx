@@ -28,6 +28,7 @@ import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/secu
 import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, ExternalLink, Filter } from 'lucide-react';
 import { CardActionButtons, createEditAction, createDeleteAction } from './CardActionButtons';
 import { CardLoadingOverlay } from './CardLoadingOverlay';
+import { FilterBar, createSecurityDomainBadges } from './FilterBar';
 
 type AudienceType = 'Executive' | 'GRC' | 'Engineering';
 type CategoryType = 'core' | 'high-value' | 'tech-focused' | 'custom';
@@ -287,39 +288,22 @@ export function FrameworkManagement() {
         </Button>
       </div>
 
-      {/* Domain Filter */}
-      <div className="flex items-center gap-3">
-        <Filter className="h-4 w-4 text-muted-foreground" />
-        <div className="flex gap-2 flex-wrap">
-          <Badge
-            variant={selectedDomainFilter === 'all' ? 'default' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => setSelectedDomainFilter('all')}
-          >
-            Todos ({defaultFrameworks.length + customFrameworks.length})
-          </Badge>
-          {securityDomains.filter(d => d.isEnabled).map(domain => {
-            const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
-            const colorStyles = DOMAIN_COLORS[domain.color];
-            const count = [...defaultFrameworks, ...customFrameworks].filter(f => f.securityDomainId === domain.domainId).length;
-            return (
-              <Badge
-                key={domain.domainId}
-                variant={selectedDomainFilter === domain.domainId ? 'default' : 'outline'}
-                className={cn(
-                  "cursor-pointer flex items-center gap-1",
-                  selectedDomainFilter === domain.domainId && colorStyles?.bg,
-                  selectedDomainFilter === domain.domainId && colorStyles?.text
-                )}
-                onClick={() => setSelectedDomainFilter(domain.domainId)}
-              >
-                <IconComp className="h-3 w-3" />
-                {domain.shortName} ({count})
-              </Badge>
-            );
-          })}
-        </div>
-      </div>
+      <FilterBar
+        showSearch={false}
+        domainBadges={{
+          value: selectedDomainFilter,
+          onChange: setSelectedDomainFilter,
+          options: createSecurityDomainBadges(
+            securityDomains,
+            ICON_COMPONENTS,
+            DOMAIN_COLORS,
+            (domainId) => [...defaultFrameworks, ...customFrameworks].filter(f => f.securityDomainId === domainId).length
+          ),
+          allLabel: 'Todos',
+          showAllCount: true,
+          allCount: defaultFrameworks.length + customFrameworks.length,
+        }}
+      />
 
       {/* All Frameworks */}
       <div className="space-y-3">

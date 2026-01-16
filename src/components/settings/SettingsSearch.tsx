@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Search, X, ArrowRight, FolderTree, Library, SlidersHorizontal, Wrench, Shield, BookOpen, Building2, FileDown, Trash2, Info } from 'lucide-react';
+import { Search, X, ArrowRight, Layers, BookMarked, ClipboardList, Settings, Shield, BookOpen, Building2, FileDown, Trash2, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
     keywords: ['domínio', 'security domain', 'ai security', 'cloud security', 'devsecops', 'habilitar', 'desabilitar'],
     tab: 'structure',
     section: 'Gerenciar Domínios de Segurança',
-    icon: FolderTree,
+    icon: Layers,
   },
   
   // Library Tab
@@ -118,10 +118,10 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
 ];
 
 const TAB_CONFIG = {
-  structure: { label: 'Domínios', icon: FolderTree, color: 'bg-purple-500/10 text-purple-700' },
-  library: { label: 'Biblioteca', icon: Library, color: 'bg-blue-500/10 text-blue-700' },
-  assessment: { label: 'Avaliação', icon: SlidersHorizontal, color: 'bg-amber-500/10 text-amber-700' },
-  system: { label: 'Sistema', icon: Wrench, color: 'bg-gray-500/10 text-gray-700' },
+  structure: { label: 'Domínios', icon: Layers, color: 'bg-purple-500/10 text-purple-700' },
+  library: { label: 'Conteúdo', icon: BookMarked, color: 'bg-blue-500/10 text-blue-700' },
+  assessment: { label: 'Avaliação', icon: ClipboardList, color: 'bg-amber-500/10 text-amber-700' },
+  system: { label: 'Geral', icon: Settings, color: 'bg-gray-500/10 text-gray-700' },
 };
 
 interface SettingsSearchProps {

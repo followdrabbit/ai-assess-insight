@@ -67,11 +67,18 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
 
   const handleSelectDomain = async (domain: SecurityDomain) => {
     if (domain.domainId !== selectedSecurityDomain) {
-      await setSelectedSecurityDomain(domain.domainId);
-      toast.success(`Domínio alterado para ${domain.domainName}`, {
-        description: 'Os dados foram atualizados para refletir o novo contexto.',
-        duration: 3000,
-      });
+      // Show loading state
+      setIsLoading(true);
+      try {
+        await setSelectedSecurityDomain(domain.domainId);
+        toast.success(`Domínio alterado para ${domain.domainName}`, {
+          description: 'Os dados foram atualizados para refletir o novo contexto.',
+          duration: 3000,
+        });
+      } finally {
+        // Small delay to allow data to reload
+        setTimeout(() => setIsLoading(false), 500);
+      }
     }
   };
 

@@ -10,24 +10,25 @@ const DEMO_EMAIL = 'demo@aiassess.app';
 
 // Response distribution for realistic demo data
 // ~40% Sim, ~30% Parcial, ~20% Não, ~10% NA
-const getRandomResponse = (seed: number): string => {
-  const rand = (seed * 9301 + 49297) % 233280 / 233280;
-  if (rand < 0.40) return 'Sim';
-  if (rand < 0.70) return 'Parcial';
-  if (rand < 0.90) return 'Não';
-  return 'NA';
+const getRandomResponse = (index: number): string => {
+  // Use simple modulo for better distribution
+  const mod = index % 10;
+  if (mod < 4) return 'Sim';       // 0,1,2,3 = 40%
+  if (mod < 7) return 'Parcial';   // 4,5,6 = 30%
+  if (mod < 9) return 'Não';       // 7,8 = 20%
+  return 'NA';                      // 9 = 10%
 };
 
 // Evidence status based on response (using Portuguese values)
-const getEvidenceStatus = (response: string, seed: number): string | null => {
+const getEvidenceStatus = (response: string, index: number): string | null => {
   if (response === 'NA') return null;
   if (response === 'Não') return null;
-  const rand = (seed * 7919 + 31337) % 233280 / 233280;
+  const mod = index % 3;
   if (response === 'Sim') {
-    return rand < 0.7 ? 'Sim' : 'Parcial';
+    return mod < 2 ? 'Sim' : 'Parcial';  // 66% Sim, 33% Parcial
   }
   // Parcial response
-  return rand < 0.5 ? 'Parcial' : 'Não';
+  return mod === 0 ? 'Parcial' : 'Não';
 };
 
 // Generate demo notes based on response
@@ -106,14 +107,61 @@ Deno.serve(async (req) => {
 
     const demoUserId = demoUser.id;
 
-    // Fetch all default questions
-    const { data: questions, error: questionsError } = await supabaseAdmin
+    // AI Security questions from JSON (hardcoded IDs)
+    const aiSecurityQuestions = [
+      // GOVERN (20 questions)
+      'GOVERN-01-Q01', 'GOVERN-01-Q02', 'GOVERN-01-Q03', 'GOVERN-01-Q04',
+      'GOVERN-02-Q01', 'GOVERN-02-Q02', 'GOVERN-02-Q03', 'GOVERN-02-Q04',
+      'GOVERN-03-Q01', 'GOVERN-03-Q02', 'GOVERN-03-Q03', 'GOVERN-03-Q04',
+      'GOVERN-04-Q01', 'GOVERN-04-Q02', 'GOVERN-04-Q03', 'GOVERN-04-Q04',
+      'GOVERN-05-Q01', 'GOVERN-05-Q02', 'GOVERN-05-Q03',
+      // MAP (28 questions)
+      'MAP-01-Q01', 'MAP-01-Q02', 'MAP-01-Q03', 'MAP-01-Q04',
+      'MAP-02-Q01', 'MAP-02-Q02', 'MAP-02-Q03', 'MAP-02-Q04',
+      'MAP-03-Q01', 'MAP-03-Q02', 'MAP-03-Q03', 'MAP-03-Q04',
+      'MAP-04-Q01', 'MAP-04-Q02', 'MAP-04-Q03', 'MAP-04-Q04',
+      'MAP-05-Q01', 'MAP-05-Q02', 'MAP-05-Q03', 'MAP-05-Q04',
+      'MAP-06-Q01', 'MAP-06-Q02', 'MAP-06-Q03', 'MAP-06-Q04',
+      'MAP-07-Q01', 'MAP-07-Q02', 'MAP-07-Q03', 'MAP-07-Q04', 'MAP-07-Q05',
+      // DATA (24 questions)
+      'DATA-01-Q01', 'DATA-01-Q02', 'DATA-01-Q03', 'DATA-01-Q04', 'DATA-01-Q05', 'DATA-01-Q06',
+      'DATA-02-Q01', 'DATA-02-Q02', 'DATA-02-Q03', 'DATA-02-Q04', 'DATA-02-Q05', 'DATA-02-Q06',
+      'DATA-03-Q01', 'DATA-03-Q02', 'DATA-03-Q03', 'DATA-03-Q04', 'DATA-03-Q05', 'DATA-03-Q06',
+      'DATA-04-Q01', 'DATA-04-Q02', 'DATA-04-Q03', 'DATA-04-Q04', 'DATA-04-Q05', 'DATA-04-Q06',
+      // DEVELOP (18 questions)
+      'DEVELOP-01-Q01', 'DEVELOP-01-Q02', 'DEVELOP-01-Q03', 'DEVELOP-01-Q04', 'DEVELOP-01-Q05', 'DEVELOP-01-Q06',
+      'DEVELOP-02-Q01', 'DEVELOP-02-Q02', 'DEVELOP-02-Q03', 'DEVELOP-02-Q04', 'DEVELOP-02-Q05', 'DEVELOP-02-Q06',
+      'DEVELOP-03-Q01', 'DEVELOP-03-Q02', 'DEVELOP-03-Q03', 'DEVELOP-03-Q04', 'DEVELOP-03-Q05', 'DEVELOP-03-Q06',
+      // MEASURE (19 questions)
+      'MEASURE-01-Q01', 'MEASURE-01-Q02', 'MEASURE-01-Q03',
+      'MEASURE-02-Q01', 'MEASURE-02-Q02', 'MEASURE-02-Q03',
+      'MEASURE-03-Q01', 'MEASURE-03-Q02', 'MEASURE-03-Q03',
+      'MEASURE-04-Q01', 'MEASURE-04-Q02', 'MEASURE-04-Q03',
+      'MEASURE-05-Q01', 'MEASURE-05-Q02', 'MEASURE-05-Q03',
+      'MEASURE-06-Q01', 'MEASURE-06-Q02', 'MEASURE-06-Q03',
+      // PROTECT (14 questions)
+      'PROTECT-01-Q01', 'PROTECT-01-Q02', 'PROTECT-01-Q03', 'PROTECT-01-Q04',
+      'PROTECT-02-Q01', 'PROTECT-02-Q02', 'PROTECT-02-Q03', 'PROTECT-02-Q04', 'PROTECT-02-Q05',
+      'PROTECT-03-Q01', 'PROTECT-03-Q02', 'PROTECT-03-Q03',
+      // DETECT (11 questions)
+      'DETECT-01-Q01', 'DETECT-01-Q02', 'DETECT-01-Q03', 'DETECT-01-Q04',
+      'DETECT-02-Q01', 'DETECT-02-Q02', 'DETECT-02-Q03', 'DETECT-02-Q04',
+      // RESPOND (9 questions)
+      'RESPOND-01-Q01', 'RESPOND-01-Q02', 'RESPOND-01-Q03', 'RESPOND-01-Q04',
+      'RESPOND-02-Q01', 'RESPOND-02-Q02', 'RESPOND-02-Q03',
+    ].map(id => ({ question_id: id, security_domain_id: 'AI_SECURITY' }));
+
+    // Fetch all default questions from database (CLOUD_SECURITY, DEVSECOPS)
+    const { data: dbQuestions, error: questionsError } = await supabaseAdmin
       .from('default_questions')
       .select('question_id, security_domain_id');
 
     if (questionsError) {
       throw new Error(`Error fetching questions: ${questionsError.message}`);
     }
+
+    // Combine AI Security questions with database questions
+    const questions = [...aiSecurityQuestions, ...(dbQuestions || [])];
 
     // Check existing answers
     const { data: existingAnswers } = await supabaseAdmin
@@ -143,9 +191,8 @@ Deno.serve(async (req) => {
 
     // Generate answers for all questions
     const answers = questionsToAnswer.map((q, index) => {
-      const seed = q.question_id.charCodeAt(q.question_id.length - 1) + index;
-      const response = getRandomResponse(seed);
-      const evidenceOk = getEvidenceStatus(response, seed);
+      const response = getRandomResponse(index);
+      const evidenceOk = getEvidenceStatus(response, index);
       const notes = getDemoNote(response, q.question_id);
 
       return {

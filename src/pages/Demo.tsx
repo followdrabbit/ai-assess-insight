@@ -69,6 +69,83 @@ const slideInRight = {
   visible: { opacity: 1, x: 0 },
 };
 
+// Presentation slide transition types
+type TransitionType = 'fade' | 'slideLeft' | 'slideRight' | 'slideUp' | 'slideDown' | 'zoom' | 'rotate' | 'flip' | 'cube';
+
+interface TransitionVariant {
+  opacity: number;
+  x?: number;
+  y?: number;
+  scale?: number;
+  rotate?: number;
+  rotateY?: number;
+  transformOrigin?: string;
+}
+
+const slideTransitions: Record<TransitionType, {
+  initial: TransitionVariant;
+  animate: TransitionVariant;
+  exit: TransitionVariant;
+}> = {
+  fade: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+  },
+  slideLeft: {
+    initial: { opacity: 0, x: 100 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -100 },
+  },
+  slideRight: {
+    initial: { opacity: 0, x: -100 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 100 },
+  },
+  slideUp: {
+    initial: { opacity: 0, y: 100 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -100 },
+  },
+  slideDown: {
+    initial: { opacity: 0, y: -100 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 100 },
+  },
+  zoom: {
+    initial: { opacity: 0, scale: 0.5 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 1.5 },
+  },
+  rotate: {
+    initial: { opacity: 0, scale: 0.8, rotate: -10 },
+    animate: { opacity: 1, scale: 1, rotate: 0 },
+    exit: { opacity: 0, scale: 0.8, rotate: 10 },
+  },
+  flip: {
+    initial: { opacity: 0, rotateY: 90 },
+    animate: { opacity: 1, rotateY: 0 },
+    exit: { opacity: 0, rotateY: -90 },
+  },
+  cube: {
+    initial: { opacity: 0, rotateY: -90, transformOrigin: 'right center' },
+    animate: { opacity: 1, rotateY: 0, transformOrigin: 'center center' },
+    exit: { opacity: 0, rotateY: 90, transformOrigin: 'left center' },
+  },
+};
+
+const transitionOptions: { value: TransitionType; label: string }[] = [
+  { value: 'fade', label: 'Fade' },
+  { value: 'slideLeft', label: 'Deslizar ←' },
+  { value: 'slideRight', label: 'Deslizar →' },
+  { value: 'slideUp', label: 'Deslizar ↑' },
+  { value: 'slideDown', label: 'Deslizar ↓' },
+  { value: 'zoom', label: 'Zoom' },
+  { value: 'rotate', label: 'Rotação' },
+  { value: 'flip', label: 'Flip 3D' },
+  { value: 'cube', label: 'Cubo 3D' },
+];
+
 interface Screenshot {
   id: string;
   title: string;
@@ -246,17 +323,21 @@ export default function Demo() {
   const [autoPlayInterval, setAutoPlayInterval] = useState(5000); // 5 seconds default
   const [progress, setProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [transitionType, setTransitionType] = useState<TransitionType>('slideLeft');
+  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
 
   const filteredScreenshots = activeCategory === 'all' 
     ? screenshots 
     : screenshots.filter(s => s.category === activeCategory);
 
   const nextScreenshot = useCallback(() => {
+    setSlideDirection('next');
     setActiveScreenshot((prev) => (prev + 1) % filteredScreenshots.length);
     setProgress(0);
   }, [filteredScreenshots.length]);
 
   const prevScreenshot = useCallback(() => {
+    setSlideDirection('prev');
     setActiveScreenshot((prev) => (prev - 1 + filteredScreenshots.length) % filteredScreenshots.length);
     setProgress(0);
   }, [filteredScreenshots.length]);
@@ -360,11 +441,27 @@ export default function Demo() {
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Transition Type Selector */}
+              <div className="flex items-center gap-2 mr-2">
+                <span className="text-sm text-muted-foreground hidden lg:inline">Transição:</span>
+                <select
+                  value={transitionType}
+                  onChange={(e) => setTransitionType(e.target.value as TransitionType)}
+                  className="bg-background border rounded-md px-2 py-1 text-sm"
+                >
+                  {transitionOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Speed Control */}
-              <div className="flex items-center gap-2 mr-4">
-                <span className="text-sm text-muted-foreground">Velocidade:</span>
+              <div className="flex items-center gap-2 mr-2">
+                <span className="text-sm text-muted-foreground hidden lg:inline">Velocidade:</span>
                 <div className="flex gap-1">
-                  {[3000, 5000, 8000, 10000].map((speed) => (
+                  {[3000, 5000, 8000].map((speed) => (
                     <Button
                       key={speed}
                       variant={autoPlayInterval === speed ? "default" : "outline"}
@@ -416,57 +513,121 @@ export default function Demo() {
         </motion.div>
 
         {/* Main Content */}
-        <div className="flex items-center justify-center h-full pt-20 pb-24 px-8">
-          <AnimatePresence mode="wait">
+        <div className="flex items-center justify-center h-full pt-20 pb-24 px-8" style={{ perspective: '1200px' }}>
+          <AnimatePresence mode="wait" custom={slideDirection}>
             <motion.div
               key={activeScreenshot}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4 }}
+              custom={slideDirection}
+              initial={slideTransitions[transitionType].initial as any}
+              animate={slideTransitions[transitionType].animate as any}
+              exit={slideTransitions[transitionType].exit as any}
+              transition={{ 
+                duration: 0.5, 
+                ease: [0.4, 0, 0.2, 1],
+              }}
               className="max-w-5xl w-full"
+              style={{ transformStyle: 'preserve-3d' }}
             >
               <Card className="overflow-hidden shadow-2xl">
                 <div className="grid md:grid-cols-2 min-h-[500px]">
                   {/* Visual Preview */}
                   <motion.div 
                     className="bg-gradient-to-br from-primary/10 to-primary/5 p-12 flex items-center justify-center"
-                    initial={{ x: -50, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, duration: 0.4 }}
                   >
                     <div className="text-center">
                       <motion.div 
                         className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 text-primary"
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
-                        transition={{ duration: 0.5, type: "spring" }}
+                        transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
                       >
-                        <div className="scale-150">
+                        <motion.div 
+                          className="scale-150"
+                          animate={{ rotate: [0, 5, -5, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                        >
                           {filteredScreenshots[activeScreenshot]?.icon}
-                        </div>
+                        </motion.div>
                       </motion.div>
                       <div className="w-full max-w-md mx-auto">
                         <motion.div 
                           className="bg-background rounded-lg shadow-xl p-6 space-y-4"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ duration: 0.5, delay: 0.2 }}
+                          initial={{ y: 30, opacity: 0, scale: 0.95 }}
+                          animate={{ y: 0, opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5, delay: 0.25 }}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-400" />
-                            <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                            <div className="w-3 h-3 rounded-full bg-green-400" />
-                            <div className="flex-1 h-5 bg-muted rounded ml-2" />
-                          </div>
-                          <div className="h-4 bg-muted rounded w-3/4" />
-                          <div className="h-4 bg-muted rounded w-1/2" />
-                          <div className="grid grid-cols-3 gap-3 mt-6">
-                            <div className="h-20 bg-primary/10 rounded" />
-                            <div className="h-20 bg-primary/20 rounded" />
-                            <div className="h-20 bg-primary/10 rounded" />
-                          </div>
-                          <div className="h-28 bg-muted/50 rounded mt-3" />
+                          <motion.div 
+                            className="flex items-center gap-2"
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                          >
+                            <motion.div 
+                              className="w-3 h-3 rounded-full bg-red-400"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                            />
+                            <motion.div 
+                              className="w-3 h-3 rounded-full bg-yellow-400"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
+                            />
+                            <motion.div 
+                              className="w-3 h-3 rounded-full bg-green-400"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: 0.9 }}
+                            />
+                            <motion.div 
+                              className="flex-1 h-5 bg-muted rounded ml-2"
+                              initial={{ scaleX: 0 }}
+                              animate={{ scaleX: 1 }}
+                              transition={{ delay: 0.4, duration: 0.3 }}
+                              style={{ originX: 0 }}
+                            />
+                          </motion.div>
+                          <motion.div 
+                            className="h-4 bg-muted rounded w-3/4"
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ delay: 0.45, duration: 0.3 }}
+                            style={{ originX: 0 }}
+                          />
+                          <motion.div 
+                            className="h-4 bg-muted rounded w-1/2"
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ delay: 0.5, duration: 0.3 }}
+                            style={{ originX: 0 }}
+                          />
+                          <motion.div 
+                            className="grid grid-cols-3 gap-3 mt-6"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.55 }}
+                          >
+                            {[0.1, 0.2, 0.1].map((opacity, i) => (
+                              <motion.div 
+                                key={i}
+                                className="h-20 rounded"
+                                style={{ backgroundColor: `hsl(var(--primary) / ${opacity})` }}
+                                whileHover={{ scale: 1.05 }}
+                                animate={{ 
+                                  boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 2px hsl(var(--primary) / 0.2)', '0 0 0 0 hsl(var(--primary) / 0)']
+                                }}
+                                transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                              />
+                            ))}
+                          </motion.div>
+                          <motion.div 
+                            className="h-28 bg-muted/50 rounded mt-3"
+                            initial={{ scaleY: 0 }}
+                            animate={{ scaleY: 1 }}
+                            transition={{ delay: 0.65, duration: 0.3 }}
+                            style={{ originY: 0 }}
+                          />
                         </motion.div>
                       </div>
                     </div>
@@ -475,32 +636,54 @@ export default function Demo() {
                   {/* Description */}
                   <motion.div 
                     className="p-12 flex flex-col justify-center"
-                    initial={{ x: 50, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2, duration: 0.4 }}
                   >
-                    <Badge variant="outline" className="w-fit mb-4 text-sm">
-                      {filteredScreenshots[activeScreenshot]?.category === 'dashboard' && 'Dashboard'}
-                      {filteredScreenshots[activeScreenshot]?.category === 'assessment' && 'Avaliação'}
-                      {filteredScreenshots[activeScreenshot]?.category === 'ai' && 'Inteligência Artificial'}
-                      {filteredScreenshots[activeScreenshot]?.category === 'settings' && 'Configurações'}
-                    </Badge>
-                    <h3 className="text-3xl font-bold mb-4">
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.25 }}
+                    >
+                      <Badge variant="outline" className="w-fit mb-4 text-sm">
+                        {filteredScreenshots[activeScreenshot]?.category === 'dashboard' && 'Dashboard'}
+                        {filteredScreenshots[activeScreenshot]?.category === 'assessment' && 'Avaliação'}
+                        {filteredScreenshots[activeScreenshot]?.category === 'ai' && 'Inteligência Artificial'}
+                        {filteredScreenshots[activeScreenshot]?.category === 'settings' && 'Configurações'}
+                      </Badge>
+                    </motion.div>
+                    <motion.h3 
+                      className="text-3xl font-bold mb-4"
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.4 }}
+                    >
                       {filteredScreenshots[activeScreenshot]?.title}
-                    </h3>
-                    <p className="text-muted-foreground mb-8 text-lg">
+                    </motion.h3>
+                    <motion.p 
+                      className="text-muted-foreground mb-8 text-lg"
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35, duration: 0.4 }}
+                    >
                       {filteredScreenshots[activeScreenshot]?.description}
-                    </p>
+                    </motion.p>
                     <ul className="space-y-3">
                       {filteredScreenshots[activeScreenshot]?.features.map((feature, idx) => (
                         <motion.li 
                           key={feature} 
                           className="flex items-center gap-3 text-base"
-                          initial={{ opacity: 0, x: 20 }}
+                          initial={{ opacity: 0, x: 30 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.3 + idx * 0.1 }}
+                          transition={{ delay: 0.4 + idx * 0.08, duration: 0.3 }}
                         >
-                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.45 + idx * 0.08, type: "spring", stiffness: 500 }}
+                          >
+                            <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                          </motion.div>
                           {feature}
                         </motion.li>
                       ))}

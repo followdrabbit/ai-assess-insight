@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,20 +73,22 @@ const emptyFormData: FrameworkFormData = {
   securityDomainId: ''
 };
 
-const categoryLabels: Record<CategoryType, string> = {
-  core: 'Core',
-  'high-value': 'Alto Valor',
-  'tech-focused': 'Técnico',
-  custom: 'Personalizado'
-};
-
-const audienceLabels: Record<AudienceType, string> = {
-  Executive: 'Executivo',
-  GRC: 'GRC',
-  Engineering: 'Engenharia'
-};
-
 export function FrameworkManagement() {
+  const { t } = useTranslation();
+
+  const categoryLabels: Record<CategoryType, string> = {
+    core: t('settings.categoryCore'),
+    'high-value': t('settings.categoryHighValue'),
+    'tech-focused': t('settings.categoryTechFocused'),
+    custom: t('settings.categoryCustom')
+  };
+
+  const audienceLabels: Record<AudienceType, string> = {
+    Executive: t('settings.audienceExecutive'),
+    GRC: t('settings.audienceGRC'),
+    Engineering: t('settings.audienceEngineering')
+  };
+
   const [customFrameworks, setCustomFrameworks] = useState<CustomFramework[]>([]);
   const [disabledDefaultFrameworks, setDisabledDefaultFrameworks] = useState<Set<string>>(new Set());
   const [securityDomains, setSecurityDomains] = useState<SecurityDomain[]>([]);
@@ -165,30 +168,30 @@ export function FrameworkManagement() {
 
   const validateForm = (): boolean => {
     if (!formData.frameworkId.trim()) {
-      toast.error('ID do framework é obrigatório');
+      toast.error(t('settings.frameworkIdRequired'));
       return false;
     }
     if (!formData.frameworkName.trim()) {
-      toast.error('Nome do framework é obrigatório');
+      toast.error(t('settings.frameworkNameRequired'));
       return false;
     }
     if (!formData.shortName.trim()) {
-      toast.error('Nome curto é obrigatório');
+      toast.error(t('settings.shortNameRequired'));
       return false;
     }
     if (formData.targetAudience.length === 0) {
-      toast.error('Selecione pelo menos um público-alvo');
+      toast.error(t('settings.selectAudience'));
       return false;
     }
     if (!formData.securityDomainId) {
-      toast.error('Selecione um domínio de segurança');
+      toast.error(t('settings.selectSecurityDomain'));
       return false;
     }
 
     // Check for duplicate ID only when creating completely new framework
     const customFrameworkIds = customFrameworks.map(f => f.frameworkId);
     if (!editingFramework && !isEditingDefault && customFrameworkIds.includes(formData.frameworkId)) {
-      toast.error('Já existe um framework personalizado com este ID');
+      toast.error(t('settings.duplicateFrameworkId'));
       return false;
     }
     return true;
@@ -214,21 +217,21 @@ export function FrameworkManagement() {
       if (editingFramework) {
         // Editing existing custom framework
         await updateCustomFramework(editingFramework.frameworkId, frameworkData);
-        toast.success('Framework atualizado com sucesso');
+        toast.success(t('settings.frameworkUpdated'));
       } else if (isEditingDefault) {
         // Creating custom override for default framework
         await createCustomFramework(frameworkData);
-        toast.success('Framework padrão substituído por versão personalizada');
+        toast.success(t('settings.defaultOverridden'));
       } else {
         // Creating new custom framework
         await createCustomFramework(frameworkData);
-        toast.success('Framework criado com sucesso');
+        toast.success(t('settings.frameworkCreated'));
       }
       await loadData();
       setIsDialogOpen(false);
       setIsEditingDefault(false);
     } catch (error) {
-      toast.error('Erro ao salvar framework');
+      toast.error(t('errors.generic'));
       console.error(error);
     }
   };
@@ -238,14 +241,14 @@ export function FrameworkManagement() {
     try {
       if (isCustom) {
         await deleteCustomFramework(frameworkId);
-        toast.success('Framework personalizado removido com sucesso');
+        toast.success(t('settings.frameworkDeleted'));
       } else {
         await disableDefaultFramework(frameworkId);
-        toast.success('Framework padrão desabilitado com sucesso');
+        toast.success(t('settings.frameworkDisabled'));
       }
       await loadData();
     } catch (error) {
-      toast.error('Erro ao remover framework');
+      toast.error(t('errors.generic'));
       console.error(error);
     } finally {
       setOperatingId(null);
@@ -255,10 +258,10 @@ export function FrameworkManagement() {
   const handleRestore = async (frameworkId: string) => {
     try {
       await enableDefaultFramework(frameworkId);
-      toast.success('Framework restaurado com sucesso');
+      toast.success(t('settings.frameworkRestored'));
       await loadData();
     } catch (error) {
-      toast.error('Erro ao restaurar framework');
+      toast.error(t('errors.generic'));
       console.error(error);
     }
   };
@@ -277,14 +280,14 @@ export function FrameworkManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Gerenciar Frameworks</h3>
+          <h3 className="text-lg font-semibold">{t('settings.manageFrameworks')}</h3>
           <p className="text-sm text-muted-foreground">
-            Visualize, crie e edite frameworks de avaliação
+            {t('settings.manageFrameworksDesc')}
           </p>
         </div>
         <Button variant="outline" onClick={openNewDialog}>
           <Plus className="h-4 w-4 mr-2" />
-          Novo Framework
+          {t('settings.newFramework')}
         </Button>
       </div>
 
@@ -299,7 +302,7 @@ export function FrameworkManagement() {
             DOMAIN_COLORS,
             (domainId) => [...defaultFrameworks, ...customFrameworks].filter(f => f.securityDomainId === domainId).length
           ),
-          allLabel: 'Todos',
+          allLabel: t('settings.all'),
           showAllCount: true,
           allCount: defaultFrameworks.length + customFrameworks.length,
         }}
@@ -308,7 +311,7 @@ export function FrameworkManagement() {
       {/* All Frameworks */}
       <div className="space-y-3">
         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-          Frameworks {selectedDomainFilter !== 'all' && `- ${getSecurityDomainInfo(selectedDomainFilter)?.shortName}`} ({allFrameworks.length})
+          {t('settings.frameworks')} {selectedDomainFilter !== 'all' && `- ${getSecurityDomainInfo(selectedDomainFilter)?.shortName}`} ({allFrameworks.length})
         </h4>
         <div className="grid gap-3 md:grid-cols-2">
           {allFrameworks.map(fw => {
@@ -320,7 +323,7 @@ export function FrameworkManagement() {
               <Card key={fw.frameworkId} className={cn("card-interactive relative", !fw.isCustom && "opacity-90")}>
                 <CardLoadingOverlay 
                   isLoading={operatingId === fw.frameworkId} 
-                  loadingText="Processando..."
+                  loadingText={t('settings.processing')}
                 />
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
@@ -328,7 +331,7 @@ export function FrameworkManagement() {
                       <CardTitle className="text-base flex items-center gap-2">
                         {fw.shortName}
                         <Badge variant={fw.isCustom ? "secondary" : "outline"} className="text-[10px]">
-                          {fw.isCustom ? 'Personalizado' : 'Padrão'}
+                          {fw.isCustom ? t('settings.custom') : t('settings.standard')}
                         </Badge>
                       </CardTitle>
                       <CardDescription className="text-xs mt-0.5">
@@ -374,11 +377,11 @@ export function FrameworkManagement() {
                         {
                           itemName: fw.shortName,
                           isDefault: !fw.isCustom,
-                          confirmTitle: fw.isCustom ? 'Excluir framework?' : 'Desabilitar framework padrão?',
+                          confirmTitle: fw.isCustom ? t('settings.deleteFrameworkTitle') : t('settings.disableFrameworkTitle'),
                           confirmDescription: fw.isCustom 
-                            ? `Você deseja excluir permanentemente o framework "${fw.shortName}"? Esta ação não pode ser desfeita.`
-                            : `Você deseja desabilitar o framework padrão "${fw.shortName}"? Ele será removido da avaliação mas poderá ser restaurado posteriormente.`,
-                          confirmActionLabel: fw.isCustom ? 'Sim, Excluir' : 'Sim, Desabilitar',
+                            ? t('settings.deleteFrameworkConfirm', { name: fw.shortName })
+                            : t('settings.disableFrameworkConfirm', { name: fw.shortName }),
+                          confirmActionLabel: fw.isCustom ? t('settings.deleteConfirm') : t('settings.disableConfirm'),
                         }
                       ),
                     ]}

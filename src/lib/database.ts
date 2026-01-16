@@ -109,10 +109,15 @@ export async function initializeDatabase(): Promise<void> {
     .single();
   
   if (!data) {
+    // All frameworks enabled by default for community testing
+    const allFrameworkIds = [
+      'NIST_AI_RMF', 'ISO_27001_27002', 'ISO_23894', 'LGPD', 'CSA_AI', 'OWASP_LLM',
+      'CSA_CCM', 'CIS_BENCHMARKS', 'NIST_SSDF', 'OWASP_API', 'OWASP_ASVS', 'SLSA'
+    ];
     await supabase.from('assessment_meta').insert({
       id: 'current',
-      name: 'Avaliação de Maturidade em Segurança de IA',
-      enabled_frameworks: ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'],
+      name: 'TrustLayer - Avaliação de Governança de Segurança',
+      enabled_frameworks: allFrameworkIds,
       selected_frameworks: [],
       version: '2.0.0'
     });
@@ -213,7 +218,11 @@ export async function getEnabledFrameworks(): Promise<string[]> {
     .eq('id', 'current')
     .single();
   
-  if (error || !data) return ['NIST_AI_RMF', 'ISO_27001_27002', 'LGPD'];
+  // All frameworks enabled by default for community testing
+  if (error || !data) return [
+    'NIST_AI_RMF', 'ISO_27001_27002', 'ISO_23894', 'LGPD', 'CSA_AI', 'OWASP_LLM',
+    'CSA_CCM', 'CIS_BENCHMARKS', 'NIST_SSDF', 'OWASP_API', 'OWASP_ASVS', 'SLSA'
+  ];
   return data.enabled_frameworks || [];
 }
 

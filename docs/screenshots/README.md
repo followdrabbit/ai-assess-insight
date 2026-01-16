@@ -1,25 +1,35 @@
-# 📸 Screenshots
+# 📸 Screenshots do TrustLayer
 
 Esta pasta contém os screenshots da plataforma TrustLayer para documentação.
 
-## 📋 Lista de Screenshots Necessários
+## ✅ Screenshots Disponíveis
 
-Capture e salve os seguintes screenshots com os nomes indicados:
+| Arquivo | Descrição | Status |
+|---------|-----------|--------|
+| `login.png` | Tela de login com credenciais demo | ✅ |
+
+### Em `src/assets/screenshots/`:
+
+| Arquivo | Descrição | Status |
+|---------|-----------|--------|
+| `assessment.png` | Questionário de avaliação | ✅ |
+| `dashboard-executive.png` | Dashboard Executivo | ✅ |
+| `dashboard-grc.png` | Dashboard GRC | ✅ |
+| `dashboard-specialist.png` | Dashboard Especialista | ✅ |
+| `ai-assistant.png` | Painel do Assistente de IA | ✅ |
+| `frameworks.png` | Gestão de Frameworks | ✅ |
+
+## 📋 Screenshots Sugeridos
 
 | Arquivo | Descrição | Rota |
 |---------|-----------|------|
-| `home.png` | Página inicial com seleção de frameworks | `/` |
-| `assessment.png` | Questionário de avaliação | `/assessment` |
-| `dashboard-executive.png` | Dashboard Executivo | `/dashboard/executive` |
-| `dashboard-grc.png` | Dashboard GRC | `/dashboard/grc` |
-| `dashboard-specialist.png` | Dashboard Especialista | `/dashboard/specialist` |
+| `voice-profile.png` | Cadastro de perfil de voz | `/profile` |
+| `voice-recording.png` | Gravação com ondas sonoras em tempo real | `/profile` |
 | `period-comparison.png` | Card de comparação de períodos | `/dashboard/executive` |
-| `ai-assistant.png` | Painel do Assistente de IA | Qualquer página (FAB) |
-| `settings-frameworks.png` | Gestão de Frameworks | `/settings` (aba Frameworks) |
-| `settings-questions.png` | Gestão de Questões | `/settings` (aba Questões) |
 | `settings-siem.png` | Integrações SIEM | `/settings` (aba Integrações) |
-| `profile.png` | Perfil do usuário | `/profile` |
+| `settings-questions.png` | Gestão de Questões | `/settings` (aba Questões) |
 | `dark-theme.png` | Qualquer tela em tema escuro | Qualquer página |
+| `mobile-view.png` | Visualização mobile responsiva | Qualquer página |
 
 ## 📐 Especificações
 
@@ -35,9 +45,22 @@ Capture e salve os seguintes screenshots com os nomes indicados:
 3. Navegue até cada página e capture o screenshot
 4. Salve com os nomes exatos listados acima
 
+## 🎤 Voice Profile Screenshots
+
+Para capturar screenshots do sistema de voz:
+
+1. Navegue até `/profile`
+2. Localize o card "Perfil de Voz"
+3. Para `voice-profile.png`: Capture o card com opções de enrollment
+4. Para `voice-recording.png`: 
+   - Inicie o cadastro de voz
+   - Clique em "Gravar Frase"
+   - Capture enquanto as barras de áudio estão animadas
+
 ## 📝 Notas
 
 - Redimensione o navegador para mostrar a área mais relevante
 - Para o AI Assistant, abra o painel antes de capturar
 - Para Period Comparison, selecione dois períodos com dados
 - Para SIEM, adicione pelo menos uma integração de exemplo
+- Para Voice Recording, capture durante a gravação para ver as ondas sonoras

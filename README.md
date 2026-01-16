@@ -38,79 +38,47 @@ Uma plataforma completa de governança de segurança multi-domínio para **AI Se
 
 <div align="center">
 
-### 🏠 Home - Seleção de Frameworks
-![Home Page](docs/screenshots/home.png)
-*Página inicial com seleção de frameworks e onboarding do usuário*
+### 🔐 Login - Autenticação Segura
+![Login](docs/screenshots/login.png)
+*Tela de login com credenciais demo pré-preenchidas*
 
 ---
 
 ### 📋 Assessment - Questionário de Avaliação
-![Assessment](docs/screenshots/assessment.png)
+![Assessment](src/assets/screenshots/assessment.png)
 *Questionário estruturado por domínios L1/L2 com campos de evidência*
 
 ---
 
 ### 📊 Dashboard Executivo
-![Executive Dashboard](docs/screenshots/dashboard-executive.png)
+![Executive Dashboard](src/assets/screenshots/dashboard-executive.png)
 *Visão estratégica com KPIs, gráficos de maturidade e roadmap para CISO*
 
 ---
 
 ### 📈 Dashboard GRC
-![GRC Dashboard](docs/screenshots/dashboard-grc.png)
+![GRC Dashboard](src/assets/screenshots/dashboard-grc.png)
 *Governança, Riscos e Compliance com cobertura de frameworks e conformidade*
 
 ---
 
 ### 🔧 Dashboard Especialista
-![Specialist Dashboard](docs/screenshots/dashboard-specialist.png)
+![Specialist Dashboard](src/assets/screenshots/dashboard-specialist.png)
 *Detalhes técnicos com métricas por categoria e gaps críticos*
 
 ---
 
-### 📉 Comparação de Períodos
-![Period Comparison](docs/screenshots/period-comparison.png)
-*Análise side-by-side de diferentes intervalos de tempo*
-
----
-
 ### 🤖 Assistente de IA
-![AI Assistant](docs/screenshots/ai-assistant.png)
+![AI Assistant](src/assets/screenshots/ai-assistant.png)
 *Chat interativo com análise contextual do assessment*
 
 ---
 
 ### ⚙️ Configurações - Gestão de Frameworks
-![Settings Frameworks](docs/screenshots/settings-frameworks.png)
+![Settings Frameworks](src/assets/screenshots/frameworks.png)
 *Gerenciamento de frameworks padrão e customizados*
 
----
-
-### 📝 Configurações - Gestão de Questões
-![Settings Questions](docs/screenshots/settings-questions.png)
-*Criação e edição de questões com versionamento*
-
----
-
-### 🔗 Configurações - Integrações SIEM
-![Settings SIEM](docs/screenshots/settings-siem.png)
-*Configuração de integrações com sistemas SIEM*
-
----
-
-### 👤 Perfil do Usuário
-![Profile](docs/screenshots/profile.png)
-*Configurações de perfil, preferências e notificações*
-
----
-
-### 🌙 Tema Escuro
-![Dark Theme](docs/screenshots/dark-theme.png)
-*Suporte completo a tema escuro em todas as telas*
-
 </div>
-
-> **Nota**: Para adicionar os screenshots, salve as imagens na pasta `docs/screenshots/` com os nomes indicados acima.
 
 ---
 
@@ -161,9 +129,18 @@ Esta ferramenta permite que organizações avaliem sua postura de segurança em 
 - **Cadastro biométrico**: Grave frases para treinar o sistema a reconhecer sua voz
 - **Níveis de enrollment**: Padrão (6 frases, ~2min) ou Avançado (12 frases, ~5min)
 - **Verificação automática**: Filtra comandos de vozes não cadastradas
-- **Processamento híbrido**: Extração de features local + verificação client-side
+- **Processamento em Web Worker**: Extração de features em background sem bloquear UI
+- **Visualização em tempo real**: Barras de áudio que respondem ao volume do microfone
+- **Barra de progresso**: Indicador visual durante processamento de áudio
 - **Indicador visual**: Mostra status de verificação em tempo real no chat
 - **Sensibilidade ajustável**: Slider para calibrar rigor da verificação
+
+**Features de Áudio Extraídas:**
+- MFCC (13 coeficientes) - Timbre vocal
+- Pitch Mean/Std - Tom de voz
+- RMS Energy - Intensidade
+- Zero Crossing Rate - Características espectrais
+- Speaking Rate - Ritmo da fala
 
 **Comandos de Voz:**
 - Navegação entre páginas por comando de voz
@@ -208,6 +185,8 @@ Esta ferramenta permite que organizações avaliem sua postura de segurança em 
 | [i18next](https://www.i18next.com/) | Internacionalização |
 | [ExcelJS](https://github.com/exceljs/exceljs) | Importação/Exportação Excel |
 | [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) | TTS/STT nativo do navegador |
+| [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) | Análise de áudio em tempo real |
+| [Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) | Processamento em background |
 | [Framer Motion](https://www.framer.com/motion/) | Animações |
 
 ## 🔊 Configuração Padrão de IA e Voz
@@ -248,8 +227,9 @@ Esta ferramenta permite que organizações avaliem sua postura de segurança em 
 | **Status** | Desativado | Ativado após enrollment |
 | **Nível** | Padrão (6 frases) | Avançado (12 frases) disponível |
 | **Sensibilidade** | 65% | Ajustável de 40% a 90% |
-| **Processamento** | Híbrido | Extração local + verificação client-side |
-| **Features** | MFCC, Pitch, Spectral | Análise multi-dimensional |
+| **Processamento** | Web Worker | Background thread, não bloqueia UI |
+| **Visualização** | Tempo real | 12 barras de frequência animadas |
+| **Features** | MFCC, Pitch, Spectral, Energy | Análise multi-dimensional |
 
 ## 📦 Pré-requisitos
 

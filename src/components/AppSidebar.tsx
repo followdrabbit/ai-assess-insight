@@ -47,6 +47,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAnswersStore } from '@/lib/stores';
 import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
+import { toast } from 'sonner';
 
 const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
   brain: Brain,
@@ -92,10 +93,15 @@ export function AppSidebar() {
     }
   }, [domains, selectedSecurityDomain]);
 
-  const handleDomainChange = async (domainId: string) => {
-    await setSelectedSecurityDomain(domainId);
-    const domain = domains.find(d => d.domainId === domainId);
-    setCurrentDomain(domain || null);
+  const handleDomainChange = async (domain: SecurityDomain) => {
+    if (domain.domainId !== selectedSecurityDomain) {
+      await setSelectedSecurityDomain(domain.domainId);
+      setCurrentDomain(domain);
+      toast.success(`Domínio alterado para ${domain.domainName}`, {
+        description: 'Os dados foram atualizados para refletir o novo contexto.',
+        duration: 3000,
+      });
+    }
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -156,7 +162,7 @@ export function AppSidebar() {
               return (
                 <DropdownMenuItem
                   key={domain.domainId}
-                  onClick={() => handleDomainChange(domain.domainId)}
+                  onClick={() => handleDomainChange(domain)}
                   className={cn(
                     "cursor-pointer gap-3 py-2.5",
                     isSelected && "bg-accent"
@@ -308,23 +314,36 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-3">
-        {!isCollapsed && currentDomain && (
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-            <div className={cn(
-              "w-2 h-2 rounded-full",
-              domainColors.bg.replace('bg-', 'bg-').replace('-100', '-500')
-            )} 
-            style={{ 
-              backgroundColor: currentDomain.color === 'purple' ? '#a855f7' :
-                               currentDomain.color === 'blue' ? '#3b82f6' :
-                               currentDomain.color === 'green' ? '#22c55e' :
-                               currentDomain.color === 'orange' ? '#f97316' :
-                               currentDomain.color === 'red' ? '#ef4444' :
-                               currentDomain.color === 'yellow' ? '#eab308' : '#3b82f6'
-            }}
+      <SidebarFooter className="border-t border-border p-2">
+        {currentDomain && (
+          <div 
+            className={cn(
+              "flex items-center gap-2 px-2 py-2 rounded-md transition-all",
+              domainColors.bg,
+              isCollapsed && "justify-center px-0"
+            )}
+          >
+            <div 
+              className="w-2.5 h-2.5 rounded-full ring-2 ring-white/50 animate-pulse"
+              style={{ 
+                backgroundColor: currentDomain.color === 'purple' ? '#a855f7' :
+                                 currentDomain.color === 'blue' ? '#3b82f6' :
+                                 currentDomain.color === 'green' ? '#22c55e' :
+                                 currentDomain.color === 'orange' ? '#f97316' :
+                                 currentDomain.color === 'red' ? '#ef4444' :
+                                 currentDomain.color === 'yellow' ? '#eab308' : '#3b82f6'
+              }}
             />
-            <span className="truncate">{currentDomain.domainName}</span>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <div className={cn("text-xs font-medium truncate", domainColors.text)}>
+                  {currentDomain.shortName}
+                </div>
+                <div className="text-[10px] text-muted-foreground truncate">
+                  Domínio ativo
+                </div>
+              </div>
+            )}
           </div>
         )}
       </SidebarFooter>

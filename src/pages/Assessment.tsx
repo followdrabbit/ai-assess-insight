@@ -166,8 +166,8 @@ export default function Assessment() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleExport = () => {
-    const blob = exportAnswersToXLSX(answers);
+  const handleExport = async () => {
+    const blob = await exportAnswersToXLSX(answers);
     downloadXLSX(blob, generateExportFilename());
     toast.success('Respostas exportadas com sucesso');
   };

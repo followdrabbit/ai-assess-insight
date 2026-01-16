@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { z } from 'zod';
+import { logAuditEvent } from './auditLog';
 
 // Helper to get current user ID
 async function getCurrentUserId(): Promise<string | null> {
@@ -103,6 +104,14 @@ export interface ChangeLog {
   action: 'create' | 'update' | 'delete' | 'disable' | 'enable';
   changes: Record<string, any>;
   createdAt: string;
+  // Enhanced audit fields
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
+  sessionId?: string | null;
+  deviceType?: string | null;
+  browserName?: string | null;
+  osName?: string | null;
 }
 
 // ============ INITIALIZATION ============
@@ -609,15 +618,19 @@ export async function enableDefaultFramework(frameworkId: string): Promise<void>
 }
 
 // ============ CHANGE LOGS ============
+/**
+ * Log a change with full audit trail (IP, User-Agent, device info)
+ * Uses edge function for server-side header capture
+ */
 export async function logChange(
   entityType: ChangeLog['entityType'],
   entityId: string,
   action: ChangeLog['action'],
   changes: Record<string, any>
 ): Promise<void> {
-  await supabase.from('change_logs').insert({
-    entity_type: entityType,
-    entity_id: entityId,
+  await logAuditEvent({
+    entityType,
+    entityId,
     action,
     changes
   });
@@ -638,7 +651,15 @@ export async function getChangeLogs(limit: number = 100): Promise<ChangeLog[]> {
     entityId: row.entity_id,
     action: row.action as ChangeLog['action'],
     changes: row.changes as Record<string, any>,
-    createdAt: row.created_at
+    createdAt: row.created_at ?? '',
+    // Enhanced audit fields
+    ipAddress: row.ip_address as string | null,
+    userAgent: row.user_agent as string | null,
+    requestId: row.request_id as string | null,
+    sessionId: row.session_id as string | null,
+    deviceType: row.device_type as string | null,
+    browserName: row.browser_name as string | null,
+    osName: row.os_name as string | null,
   }));
 }
 

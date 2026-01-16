@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Cloud, Brain, GitBranch, Server, Shield, Workflow, AlertTriangle, CheckCircle2, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActiveQuestion } from '@/lib/scoring';
@@ -121,7 +122,7 @@ function calculateIndicator(
   };
 }
 
-function getCloudSecurityIndicators(questions: ActiveQuestion[], answers: Map<string, Answer>): IndicatorData[] {
+function getCloudSecurityIndicators(questions: ActiveQuestion[], answers: Map<string, Answer>, t: (key: string) => string): IndicatorData[] {
   const cspData = calculateIndicator(questions, answers, CSP_KEYWORDS);
   const identityData = calculateIndicator(questions, answers, IDENTITY_KEYWORDS);
   const dataData = calculateIndicator(questions, answers, DATA_PROTECTION_KEYWORDS);
@@ -130,60 +131,60 @@ function getCloudSecurityIndicators(questions: ActiveQuestion[], answers: Map<st
   return [
     {
       id: 'csp-coverage',
-      label: 'Cobertura de CSPs',
+      label: t('help.cspCoverage'),
       value: cspData.positive,
       total: cspData.matched,
       percentage: cspData.matched > 0 ? (cspData.positive / cspData.matched) * 100 : 0,
       icon: <Cloud className="h-5 w-5" />,
       color: 'text-sky-500',
       bgColor: 'bg-sky-500/10',
-      description: 'Questões relacionadas a Cloud Service Providers respondidas positivamente',
+      description: t('help.cspCoverageDesc'),
       frameworkRef: 'CSA CCM: AIS, BCR, CCC',
-      detailedHelp: 'Avalia a cobertura de controles específicos para provedores de cloud (AWS, Azure, GCP). Baseado nos domínios AIS (Application & Interface Security), BCR (Business Continuity) e CCC (Change Control) do CSA CCM.'
+      detailedHelp: t('help.cspCoverageDesc')
     },
     {
       id: 'identity-security',
-      label: 'Segurança de Identidade',
+      label: t('help.identitySecurity'),
       value: identityData.positive,
       total: identityData.matched,
       percentage: identityData.matched > 0 ? (identityData.positive / identityData.matched) * 100 : 0,
       icon: <Shield className="h-5 w-5" />,
       color: 'text-violet-500',
       bgColor: 'bg-violet-500/10',
-      description: 'Controles de IAM, autenticação e autorização implementados',
+      description: t('help.identitySecurityDesc'),
       frameworkRef: 'CSA CCM: IAM, HRS',
-      detailedHelp: 'Mede a implementação de controles de Identity & Access Management. Cobre domínios IAM (Identity & Access Management) e HRS (Human Resources Security) do CSA CCM, incluindo MFA, SSO, RBAC e gestão de privilégios.'
+      detailedHelp: t('help.identitySecurityDesc')
     },
     {
       id: 'data-protection',
-      label: 'Proteção de Dados',
+      label: t('help.dataProtection'),
       value: dataData.positive,
       total: dataData.matched,
       percentage: dataData.matched > 0 ? (dataData.positive / dataData.matched) * 100 : 0,
       icon: <Server className="h-5 w-5" />,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10',
-      description: 'Criptografia, DLP e gestão de chaves',
+      description: t('help.dataProtectionDesc'),
       frameworkRef: 'CSA CCM: DSP, EKM',
-      detailedHelp: 'Avalia controles de proteção de dados em cloud. Baseado nos domínios DSP (Data Security & Privacy) e EKM (Encryption & Key Management) do CSA CCM, cobrindo criptografia, classificação, DLP e gestão de chaves.'
+      detailedHelp: t('help.dataProtectionDesc')
     },
     {
       id: 'network-security',
-      label: 'Segurança de Rede',
+      label: t('help.networkSecurity'),
       value: networkData.positive,
       total: networkData.matched,
       percentage: networkData.matched > 0 ? (networkData.positive / networkData.matched) * 100 : 0,
       icon: <Workflow className="h-5 w-5" />,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10',
-      description: 'Firewalls, segmentação e Zero Trust',
+      description: t('help.networkSecurityDesc'),
       frameworkRef: 'CSA CCM: IVS, TVM',
-      detailedHelp: 'Mede a segurança de rede em ambientes cloud. Cobre domínios IVS (Infrastructure & Virtualization Security) e TVM (Threat & Vulnerability Management) do CSA CCM, incluindo segmentação, firewalls, WAF e Zero Trust.'
+      detailedHelp: t('help.networkSecurityDesc')
     }
   ];
 }
 
-function getAISecurityIndicators(questions: ActiveQuestion[], answers: Map<string, Answer>): IndicatorData[] {
+function getAISecurityIndicators(questions: ActiveQuestion[], answers: Map<string, Answer>, t: (key: string) => string): IndicatorData[] {
   const modelData = calculateIndicator(questions, answers, MODEL_RISK_KEYWORDS);
   const dataData = calculateIndicator(questions, answers, ['training data', 'dataset', 'data quality', 'data governance']);
   const adversarialData = calculateIndicator(questions, answers, ['adversarial', 'attack', 'injection', 'jailbreak', 'prompt']);
@@ -192,60 +193,60 @@ function getAISecurityIndicators(questions: ActiveQuestion[], answers: Map<strin
   return [
     {
       id: 'model-risks',
-      label: 'Riscos de Modelo',
+      label: t('help.modelRisks'),
       value: modelData.positive,
       total: modelData.matched,
       percentage: modelData.matched > 0 ? (modelData.positive / modelData.matched) * 100 : 0,
       icon: <Brain className="h-5 w-5" />,
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10',
-      description: 'Riscos associados a modelos de ML/IA mitigados',
+      description: t('help.modelRisksDesc'),
       frameworkRef: 'NIST AI RMF: MEASURE, MANAGE',
-      detailedHelp: 'Avalia a gestão de riscos específicos de modelos de ML/IA. Baseado nas funções MEASURE (medir riscos) e MANAGE (gerenciar riscos) do NIST AI RMF, cobrindo drift, degradação, robustez e confiabilidade do modelo.'
+      detailedHelp: t('help.modelRisksDesc')
     },
     {
       id: 'data-governance',
-      label: 'Governança de Dados',
+      label: t('help.dataGovernance'),
       value: dataData.positive,
       total: dataData.matched,
       percentage: dataData.matched > 0 ? (dataData.positive / dataData.matched) * 100 : 0,
       icon: <Server className="h-5 w-5" />,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
-      description: 'Qualidade e governança dos dados de treinamento',
+      description: t('help.dataGovernanceDesc'),
       frameworkRef: 'NIST AI RMF: MAP',
-      detailedHelp: 'Mede a governança de dados para sistemas de IA. Alinhado à função MAP do NIST AI RMF, avalia proveniência, qualidade, representatividade e viés nos dados de treinamento e validação.'
+      detailedHelp: t('help.dataGovernanceDesc')
     },
     {
       id: 'adversarial-defense',
-      label: 'Defesa Adversarial',
+      label: t('help.adversarialDefense'),
       value: adversarialData.positive,
       total: adversarialData.matched,
       percentage: adversarialData.matched > 0 ? (adversarialData.positive / adversarialData.matched) * 100 : 0,
       icon: <AlertTriangle className="h-5 w-5" />,
       color: 'text-red-500',
       bgColor: 'bg-red-500/10',
-      description: 'Proteção contra ataques adversariais e injeções',
+      description: t('help.adversarialDefenseDesc'),
       frameworkRef: 'OWASP LLM Top 10, MITRE ATLAS',
-      detailedHelp: 'Avalia defesas contra ataques adversariais em sistemas de IA. Baseado no OWASP LLM Top 10 (prompt injection, jailbreaks) e MITRE ATLAS (táticas e técnicas de ataque a ML), cobre evasion, poisoning e extraction attacks.'
+      detailedHelp: t('help.adversarialDefenseDesc')
     },
     {
       id: 'bias-ethics',
-      label: 'Ética e Viés',
+      label: t('help.biasEthics'),
       value: biasData.positive,
       total: biasData.matched,
       percentage: biasData.matched > 0 ? (biasData.positive / biasData.matched) * 100 : 0,
       icon: <CheckCircle2 className="h-5 w-5" />,
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
-      description: 'Controles de viés, fairness e explicabilidade',
+      description: t('help.biasEthicsDesc'),
       frameworkRef: 'NIST AI RMF: GOVERN, ISO 23894',
-      detailedHelp: 'Mede aspectos éticos e de fairness em IA. Alinhado à função GOVERN do NIST AI RMF e ISO 23894, avalia detecção de viés, explicabilidade (XAI), transparência e accountability algorítmica.'
+      detailedHelp: t('help.biasEthicsDesc')
     }
   ];
 }
 
-function getDevSecOpsIndicators(questions: ActiveQuestion[], answers: Map<string, Answer>): IndicatorData[] {
+function getDevSecOpsIndicators(questions: ActiveQuestion[], answers: Map<string, Answer>, t: (key: string) => string): IndicatorData[] {
   const pipelineData = calculateIndicator(questions, answers, PIPELINE_KEYWORDS);
   const codeSecurityData = calculateIndicator(questions, answers, ['code review', 'static analysis', 'sast', 'code scanning', 'secure coding']);
   const dependencyData = calculateIndicator(questions, answers, ['dependency', 'sca', 'sbom', 'vulnerability', 'cve', 'third-party']);
@@ -254,60 +255,61 @@ function getDevSecOpsIndicators(questions: ActiveQuestion[], answers: Map<string
   return [
     {
       id: 'pipeline-coverage',
-      label: 'Cobertura de Pipeline',
+      label: t('help.pipelineCoverage'),
       value: pipelineData.positive,
       total: pipelineData.matched,
       percentage: pipelineData.matched > 0 ? (pipelineData.positive / pipelineData.matched) * 100 : 0,
       icon: <GitBranch className="h-5 w-5" />,
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10',
-      description: 'Segurança integrada no pipeline CI/CD',
+      description: t('help.pipelineCoverageDesc'),
       frameworkRef: 'NIST SSDF: PW, RV',
-      detailedHelp: 'Avalia a integração de segurança no pipeline CI/CD. Baseado nas práticas PW (Produce Well-Secured Software) e RV (Respond to Vulnerabilities) do NIST SSDF, cobre security gates, automação e integração contínua de segurança.'
+      detailedHelp: t('help.pipelineCoverageDesc')
     },
     {
       id: 'code-security',
-      label: 'Segurança de Código',
+      label: t('help.codeSecurity'),
       value: codeSecurityData.positive,
       total: codeSecurityData.matched,
       percentage: codeSecurityData.matched > 0 ? (codeSecurityData.positive / codeSecurityData.matched) * 100 : 0,
       icon: <Shield className="h-5 w-5" />,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
-      description: 'Análise estática e revisão de código seguro',
+      description: t('help.codeSecurityDesc'),
       frameworkRef: 'NIST SSDF: PW, OWASP SAMM',
-      detailedHelp: 'Mede práticas de código seguro. Alinhado ao NIST SSDF prática PW e OWASP SAMM, avalia SAST, code review, secure coding standards, treinamento de desenvolvedores e IDE security plugins.'
+      detailedHelp: t('help.codeSecurityDesc')
     },
     {
       id: 'dependency-management',
-      label: 'Gestão de Dependências',
+      label: t('help.dependencyManagement'),
       value: dependencyData.positive,
       total: dependencyData.matched,
       percentage: dependencyData.matched > 0 ? (dependencyData.positive / dependencyData.matched) * 100 : 0,
       icon: <Workflow className="h-5 w-5" />,
       color: 'text-teal-500',
       bgColor: 'bg-teal-500/10',
-      description: 'SCA, SBOM e gestão de vulnerabilidades',
+      description: t('help.dependencyManagementDesc'),
       frameworkRef: 'SLSA, CIS Supply Chain',
-      detailedHelp: 'Avalia segurança da cadeia de dependências. Baseado no SLSA (Supply-chain Levels for Software Artifacts) e CIS Software Supply Chain, cobre SCA, SBOM, vulnerability management e third-party risk assessment.'
+      detailedHelp: t('help.dependencyManagementDesc')
     },
     {
       id: 'container-security',
-      label: 'Segurança de Containers',
+      label: t('help.containerSecurity'),
       value: containerData.positive,
       total: containerData.matched,
       percentage: containerData.matched > 0 ? (containerData.positive / containerData.matched) * 100 : 0,
       icon: <Server className="h-5 w-5" />,
       color: 'text-cyan-500',
       bgColor: 'bg-cyan-500/10',
-      description: 'Segurança de imagens e orquestração',
+      description: t('help.containerSecurityDesc'),
       frameworkRef: 'CIS Docker/K8s Benchmarks',
-      detailedHelp: 'Mede segurança de containers e orquestração. Alinhado aos CIS Docker e Kubernetes Benchmarks, avalia image scanning, runtime protection, secrets management, network policies e registry hardening.'
+      detailedHelp: t('help.containerSecurityDesc')
     }
   ];
 }
 
 function DomainHelpPopover({ securityDomainId }: { securityDomainId: string }) {
+  const { t } = useTranslation();
   const helpContent = domainHelpContent[securityDomainId] || domainHelpContent.AI_SECURITY;
 
   return (
@@ -325,7 +327,7 @@ function DomainHelpPopover({ securityDomainId }: { securityDomainId: string }) {
           </div>
           
           <div>
-            <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Frameworks de Referência</h5>
+            <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t('help.referenceFrameworksHeader')}</h5>
             <div className="space-y-2">
               {helpContent.frameworks.map((fw, idx) => (
                 <div key={idx} className="text-xs">
@@ -337,7 +339,7 @@ function DomainHelpPopover({ securityDomainId }: { securityDomainId: string }) {
           </div>
 
           <div>
-            <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Pilares Avaliados</h5>
+            <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t('help.pillarsEvaluated')}</h5>
             <div className="grid grid-cols-2 gap-2">
               {helpContent.pillars.map((pillar, idx) => (
                 <div key={idx} className="p-2 rounded-md bg-muted/50">
@@ -354,31 +356,33 @@ function DomainHelpPopover({ securityDomainId }: { securityDomainId: string }) {
 }
 
 export function DomainSpecificIndicators({ securityDomainId, questions, answers }: DomainSpecificIndicatorsProps) {
+  const { t } = useTranslation();
+  
   const indicators = useMemo(() => {
     switch (securityDomainId) {
       case 'CLOUD_SECURITY':
-        return getCloudSecurityIndicators(questions, answers);
+        return getCloudSecurityIndicators(questions, answers, t);
       case 'AI_SECURITY':
-        return getAISecurityIndicators(questions, answers);
+        return getAISecurityIndicators(questions, answers, t);
       case 'DEVSECOPS':
-        return getDevSecOpsIndicators(questions, answers);
+        return getDevSecOpsIndicators(questions, answers, t);
       default:
-        return getAISecurityIndicators(questions, answers);
+        return getAISecurityIndicators(questions, answers, t);
     }
-  }, [securityDomainId, questions, answers]);
+  }, [securityDomainId, questions, answers, t]);
 
   const domainLabel = useMemo(() => {
     switch (securityDomainId) {
       case 'CLOUD_SECURITY':
-        return 'Indicadores Cloud Security';
+        return t('help.indicatorsCloudSecurity');
       case 'AI_SECURITY':
-        return 'Indicadores AI Security';
+        return t('help.indicatorsAISecurity');
       case 'DEVSECOPS':
-        return 'Indicadores DevSecOps';
+        return t('help.indicatorsDevSecOps');
       default:
-        return 'Indicadores Específicos';
+        return t('help.indicatorsSpecific');
     }
-  }, [securityDomainId]);
+  }, [securityDomainId, t]);
 
   const [showTrend, setShowTrend] = useState(false);
 
@@ -395,7 +399,7 @@ export function DomainSpecificIndicators({ securityDomainId, questions, answers 
               onClick={() => setShowTrend(!showTrend)}
             >
               {showTrend ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-              {showTrend ? 'Ocultar tendência' : 'Ver tendência'}
+              {showTrend ? t('help.hideTrend') : t('help.showTrend')}
             </Button>
             <DomainHelpPopover securityDomainId={securityDomainId} />
           </div>

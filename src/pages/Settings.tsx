@@ -22,7 +22,8 @@ import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib
 import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
-import { Layers, BookOpen, Database, Settings2, Info, FileDown, Trash2, RefreshCw, Building2, Calendar, Shield, ExternalLink, Home, ChevronRight } from 'lucide-react';
+import { CascadeHierarchy } from '@/components/settings/CascadeHierarchy';
+import { Layers, BookOpen, Database, Settings2, Info, FileDown, Trash2, RefreshCw, Building2, Calendar, Shield, ExternalLink, Home, ChevronRight, GitBranch } from 'lucide-react';
 
 const TAB_LABELS: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   taxonomy: { label: 'Taxonomia', icon: Layers },
@@ -345,35 +346,24 @@ export default function Settings() {
 
         {/* ========== TAXONOMY TAB ========== */}
         <TabsContent value="taxonomy" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3 mb-4">
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-              <CardContent className="pt-4 pb-3">
+          <Accordion type="single" collapsible defaultValue="cascade" className="space-y-4">
+            <AccordionItem value="cascade" className="border rounded-lg px-4">
+              <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Layers className="h-5 w-5 text-primary" />
+                  <div className="h-8 w-8 rounded-md bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center">
+                    <GitBranch className="h-4 w-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Domínios de Segurança</p>
-                    <p className="text-xl font-bold">Estrutura Base</p>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Hierarquia: Domínios → Frameworks → Perguntas</h3>
+                    <p className="text-sm text-muted-foreground font-normal">Visualize e gerencie a relação cascata entre domínios, frameworks e perguntas</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">Frameworks Ativos</p>
-                <p className="text-2xl font-bold text-primary">{pendingFrameworks.length}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">Perguntas Totais</p>
-                <p className="text-2xl font-bold">{questions.length}</p>
-              </CardContent>
-            </Card>
-          </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <CascadeHierarchy />
+              </AccordionContent>
+            </AccordionItem>
 
-          <Accordion type="single" collapsible defaultValue="domains" className="space-y-4">
             <AccordionItem value="domains" className="border rounded-lg px-4">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3">
@@ -381,8 +371,8 @@ export default function Settings() {
                     <Layers className="h-4 w-4 text-primary" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold">Domínios de Segurança</h3>
-                    <p className="text-sm text-muted-foreground font-normal">AI Security, Cloud Security, DevSecOps e domínios personalizados</p>
+                    <h3 className="font-semibold">Gerenciar Domínios de Segurança</h3>
+                    <p className="text-sm text-muted-foreground font-normal">Criar, editar e importar/exportar domínios</p>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -398,7 +388,7 @@ export default function Settings() {
                     <Shield className="h-4 w-4 text-amber-600" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold">Seleção de Frameworks</h3>
+                    <h3 className="font-semibold">Seleção Rápida de Frameworks</h3>
                     <p className="text-sm text-muted-foreground font-normal">Ative ou desative frameworks na avaliação atual</p>
                   </div>
                 </div>

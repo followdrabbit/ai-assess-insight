@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ interface NotificationPreferences {
 export default function Profile() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t, i18n } = useTranslation();
   const [profile, setProfile] = useState<Profile>({
     display_name: '',
     organization: '',
@@ -97,10 +99,12 @@ export default function Profile() {
           notify_weekly_digest: data.notify_weekly_digest ?? false,
           notify_new_features: data.notify_new_features ?? true,
         });
-        setLanguage((data as any).language || 'pt-BR');
+        const userLang = (data as any).language || 'pt-BR';
+        setLanguage(userLang);
+        i18n.changeLanguage(userLang);
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar perfil');
+      setError(err.message || t('errors.loadProfile'));
     } finally {
       setLoading(false);
     }
@@ -194,6 +198,9 @@ export default function Profile() {
     setSavingLanguage(true);
 
     try {
+      // Update i18next language
+      i18n.changeLanguage(newLanguage);
+      
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -205,11 +212,12 @@ export default function Profile() {
       if (error) throw error;
       
       const langName = LANGUAGES.find(l => l.code === newLanguage)?.name || newLanguage;
-      toast.success(`Idioma alterado para ${langName}`);
+      toast.success(t('profile.languageChanged', { language: langName }));
     } catch (err: any) {
       // Revert on error
       setLanguage(previousLanguage);
-      toast.error(err.message || 'Erro ao salvar idioma');
+      i18n.changeLanguage(previousLanguage);
+      toast.error(err.message || t('errors.saveLanguage'));
     } finally {
       setSavingLanguage(false);
     }

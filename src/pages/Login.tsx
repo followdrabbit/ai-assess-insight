@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, LogIn } from 'lucide-react';
 
 export default function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export default function Login() {
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          setError('Email ou senha incorretos');
+          setError(t('auth.invalidCredentials'));
         } else {
           setError(error.message);
         }
@@ -38,7 +40,7 @@ export default function Login() {
         navigate(from, { replace: true });
       }
     } catch (err) {
-      setError('Ocorreu um erro ao fazer login');
+      setError(t('errors.loginError'));
     } finally {
       setLoading(false);
     }
@@ -53,9 +55,9 @@ export default function Login() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Entrar</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('auth.loginTitle')}</CardTitle>
           <CardDescription>
-            Acesse sua conta para continuar
+            {t('auth.accessAccount')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -67,11 +69,11 @@ export default function Login() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="seu@email.com"
+                placeholder="email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -81,12 +83,12 @@ export default function Login() {
             
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <Link 
                   to="/forgot-password" 
                   className="text-sm text-primary hover:underline"
                 >
-                  Esqueceu a senha?
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
               <Input
@@ -107,20 +109,20 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
+                  {t('auth.loggingIn')}
                 </>
               ) : (
                 <>
                   <LogIn className="mr-2 h-4 w-4" />
-                  Entrar
+                  {t('auth.loginButton')}
                 </>
               )}
             </Button>
             
             <p className="text-sm text-muted-foreground text-center">
-              Não tem uma conta?{' '}
+              {t('auth.noAccount')}{' '}
               <Link to="/signup" className="text-primary hover:underline font-medium">
-                Cadastre-se
+                {t('auth.createAccount')}
               </Link>
             </p>
           </CardFooter>

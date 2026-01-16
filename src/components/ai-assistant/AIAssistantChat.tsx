@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, Globe, FileDown } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, Globe, FileDown, Sparkles, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,7 +23,7 @@ export function AIAssistantChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastMessageRef = useRef<string>('');
 
-  const { messages, isLoading, error, sendMessage, clearMessages, stopGeneration, addSystemMessage } = useAIAssistant();
+  const { messages, isLoading, error, sendMessage, clearMessages, stopGeneration, addSystemMessage, currentProvider } = useAIAssistant();
   const { isListening, transcript, isSupported: sttSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
   const { isSpeaking, isSupported: ttsSupported, speak, stop: stopSpeaking } = useSpeechSynthesis();
   const { executeCommand, getDataFromCommand, isCommand, getAllCommands } = useVoiceCommands();
@@ -140,15 +140,33 @@ export function AIAssistantChat() {
     <Card className="flex flex-col h-[600px] border-border/50">
       <CardHeader className="pb-3 border-b border-border/30">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-primary/10">
               <Bot className="h-5 w-5 text-primary" />
             </div>
             <div>
               <CardTitle className="text-lg">{t('aiAssistant.title', 'Security AI Assistant')}</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {t('aiAssistant.subtitle', 'Ask questions about your security posture')}
-              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-xs text-muted-foreground">
+                  {t('aiAssistant.subtitle', 'Ask questions about your security posture')}
+                </p>
+                {currentProvider && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-1 cursor-default">
+                        <Sparkles className="h-2.5 w-2.5" />
+                        {currentProvider.name}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <div className="text-xs">
+                        <div className="font-medium">{t('aiAssistant.currentProvider', 'Current Provider')}</div>
+                        <div className="text-muted-foreground">{currentProvider.modelId}</div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">

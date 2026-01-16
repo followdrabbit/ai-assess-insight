@@ -11,7 +11,6 @@ import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { DomainSpecificIndicators } from '@/components/DomainSpecificIndicators';
 import { 
   CoverageHelp,
-  CriticalGapsHelp,
   CriticalityLevelsHelp,
   HeatmapHelp,
   FrameworkCategoryHelp,
@@ -20,6 +19,8 @@ import {
   DomainRiskDistributionHelp,
   DomainFrameworkCoverageHelp,
   DomainResponseDistributionHelp,
+  DomainCriticalGapsHelp,
+  DomainRoadmapHelp,
 } from '@/components/HelpTooltip';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

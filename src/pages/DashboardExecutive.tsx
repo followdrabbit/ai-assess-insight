@@ -2,11 +2,13 @@ import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import MaturityTrendChart from '@/components/MaturityTrendChart';
 import { DomainSwitcher } from '@/components/DomainSwitcher';
+import { cn } from '@/lib/utils';
 
 export default function DashboardExecutive() {
   const {
     isLoading,
     questionsLoading,
+    isTransitioning,
     metrics,
     criticalGaps,
     roadmap,
@@ -22,7 +24,12 @@ export default function DashboardExecutive() {
   }
 
   return (
-    <div className="space-y-6">
+    <div 
+      className={cn(
+        "space-y-6 transition-all duration-300 ease-out",
+        isTransitioning && "opacity-50 scale-[0.99] blur-[1px]"
+      )}
+    >
       <ExecutiveDashboard 
         metrics={metrics}
         criticalGaps={criticalGaps}

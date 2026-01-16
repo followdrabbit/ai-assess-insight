@@ -138,8 +138,38 @@ Esta ferramenta permite que organizações avaliem sua postura de segurança em 
 
 #### 🤖 Assistente de IA
 - **Chat Interativo**: Análise contextual do assessment com suporte a múltiplos provedores
-- **Comandos de Voz**: Navegação e execução de ações por voz (Web Speech API)
-- **Provedores Configuráveis**: OpenAI, Claude, Gemini, Ollama, Hugging Face
+- **Provedores de IA Configuráveis**: OpenAI, Claude, Gemini, Ollama, Hugging Face
+- **Padrão IA**: Utiliza **Lovable AI Gateway** por padrão (sem necessidade de API key)
+  - Modelos suportados: GPT-5, GPT-5-mini, Gemini 2.5 Pro/Flash, entre outros
+  - Fallback automático para provedores configurados pelo usuário
+
+#### 🎙️ Sistema de Voz Inteligente
+
+**Text-to-Speech (TTS):**
+- **Padrão**: Web Speech API nativa do navegador (sem custo, funciona offline)
+- Configurações personalizáveis: idioma, velocidade, tom, volume e voz preferida
+- Auto-speak opcional para respostas do assistente
+
+**Speech-to-Text (STT):**
+- **Padrão**: Web Speech API (reconhecimento em tempo real, gratuito)
+- **Alternativas configuráveis**:
+  - OpenAI Whisper (alta precisão, requer API key)
+  - Endpoint customizado (para modelos próprios)
+- Suporte a transcrição de arquivos de áudio
+
+**Perfil de Voz (Speaker Verification):**
+- **Cadastro biométrico**: Grave frases para treinar o sistema a reconhecer sua voz
+- **Níveis de enrollment**: Padrão (6 frases, ~2min) ou Avançado (12 frases, ~5min)
+- **Verificação automática**: Filtra comandos de vozes não cadastradas
+- **Processamento híbrido**: Extração de features local + verificação client-side
+- **Indicador visual**: Mostra status de verificação em tempo real no chat
+- **Sensibilidade ajustável**: Slider para calibrar rigor da verificação
+
+**Comandos de Voz:**
+- Navegação entre páginas por comando de voz
+- Consulta de dados e métricas
+- Troca de domínios de segurança
+- Exportação de relatórios
 
 #### 🔗 Integrações
 - **SIEM Integration**: Encaminhamento de eventos em JSON, CEF, LEEF, Syslog
@@ -177,6 +207,49 @@ Esta ferramenta permite que organizações avaliem sua postura de segurança em 
 | [React Router](https://reactrouter.com/) | Roteamento |
 | [i18next](https://www.i18next.com/) | Internacionalização |
 | [ExcelJS](https://github.com/exceljs/exceljs) | Importação/Exportação Excel |
+| [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) | TTS/STT nativo do navegador |
+| [Framer Motion](https://www.framer.com/motion/) | Animações |
+
+## 🔊 Configuração Padrão de IA e Voz
+
+### Inteligência Artificial
+
+| Configuração | Padrão | Alternativas |
+|--------------|--------|--------------|
+| **Gateway** | Lovable AI Gateway | Provedores customizados |
+| **Modelo LLM** | GPT-5 / Gemini 2.5 Pro | GPT-5-mini, Gemini Flash, Claude, Ollama |
+| **API Key** | Não necessária (gateway) | Obrigatória para provedores externos |
+| **Contexto** | Assessment atual + histórico | Personalizável por provedor |
+
+### Síntese de Voz (TTS)
+
+| Configuração | Padrão | Faixa |
+|--------------|--------|-------|
+| **Provedor** | Web Speech API | Nativo do navegador |
+| **Idioma** | pt-BR | pt-BR, en-US, es-ES |
+| **Velocidade** | 1.0x | 0.5x - 2.0x |
+| **Tom (Pitch)** | 1.0 | 0.5 - 2.0 |
+| **Volume** | 1.0 | 0.0 - 1.0 |
+| **Auto-Speak** | Desativado | Ativável por toggle |
+
+### Reconhecimento de Voz (STT)
+
+| Configuração | Padrão | Alternativas |
+|--------------|--------|--------------|
+| **Provedor** | Web Speech API | OpenAI Whisper, Custom Endpoint |
+| **Modo** | Tempo real | Transcrição de arquivo (Whisper) |
+| **Idioma** | pt-BR | Configurável no perfil |
+| **API Key** | Não necessária | Obrigatória para Whisper |
+
+### Perfil de Voz (Verificação de Locutor)
+
+| Configuração | Padrão | Descrição |
+|--------------|--------|-----------|
+| **Status** | Desativado | Ativado após enrollment |
+| **Nível** | Padrão (6 frases) | Avançado (12 frases) disponível |
+| **Sensibilidade** | 65% | Ajustável de 40% a 90% |
+| **Processamento** | Híbrido | Extração local + verificação client-side |
+| **Features** | MFCC, Pitch, Spectral | Análise multi-dimensional |
 
 ## 📦 Pré-requisitos
 
@@ -282,6 +355,8 @@ supabase/
 | `change_logs` | Logs de auditoria |
 | `question_versions` | Versionamento de questões |
 | `profiles` | Perfis de usuário |
+| `voice_profiles` | Perfis de voz para verificação de locutor |
+| `voice_enrollment_samples` | Amostras de áudio do enrollment |
 
 ## 🎯 Fluxo de Uso
 

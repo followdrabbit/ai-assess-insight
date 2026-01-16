@@ -1,24 +1,18 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, LogIn } from 'lucide-react';
+import { Loader2, Shield, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 
-export default function Login() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  
-  const { signIn } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,23 +20,55 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
       
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setError('Email ou senha incorretos');
-        } else {
-          setError(error.message);
-        }
+        setError(error.message);
       } else {
-        navigate(from, { replace: true });
+        setSuccess(true);
       }
     } catch (err) {
-      setError('Ocorreu um erro ao fazer login');
+      setError('Ocorreu um erro ao enviar o email de recuperação');
     } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-full bg-green-500/10">
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Email Enviado</CardTitle>
+            <CardDescription>
+              Verifique sua caixa de entrada para redefinir sua senha
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center text-muted-foreground">
+            <p>
+              Enviamos um link de recuperação para <strong>{email}</strong>. 
+              Clique no link para criar uma nova senha.
+            </p>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <Link to="/login">
+              <Button variant="outline">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para Login
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -53,9 +79,9 @@ export default function Login() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Entrar</CardTitle>
+          <CardTitle className="text-2xl font-bold">Esqueceu a Senha?</CardTitle>
           <CardDescription>
-            Acesse sua conta para continuar
+            Digite seu email para receber um link de recuperação
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -78,28 +104,6 @@ export default function Login() {
                 disabled={loading}
               />
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
-                <Link 
-                  to="/forgot-password" 
-                  className="text-sm text-primary hover:underline"
-                >
-                  Esqueceu a senha?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
-            </div>
           </CardContent>
           
           <CardFooter className="flex flex-col gap-4">
@@ -107,22 +111,22 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
+                  Enviando...
                 </>
               ) : (
                 <>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Entrar
+                  <Mail className="mr-2 h-4 w-4" />
+                  Enviar Link de Recuperação
                 </>
               )}
             </Button>
             
-            <p className="text-sm text-muted-foreground text-center">
-              Não tem uma conta?{' '}
-              <Link to="/signup" className="text-primary hover:underline font-medium">
-                Cadastre-se
-              </Link>
-            </p>
+            <Link to="/login" className="w-full">
+              <Button variant="outline" className="w-full" type="button">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para Login
+              </Button>
+            </Link>
           </CardFooter>
         </form>
       </Card>

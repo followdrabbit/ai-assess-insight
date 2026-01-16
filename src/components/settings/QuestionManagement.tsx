@@ -297,9 +297,14 @@ export function QuestionManagement() {
       const matchesSecurityDomain = filterSecurityDomain === 'all' || 
         (q as any).securityDomainId === filterSecurityDomain ||
         taxonomyDomains.find(d => d.domainId === q.domainId)?.securityDomainId === filterSecurityDomain;
-      const matchesFramework = filterFramework === 'all' || 
-        q.frameworks.some(fw => fw === filterFramework || fw.toUpperCase() === filterFramework.toUpperCase());
-      return matchesSearch && matchesDomain && matchesSecurityDomain && matchesFramework;
+      const matchesFramework = filterFramework === 'all' || q.frameworks.some(fwString => {
+        const mappedId = mapQuestionFrameworkToId(fwString);
+        return (
+          mappedId === filterFramework ||
+          fwString === filterFramework ||
+          fwString.toUpperCase() === filterFramework.toUpperCase()
+        );
+      });
     });
   }, [allQuestions, searchQuery, filterDomain, filterSecurityDomain, filterFramework, taxonomyDomains]);
 

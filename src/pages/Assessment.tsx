@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAnswersStore } from '@/lib/stores';
 import { domains, subcategories, questions, getSubcategoriesByDomain, responseOptions, evidenceOptions } from '@/lib/dataset';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
@@ -22,6 +23,7 @@ import { ClipboardCheck } from 'lucide-react';
 type AssessmentStep = 'domain' | 'framework' | 'questions';
 
 export default function Assessment() {
+  const { t } = useTranslation();
   const { answers, setAnswer, clearAnswers, importAnswers, generateDemoData, isLoading, selectedFrameworks, selectedSecurityDomain } = useAnswersStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,7 +171,7 @@ export default function Assessment() {
   const handleExport = async () => {
     const blob = await exportAnswersToXLSX(answers);
     downloadXLSX(blob, generateExportFilename());
-    toast.success('Respostas exportadas com sucesso');
+    toast.success(t('assessment.exportSuccess'));
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,9 +181,9 @@ export default function Assessment() {
     const result = await importAnswersFromXLSX(file);
     if (result.success) {
       await importAnswers(result.answers);
-      toast.success(`${result.answers.length} respostas importadas`);
+      toast.success(`${result.answers.length} ${t('assessment.importSuccess')}`);
       if (result.warnings.length > 0) {
-        toast.warning(`${result.warnings.length} avisos durante importação`);
+        toast.warning(`${result.warnings.length} ${t('assessment.importWarnings')}`);
       }
     } else {
       toast.error(result.errors.join(', '));
@@ -190,9 +192,9 @@ export default function Assessment() {
   };
 
   const handleClear = async () => {
-    if (confirm('Tem certeza que deseja limpar todas as respostas?')) {
+    if (confirm(t('assessment.clearConfirm'))) {
       await clearAnswers();
-      toast.success('Respostas limpas');
+      toast.success(t('assessment.clearSuccess'));
     }
   };
 
@@ -222,7 +224,7 @@ export default function Assessment() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Carregando avaliação...</p>
+          <p className="text-sm text-muted-foreground">{t('assessment.loading')}</p>
         </div>
       </div>
     );
@@ -254,7 +256,7 @@ export default function Assessment() {
       {/* Breadcrumb */}
       <PageBreadcrumb 
         items={[
-          { label: 'Avaliação', icon: ClipboardCheck }
+          { label: t('navigation.assessment'), icon: ClipboardCheck }
         ]} 
         className="mb-4"
       />
@@ -266,8 +268,8 @@ export default function Assessment() {
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-3">
-                <h1 className="text-lg font-semibold truncate">
-                  Avaliação: {currentDomainInfo?.domainName || 'Segurança'}
+              <h1 className="text-lg font-semibold truncate">
+                  {t('navigation.assessment')}: {currentDomainInfo?.domainName || t('assessment.security')}
                 </h1>
                 <DomainSwitcher variant="badge" />
               </div>
@@ -281,10 +283,10 @@ export default function Assessment() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <Button onClick={() => setCurrentStep('framework')} variant="outline" size="sm">
-                Alterar Frameworks
+                {t('common.changeFrameworks')}
               </Button>
               <Button onClick={handleExport} variant="outline" size="sm" className="hidden sm:inline-flex">
-                Exportar
+                {t('common.export')}
               </Button>
             </div>
           </div>
@@ -294,7 +296,7 @@ export default function Assessment() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-4">
                 <span className="font-medium">
-                  {metrics.answeredQuestions} de {metrics.totalQuestions} respondidas
+                  {metrics.answeredQuestions} {t('common.of')} {metrics.totalQuestions} {t('common.answered')}
                 </span>
                 <span className={cn(
                   "text-xs px-2 py-0.5 rounded-full font-medium",
@@ -342,15 +344,15 @@ export default function Assessment() {
 
       {/* Secondary actions bar */}
       <div className="flex flex-wrap items-center gap-2 mb-8 pb-4 border-b">
-        <span className="text-sm text-muted-foreground mr-2">Ações:</span>
+        <span className="text-sm text-muted-foreground mr-2">{t('common.actions')}:</span>
         <Button onClick={() => fileInputRef.current?.click()} variant="ghost" size="sm">
-          Importar XLSX
+          {t('common.importXLSX')}
         </Button>
         <Button onClick={generateDemoData} variant="ghost" size="sm">
-          Dados Demo
+          {t('common.demoData')}
         </Button>
         <Button onClick={handleClear} variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-          Limpar Tudo
+          {t('common.clearAll')}
         </Button>
         <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleImport} className="hidden" />
       </div>
@@ -409,7 +411,7 @@ export default function Assessment() {
                       {subcat.criticality}
                     </Badge>
                     <span className="text-xs text-muted-foreground ml-auto">
-                      {subcatAnswered}/{subcatQuestions.length} respondidas
+                      {subcatAnswered}/{subcatQuestions.length} {t('common.answered')}
                     </span>
                   </div>
 
@@ -493,10 +495,10 @@ export default function Assessment() {
                             </div>
 
                             {/* Evidence selector - only show if response is not NA */}
-                            {answer?.response && answer.response !== 'NA' && (
+                             {answer?.response && answer.response !== 'NA' && (
                               <div className="mb-4 pt-4 border-t border-dashed animate-fade-in">
                                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">
-                                  Evidência disponível?
+                                  {t('assessment.evidenceAvailable')}
                                 </label>
                                 <div className="flex gap-2">
                                   {evidenceOptions.map(opt => (
@@ -526,7 +528,7 @@ export default function Assessment() {
                               <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 w-full">
                                 <span className="h-px flex-1 bg-border" />
                                 <span className="flex items-center gap-1.5 px-2">
-                                  {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes e observações'}
+                                  {isExpanded ? t('assessment.hideDetails') : t('assessment.viewDetails')}
                                   <span className="text-lg leading-none">{isExpanded ? '−' : '+'}</span>
                                 </span>
                                 <span className="h-px flex-1 bg-border" />
@@ -536,7 +538,7 @@ export default function Assessment() {
                                   <div className="grid sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                        Evidências Esperadas
+                                        {t('assessment.expectedEvidence')}
                                       </label>
                                       <p className="text-sm leading-relaxed bg-muted/50 rounded-lg p-3">
                                         {q.expectedEvidence}
@@ -544,7 +546,7 @@ export default function Assessment() {
                                     </div>
                                     <div className="space-y-1.5">
                                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                        Verificações
+                                        {t('assessment.verifications')}
                                       </label>
                                       <p className="text-sm leading-relaxed bg-muted/50 rounded-lg p-3">
                                         {q.imperativeChecks}
@@ -553,7 +555,7 @@ export default function Assessment() {
                                   </div>
                                   <div className="space-y-1.5">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                      Riscos
+                                      {t('assessment.risks')}
                                     </label>
                                     <p className="text-sm leading-relaxed bg-red-50 text-red-900 rounded-lg p-3 border border-red-100">
                                       {q.riskSummary}
@@ -561,7 +563,7 @@ export default function Assessment() {
                                   </div>
                                   <div className="space-y-1.5">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                      Frameworks Relacionados
+                                      {t('assessment.relatedFrameworks')}
                                     </label>
                                     <div className="flex flex-wrap gap-1.5">
                                       {q.frameworks.map(fw => (
@@ -573,12 +575,12 @@ export default function Assessment() {
                                   </div>
                                   <div className="space-y-1.5">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                      Observações
+                                      {t('assessment.notes')}
                                     </label>
                                     <Textarea
                                       value={answer?.notes || ''}
                                       onChange={e => setAnswer(q.questionId, { notes: e.target.value })}
-                                      placeholder="Adicione observações, links ou contexto adicional..."
+                                      placeholder={t('assessment.notesPlaceholder')}
                                       className="min-h-[80px] resize-y"
                                     />
                                   </div>
@@ -603,12 +605,12 @@ export default function Assessment() {
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">📋</span>
           </div>
-          <h3 className="text-lg font-medium mb-2">Nenhuma pergunta encontrada</h3>
+          <h3 className="text-lg font-medium mb-2">{t('assessment.noQuestionsFound')}</h3>
           <p className="text-muted-foreground mb-6">
-            Selecione frameworks para carregar as perguntas da avaliação.
+            {t('assessment.selectFrameworksHint')}
           </p>
           <Button onClick={() => setCurrentStep('framework')}>
-            Selecionar Frameworks
+            {t('home.selectFrameworks')}
           </Button>
         </div>
       )}
@@ -617,7 +619,7 @@ export default function Assessment() {
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center"
-        aria-label="Voltar ao topo"
+        aria-label={t('assessment.backToTop')}
       >
         ↑
       </button>

@@ -182,7 +182,17 @@
     "importWarnings": "advertencias durante importación",
     "clearConfirm": "¿Estás seguro de que deseas limpiar todas las respuestas?",
     "clearSuccess": "Respuestas limpiadas",
-    "security": "Seguridad"
+    "security": "Seguridad",
+    "evidenceAvailable": "¿Evidencia disponible?",
+    "hideDetails": "Ocultar detalles",
+    "viewDetails": "Ver detalles y observaciones",
+    "verifications": "Verificaciones",
+    "risks": "Riesgos",
+    "relatedFrameworks": "Frameworks Relacionados",
+    "notesPlaceholder": "Añade observaciones, enlaces o contexto adicional...",
+    "noQuestionsFound": "No se encontraron preguntas",
+    "selectFrameworksHint": "Selecciona frameworks para cargar las preguntas de la evaluación.",
+    "backToTop": "Volver arriba"
   },
   "settings": {
     "title": "Configuración",

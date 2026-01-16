@@ -182,7 +182,17 @@
     "importWarnings": "warnings during import",
     "clearConfirm": "Are you sure you want to clear all answers?",
     "clearSuccess": "Answers cleared",
-    "security": "Security"
+    "security": "Security",
+    "evidenceAvailable": "Evidence available?",
+    "hideDetails": "Hide details",
+    "viewDetails": "View details and notes",
+    "verifications": "Verifications",
+    "risks": "Risks",
+    "relatedFrameworks": "Related Frameworks",
+    "notesPlaceholder": "Add notes, links or additional context...",
+    "noQuestionsFound": "No questions found",
+    "selectFrameworksHint": "Select frameworks to load assessment questions.",
+    "backToTop": "Back to top"
   },
   "settings": {
     "title": "Settings",

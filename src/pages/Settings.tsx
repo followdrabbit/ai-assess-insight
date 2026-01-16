@@ -40,9 +40,11 @@ import {
   Database,
   Info,
   CheckCircle2,
-  Activity
+  Activity,
+  Server
 } from 'lucide-react';
 import { AuditLogsPanel } from '@/components/settings/AuditLogsPanel';
+import { SIEMIntegrationsPanel } from '@/components/settings/SIEMIntegrationsPanel';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -68,6 +70,11 @@ export default function Settings() {
       label: t('auditLogs.title'),
       icon: Activity,
       description: t('auditLogs.description')
+    },
+    siem: {
+      label: t('siem.tabTitle'),
+      icon: Server,
+      description: t('siem.tabDescription')
     },
   };
 
@@ -353,7 +360,7 @@ export default function Settings() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-muted/50">
           {Object.entries(TAB_CONFIG).map(([key, config]) => {
             const Icon = config.icon;
             return (
@@ -914,6 +921,24 @@ export default function Settings() {
           </div>
 
           <AuditLogsPanel />
+        </TabsContent>
+
+        {/* ========== SIEM INTEGRATIONS TAB ========== */}
+        <TabsContent value="siem" className="space-y-6">
+          {/* Tab Header */}
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Server className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold">{t('siem.title')}</h2>
+              <p className="text-sm text-muted-foreground">
+                {t('siem.description')}
+              </p>
+            </div>
+          </div>
+
+          <SIEMIntegrationsPanel />
         </TabsContent>
       </Tabs>
     </div>

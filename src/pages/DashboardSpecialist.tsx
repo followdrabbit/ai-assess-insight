@@ -61,6 +61,7 @@ import {
   DashboardKPIGrid,
   DashboardKPICard,
   DashboardSection,
+  DashboardRoadmapGrid,
 } from '@/components/dashboard';
 
 // Rationalized Framework Categories - Authoritative Set Only
@@ -882,75 +883,20 @@ export default function DashboardSpecialist() {
         answers={answers}
       />
 
-      {/* Strategic Roadmap */}
-      {roadmap.length > 0 && (
-        <div 
-          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold">Roadmap Técnico</h3>
-              <DomainRoadmapHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
-            </div>
-            <div className="flex items-center gap-4">
-              <p className="text-xs text-muted-foreground hidden md:block">Remediações priorizadas por impacto técnico</p>
-              <div className="flex gap-2 text-xs">
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500" /> Urgente
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" /> Curto prazo
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" /> Médio prazo
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {['immediate', 'short', 'medium'].map((priority, idx) => {
-              const items = roadmap.filter(r => r.priority === priority);
-              const config = {
-                immediate: { label: 'Urgente (0-30 dias)', color: 'border-red-500', bg: 'bg-red-50 dark:bg-red-950/20' },
-                short: { label: 'Curto prazo (30-60 dias)', color: 'border-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/20' },
-                medium: { label: 'Médio prazo (60-90 dias)', color: 'border-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/20' },
-              }[priority]!;
-              
-              return (
-                <div 
-                  key={priority} 
-                  className={cn(
-                    "rounded-lg p-4 border-l-4 animate-in fade-in-0 slide-in-from-left-4 duration-400",
-                    config.color, 
-                    config.bg
-                  )}
-                  style={{ animationDelay: `${350 + idx * 100}ms`, animationFillMode: 'backwards' }}
-                >
-                  <h4 className="font-medium text-sm mb-3">{config.label}</h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {items.length > 0 ? items.slice(0, 6).map((item, itemIdx) => (
-                      <div 
-                        key={itemIdx} 
-                        className="text-xs group cursor-pointer hover:bg-muted/50 p-1.5 rounded -mx-1.5 transition-colors"
-                        onClick={() => navigate(`/assessment?questionId=${item.questionId}`)}
-                      >
-                        <p className="font-medium line-clamp-2 group-hover:text-primary transition-colors">{item.action}</p>
-                        <p className="text-muted-foreground mt-0.5">{item.domain} · {item.ownershipType}</p>
-                      </div>
-                    )) : (
-                      <p className="text-xs text-muted-foreground">Nenhuma remediação pendente</p>
-                    )}
-                    {items.length > 6 && (
-                      <p className="text-xs text-primary font-medium">+{items.length - 6} mais itens</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Technical Roadmap - Standardized */}
+      <DashboardRoadmapGrid
+        items={roadmap}
+        title="Roadmap Técnico"
+        subtitle="Remediações priorizadas por impacto técnico"
+        helpTooltip={<DomainRoadmapHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />}
+        animationDelay={300}
+        maxItemsPerColumn={6}
+        columnConfig={{
+          immediate: { label: 'Urgente (0-30 dias)' },
+          short: { label: 'Curto prazo (30-60 dias)' },
+          medium: { label: 'Médio prazo (60-90 dias)' },
+        }}
+      />
 
       {/* Tabs for different views */}
       <Tabs defaultValue="gaps" className="space-y-4">
@@ -963,10 +909,10 @@ export default function DashboardSpecialist() {
 
         {/* Technical Gaps Tab */}
         <TabsContent value="gaps" className="space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-sm font-medium">Gaps por Criticidade</h3>
-            <CriticalityLevelsHelp />
-          </div>
+          <DashboardSection
+            title="Gaps por Criticidade"
+            helpTooltip={<CriticalityLevelsHelp />}
+          />
           {/* Filter Bar */}
           <div className="filter-bar">
             <div className="flex-1 min-w-[200px]">

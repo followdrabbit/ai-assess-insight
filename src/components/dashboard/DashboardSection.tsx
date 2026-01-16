@@ -7,8 +7,12 @@ interface DashboardSectionProps {
   helpTooltip?: ReactNode;
   actions?: ReactNode;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
   animationDelay?: number;
+  /** Wrap content in a card-elevated container */
+  card?: boolean;
+  /** Additional padding class for card content */
+  cardPadding?: string;
 }
 
 export function DashboardSection({
@@ -19,7 +23,15 @@ export function DashboardSection({
   className,
   children,
   animationDelay = 0,
+  card = false,
+  cardPadding = 'p-6',
 }: DashboardSectionProps) {
+  const content = card ? (
+    <div className={cn("card-elevated", cardPadding)}>
+      {children}
+    </div>
+  ) : children;
+
   return (
     <div 
       className={cn(
@@ -39,7 +51,7 @@ export function DashboardSection({
             )}
             {helpTooltip}
             {subtitle && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground hidden md:inline">
                 {subtitle}
               </span>
             )}
@@ -47,7 +59,7 @@ export function DashboardSection({
           {actions}
         </div>
       )}
-      {children}
+      {content}
     </div>
   );
 }

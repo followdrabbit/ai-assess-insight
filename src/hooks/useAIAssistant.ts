@@ -1,5 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDashboardMetrics } from './useDashboardMetrics';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 export interface ChatMessage {
   id: string;
@@ -7,6 +9,12 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   isCommand?: boolean;
+}
+
+interface ProviderInfo {
+  name: string;
+  modelId: string;
+  providerType: string;
 }
 
 interface UseAIAssistantReturn {
@@ -17,6 +25,7 @@ interface UseAIAssistantReturn {
   clearMessages: () => void;
   stopGeneration: () => void;
   addSystemMessage: (content: string) => void;
+  currentProvider: ProviderInfo | null;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
@@ -25,9 +34,58 @@ export function useAIAssistant(): UseAIAssistantReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentProvider, setCurrentProvider] = useState<ProviderInfo | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
+  const { user } = useAuth();
   const { metrics, criticalGaps, enabledFrameworks, currentDomainInfo } = useDashboardMetrics();
+
+  // Load the default provider info
+  useEffect(() => {
+    async function loadDefaultProvider() {
+      if (!user) {
+        setCurrentProvider({
+          name: 'Lovable AI',
+          modelId: 'google/gemini-3-flash-preview',
+          providerType: 'lovable',
+        });
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('ai_providers')
+          .select('name, model_id, provider_type')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .eq('is_enabled', true)
+          .single();
+
+        if (error || !data) {
+          setCurrentProvider({
+            name: 'Lovable AI',
+            modelId: 'google/gemini-3-flash-preview',
+            providerType: 'lovable',
+          });
+          return;
+        }
+
+        setCurrentProvider({
+          name: data.name,
+          modelId: data.model_id || 'default',
+          providerType: data.provider_type,
+        });
+      } catch {
+        setCurrentProvider({
+          name: 'Lovable AI',
+          modelId: 'google/gemini-3-flash-preview',
+          providerType: 'lovable',
+        });
+      }
+    }
+
+    loadDefaultProvider();
+  }, [user]);
 
   const buildContext = useCallback(() => {
     return {
@@ -73,11 +131,15 @@ export function useAIAssistant(): UseAIAssistantReturn {
     abortControllerRef.current = new AbortController();
 
     try {
+      // Get auth token for the request
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
       const response = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           messages: apiMessages,
@@ -222,5 +284,6 @@ export function useAIAssistant(): UseAIAssistantReturn {
     clearMessages,
     stopGeneration,
     addSystemMessage,
+    currentProvider,
   };
 }

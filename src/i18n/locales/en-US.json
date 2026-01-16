@@ -1251,7 +1251,8 @@
     "suggestedQuestion1": "What are my top priority gaps?",
     "suggestedQuestion2": "Summarize my security posture",
     "suggestedQuestion3": "How can I improve my maturity level?",
-    "sttNotSupported": "Voice input not supported in this browser"
+    "sttNotSupported": "Voice input not supported in this browser",
+    "currentProvider": "Current Provider"
   },
   "voiceCommands": {
     "title": "Voice Commands",

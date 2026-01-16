@@ -1251,7 +1251,8 @@
     "suggestedQuestion1": "Quais são minhas lacunas prioritárias?",
     "suggestedQuestion2": "Resuma minha postura de segurança",
     "suggestedQuestion3": "Como posso melhorar meu nível de maturidade?",
-    "sttNotSupported": "Entrada por voz não suportada neste navegador"
+    "sttNotSupported": "Entrada por voz não suportada neste navegador",
+    "currentProvider": "Provedor Atual"
   },
   "voiceCommands": {
     "title": "Comandos de Voz",

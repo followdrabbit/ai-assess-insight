@@ -1251,7 +1251,8 @@
     "suggestedQuestion1": "¿Cuáles son mis brechas prioritarias?",
     "suggestedQuestion2": "Resume mi postura de seguridad",
     "suggestedQuestion3": "¿Cómo puedo mejorar mi nivel de madurez?",
-    "sttNotSupported": "Entrada de voz no soportada en este navegador"
+    "sttNotSupported": "Entrada de voz no soportada en este navegador",
+    "currentProvider": "Proveedor Actual"
   },
   "voiceCommands": {
     "title": "Comandos de Voz",

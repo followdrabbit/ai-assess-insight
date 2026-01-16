@@ -18,6 +18,7 @@ import {
   Key,
   ChevronRight,
   Check,
+  User,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -323,6 +324,18 @@ export function AppSidebar() {
                 >
                   <Settings className="h-4 w-4" />
                   <span>Configurações</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Profile */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate('/profile')}
+                  isActive={isActive('/profile')}
+                  tooltip="Meu Perfil"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Meu Perfil</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

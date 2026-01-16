@@ -60,6 +60,7 @@ import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter a
 import { CardActionButtons, createEditAction, createDeleteAction, createDuplicateAction, createToggleAction, createHistoryAction } from './CardActionButtons';
 import { CardLoadingOverlay } from './CardLoadingOverlay';
 import { FilterBar, createSecurityDomainBadges } from './FilterBar';
+import { StatsGrid, createTotalStat, createCustomStat, createDisabledStat, createFilteredStat } from './StatsGrid';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -778,32 +779,15 @@ export function QuestionManagement() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{defaultQuestions.length}</div>
-            <div className="text-xs text-muted-foreground">Perguntas Padrão</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{customQuestions.length}</div>
-            <div className="text-xs text-muted-foreground">Personalizadas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{disabledQuestionIds.length}</div>
-            <div className="text-xs text-muted-foreground">Desabilitadas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{filteredQuestions.length}</div>
-            <div className="text-xs text-muted-foreground">Exibindo</div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsGrid
+        stats={[
+          createTotalStat(defaultQuestions.length, 'Perguntas Padrão'),
+          createCustomStat(customQuestions.length, 'Personalizadas'),
+          createDisabledStat(disabledQuestionIds.length, 'Desabilitadas'),
+          createFilteredStat(filteredQuestions.length, 'Exibindo'),
+        ]}
+        columns={4}
+      />
 
       {/* Questions Tabs */}
       <Tabs defaultValue="all" className="space-y-4">

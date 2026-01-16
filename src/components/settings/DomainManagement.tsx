@@ -31,6 +31,7 @@ import { frameworks } from '@/lib/frameworks';
 import { CardActionButtons, createEditAction, createDeleteAction, createExportAction } from './CardActionButtons';
 import { CardLoadingOverlay } from './CardLoadingOverlay';
 import { FilterBar } from './FilterBar';
+import { StatsGrid, createTotalStat, createActiveStat } from './StatsGrid';
 
 const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
   brain: Brain,
@@ -697,20 +698,15 @@ export function DomainManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6">
-            <div>
-              <div className="text-xl sm:text-2xl font-bold">{domains.length}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">Domínios totais</div>
-            </div>
-            <div className="border-l border-border pl-4 sm:pl-6">
-              <div className="text-xl sm:text-2xl font-bold">{domains.filter(d => d.isEnabled).length}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">Domínios ativos</div>
-            </div>
-            <div className="border-l border-border pl-4 sm:pl-6">
-              <div className="text-xl sm:text-2xl font-bold">{questions.length}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">Perguntas totais</div>
-            </div>
-          </div>
+          <StatsGrid
+            stats={[
+              createTotalStat(domains.length, 'Domínios totais'),
+              createActiveStat(domains.filter(d => d.isEnabled).length, 'Domínios ativos'),
+              createTotalStat(questions.length, 'Perguntas totais'),
+            ]}
+            variant="inline"
+            className="mb-6"
+          />
 
           {/* Search Filter */}
           {domains.length > 3 && (

@@ -10,6 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 // This is needed because the table was just created and types haven't been regenerated
 const questionVersionsTable = () => supabase.from('question_versions' as any);
 
+export interface VersionAnnotation {
+  id: string;
+  text: string;
+  author: string | null;
+  createdAt: string;
+}
+
 export interface QuestionVersion {
   id: string;
   questionId: string;
@@ -28,6 +35,7 @@ export interface QuestionVersion {
   changeSummary: string | null;
   changedBy: string | null;
   createdAt: string;
+  annotations: VersionAnnotation[];
 }
 
 export interface VersionDiff {
@@ -319,7 +327,8 @@ function mapVersionRow(row: any): QuestionVersion {
     changeType: row.change_type as 'create' | 'update' | 'revert',
     changeSummary: row.change_summary,
     changedBy: row.changed_by,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    annotations: row.annotations || []
   };
 }
 
@@ -329,6 +338,135 @@ export const CHANGE_TYPE_LABELS: Record<string, string> = {
   update: 'Atualização',
   revert: 'Reversão'
 };
+
+/**
+ * Add an annotation to a version
+ */
+export async function addVersionAnnotation(
+  versionId: string,
+  text: string,
+  author?: string
+): Promise<VersionAnnotation | null> {
+  try {
+    // Get current annotations
+    const { data: version, error: fetchError } = await questionVersionsTable()
+      .select('annotations')
+      .eq('id', versionId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching version for annotation:', fetchError);
+      return null;
+    }
+
+    const versionData = version as unknown as { annotations: VersionAnnotation[] | null };
+    const currentAnnotations = versionData?.annotations || [];
+    
+    const newAnnotation: VersionAnnotation = {
+      id: crypto.randomUUID(),
+      text,
+      author: author || null,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedAnnotations = [...currentAnnotations, newAnnotation];
+
+    const { error: updateError } = await questionVersionsTable()
+      .update({ annotations: updatedAnnotations })
+      .eq('id', versionId);
+
+    if (updateError) {
+      console.error('Error adding annotation:', updateError);
+      return null;
+    }
+
+    return newAnnotation;
+  } catch (error) {
+    console.error('Error in addVersionAnnotation:', error);
+    return null;
+  }
+}
+
+/**
+ * Update an annotation
+ */
+export async function updateVersionAnnotation(
+  versionId: string,
+  annotationId: string,
+  newText: string
+): Promise<boolean> {
+  try {
+    const { data: version, error: fetchError } = await questionVersionsTable()
+      .select('annotations')
+      .eq('id', versionId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching version for annotation update:', fetchError);
+      return false;
+    }
+
+    const versionData = version as unknown as { annotations: VersionAnnotation[] | null };
+    const currentAnnotations = versionData?.annotations || [];
+    
+    const updatedAnnotations = currentAnnotations.map(a => 
+      a.id === annotationId ? { ...a, text: newText } : a
+    );
+
+    const { error: updateError } = await questionVersionsTable()
+      .update({ annotations: updatedAnnotations })
+      .eq('id', versionId);
+
+    if (updateError) {
+      console.error('Error updating annotation:', updateError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in updateVersionAnnotation:', error);
+    return false;
+  }
+}
+
+/**
+ * Delete an annotation
+ */
+export async function deleteVersionAnnotation(
+  versionId: string,
+  annotationId: string
+): Promise<boolean> {
+  try {
+    const { data: version, error: fetchError } = await questionVersionsTable()
+      .select('annotations')
+      .eq('id', versionId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching version for annotation delete:', fetchError);
+      return false;
+    }
+
+    const versionData = version as unknown as { annotations: VersionAnnotation[] | null };
+    const currentAnnotations = versionData?.annotations || [];
+    
+    const updatedAnnotations = currentAnnotations.filter(a => a.id !== annotationId);
+
+    const { error: updateError } = await questionVersionsTable()
+      .update({ annotations: updatedAnnotations })
+      .eq('id', versionId);
+
+    if (updateError) {
+      console.error('Error deleting annotation:', updateError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteVersionAnnotation:', error);
+    return false;
+  }
+}
 
 // Format version date
 export function formatVersionDate(dateString: string): string {

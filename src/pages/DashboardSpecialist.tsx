@@ -841,87 +841,39 @@ export default function DashboardSpecialist() {
         </Badge>
       </div>
 
-      {/* Specialist KPIs - Enhanced with decorative elements */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
-          <div className="kpi-label">Total de Perguntas</div>
-          <div className="kpi-value">{metrics.totalQuestions}</div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Em {metrics.domainMetrics.length} domínios
-          </div>
-          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            {enabledFrameworks.length} frameworks ativos
-          </div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-success/10 rounded-bl-full" />
-          <div className="kpi-label">Respondidas</div>
-          <div className="kpi-value">{metrics.answeredQuestions}</div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-green-500 transition-all duration-700 ease-out" 
-                style={{ width: `${metrics.coverage * 100}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            {Math.round(metrics.coverage * 100)}% de cobertura
-          </div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
-          <div className="kpi-label">Controles Ausentes</div>
-          <div className="kpi-value text-destructive">
-            {quickStats.noCount + quickStats.notRespondedCount}
-          </div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-destructive transition-all duration-700 ease-out" 
-                style={{ width: `${metrics.totalQuestions > 0 ? ((quickStats.noCount + quickStats.notRespondedCount) / metrics.totalQuestions) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Resposta "Não" ou pendente
-          </div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-warning/10 rounded-bl-full" />
-          <div className="kpi-label">Controles Parciais</div>
-          <div className="kpi-value text-amber-600">
-            {quickStats.partialCount}
-          </div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-amber-500 transition-all duration-700 ease-out" 
-                style={{ width: `${metrics.totalQuestions > 0 ? (quickStats.partialCount / metrics.totalQuestions) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Implementação incompleta
-          </div>
-        </div>
-      </div>
+      {/* Specialist KPIs - Standardized */}
+      <DashboardKPIGrid columns={4}>
+        <DashboardKPICard
+          label="Total de Perguntas"
+          value={metrics.totalQuestions}
+          subtitle={`Em ${metrics.domainMetrics.length} domínios`}
+          animationDelay={0}
+        />
+        <DashboardKPICard
+          label="Respondidas"
+          value={metrics.answeredQuestions}
+          progress={metrics.coverage * 100}
+          subtitle={`${Math.round(metrics.coverage * 100)}% de cobertura`}
+          animationDelay={75}
+          variant="success"
+        />
+        <DashboardKPICard
+          label="Controles Ausentes"
+          value={quickStats.noCount + quickStats.notRespondedCount}
+          progress={metrics.totalQuestions > 0 ? ((quickStats.noCount + quickStats.notRespondedCount) / metrics.totalQuestions) * 100 : 0}
+          subtitle='Resposta "Não" ou pendente'
+          animationDelay={150}
+          variant="danger"
+        />
+        <DashboardKPICard
+          label="Controles Parciais"
+          value={quickStats.partialCount}
+          progress={metrics.totalQuestions > 0 ? (quickStats.partialCount / metrics.totalQuestions) * 100 : 0}
+          subtitle="Implementação incompleta"
+          animationDelay={225}
+          variant="warning"
+        />
+      </DashboardKPIGrid>
 
       {/* Domain-Specific Indicators */}
       <DomainSpecificIndicators 

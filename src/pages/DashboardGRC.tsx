@@ -632,94 +632,45 @@ export default function DashboardGRC() {
         </Badge>
       </div>
 
-      {/* GRC KPI Cards - Enhanced with decorative elements */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Cobertura Geral</div>
-            <CoverageHelp />
-          </div>
-          <div className="kpi-value">{Math.round(metrics.coverage * 100)}%</div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-700 ease-out" 
-                style={{ width: `${metrics.coverage * 100}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            {metrics.answeredQuestions} de {metrics.totalQuestions}
-          </div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-success/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Prontidão de Evidências</div>
-            <EvidenceReadinessHelp />
-          </div>
-          <div className="kpi-value">{Math.round(metrics.evidenceReadiness * 100)}%</div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-green-500 transition-all duration-700 ease-out" 
-                style={{ width: `${metrics.evidenceReadiness * 100}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Para auditoria
-          </div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-warning/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Score Geral</div>
-            <MaturityScoreHelp />
-          </div>
-          <div className="kpi-value" style={{ color: metrics.maturityLevel.color }}>
-            {Math.round(metrics.overallScore * 100)}%
-          </div>
-          <div className={cn("maturity-badge mt-2", `maturity-${metrics.maturityLevel.level}`)}>
-            {metrics.maturityLevel.name}
-          </div>
-          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            Meta recomendada: 70%+
-          </div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
-          style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Gaps Críticos</div>
-            <DomainCriticalGapsHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
-          </div>
-          <div className="kpi-value text-destructive">
-            {quickStats.criticalGapsCount}
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Requerem ação imediata
-          </div>
-          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            {quickStats.criticalGapsCount > 0 ? 'Ação prioritária necessária' : 'Nenhum gap crítico'}
-          </div>
-        </div>
-      </div>
+      {/* GRC KPI Cards - Standardized */}
+      <DashboardKPIGrid columns={4}>
+        <DashboardKPICard
+          label="Cobertura Geral"
+          value={Math.round(metrics.coverage * 100)}
+          suffix="%"
+          helpTooltip={<CoverageHelp />}
+          progress={metrics.coverage * 100}
+          subtitle={`${metrics.answeredQuestions} de ${metrics.totalQuestions}`}
+          animationDelay={0}
+        />
+        <DashboardKPICard
+          label="Prontidão de Evidências"
+          value={Math.round(metrics.evidenceReadiness * 100)}
+          suffix="%"
+          helpTooltip={<EvidenceReadinessHelp />}
+          progress={metrics.evidenceReadiness * 100}
+          subtitle="Para auditoria"
+          animationDelay={75}
+          variant="success"
+        />
+        <DashboardKPICard
+          label="Score Geral"
+          value={Math.round(metrics.overallScore * 100)}
+          suffix="%"
+          helpTooltip={<MaturityScoreHelp />}
+          subtitle={`Meta recomendada: 70%+`}
+          animationDelay={150}
+          variant="warning"
+        />
+        <DashboardKPICard
+          label="Gaps Críticos"
+          value={quickStats.criticalGapsCount}
+          helpTooltip={<DomainCriticalGapsHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />}
+          subtitle={quickStats.criticalGapsCount > 0 ? 'Ação prioritária necessária' : 'Nenhum gap crítico'}
+          animationDelay={225}
+          variant="danger"
+        />
+      </DashboardKPIGrid>
 
       {/* Domain-Specific Indicators */}
       <DomainSpecificIndicators 

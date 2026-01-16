@@ -69,12 +69,41 @@ interface CustomDateRange {
   previousEnd: Date | undefined;
 }
 
+// Linear regression calculation
+function calculateLinearRegression(data: number[]): { slope: number; intercept: number } {
+  const n = data.length;
+  if (n < 2) return { slope: 0, intercept: data[0] || 0 };
+  
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += data[i];
+    sumXY += i * data[i];
+    sumX2 += i * i;
+  }
+  
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
+// Moving average calculation
+function calculateMovingAverage(data: number[], windowSize: number): (number | null)[] {
+  return data.map((_, index) => {
+    if (index < windowSize - 1) return null;
+    const window = data.slice(index - windowSize + 1, index + 1);
+    return Math.round(window.reduce((a, b) => a + b, 0) / windowSize);
+  });
+}
+
 export default function MaturityTrendChart({ className }: MaturityTrendChartProps) {
   const [snapshots, setSnapshots] = useState<MaturitySnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [daysBack, setDaysBack] = useState<string>('90');
   const [activeTab, setActiveTab] = useState('overall');
   const [comparisonType, setComparisonType] = useState<ComparisonType>('month');
+  const [showTrendLines, setShowTrendLines] = useState(true);
+  const [showMovingAverage, setShowMovingAverage] = useState(true);
   const [customRange, setCustomRange] = useState<CustomDateRange>({
     currentStart: subDays(new Date(), 30),
     currentEnd: new Date(),
@@ -97,15 +126,38 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
     loadSnapshots();
   }, [daysBack]);
 
-  // Transform data for overall chart
+  // Transform data for overall chart with trend lines and moving averages
   const overallChartData = useMemo(() => {
-    return snapshots.map(s => ({
+    const baseData = snapshots.map(s => ({
       date: s.snapshotDate,
       dateFormatted: format(parseISO(s.snapshotDate), 'dd/MM', { locale: ptBR }),
       score: Math.round(s.overallScore * 100),
       coverage: Math.round(s.overallCoverage * 100),
       evidence: Math.round(s.evidenceReadiness * 100),
       gaps: s.criticalGaps
+    }));
+
+    if (baseData.length < 2) return baseData;
+
+    // Calculate regression lines
+    const scoreReg = calculateLinearRegression(baseData.map(d => d.score));
+    const coverageReg = calculateLinearRegression(baseData.map(d => d.coverage));
+    const evidenceReg = calculateLinearRegression(baseData.map(d => d.evidence));
+
+    // Calculate moving averages (window of 3 for smoother lines)
+    const windowSize = Math.min(3, Math.floor(baseData.length / 2));
+    const scoreMA = calculateMovingAverage(baseData.map(d => d.score), windowSize);
+    const coverageMA = calculateMovingAverage(baseData.map(d => d.coverage), windowSize);
+    const evidenceMA = calculateMovingAverage(baseData.map(d => d.evidence), windowSize);
+
+    return baseData.map((d, i) => ({
+      ...d,
+      scoreTrend: Math.round(scoreReg.intercept + scoreReg.slope * i),
+      coverageTrend: Math.round(coverageReg.intercept + coverageReg.slope * i),
+      evidenceTrend: Math.round(evidenceReg.intercept + evidenceReg.slope * i),
+      scoreMA: scoreMA[i],
+      coverageMA: coverageMA[i],
+      evidenceMA: evidenceMA[i],
     }));
   }, [snapshots]);
 
@@ -371,6 +423,28 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
         </TabsList>
 
         <TabsContent value="overall">
+          {/* Trend/MA toggles */}
+          <div className="flex items-center gap-4 mb-4">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showTrendLines}
+                onChange={(e) => setShowTrendLines(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-muted-foreground">Linhas de Tendência</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showMovingAverage}
+                onChange={(e) => setShowMovingAverage(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-muted-foreground">Média Móvel</span>
+            </label>
+          </div>
+
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart key={`${activeTab}-${daysBack}-${snapshots.length}`} data={overallChartData}>
@@ -393,17 +467,26 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                     borderRadius: '8px',
                   }}
                   labelFormatter={(label) => `Data: ${label}`}
-                  formatter={(value: number, name: string) => {
+                  formatter={(value: number | null, name: string) => {
+                    if (value === null) return ['-', name];
                     const labels: Record<string, string> = {
                       score: 'Maturidade',
                       coverage: 'Cobertura',
                       evidence: 'Prontidão Evidências',
-                      gaps: 'Gaps Críticos'
+                      gaps: 'Gaps Críticos',
+                      scoreTrend: 'Tendência Maturidade',
+                      coverageTrend: 'Tendência Cobertura',
+                      evidenceTrend: 'Tendência Evidências',
+                      scoreMA: 'MM Maturidade',
+                      coverageMA: 'MM Cobertura',
+                      evidenceMA: 'MM Evidências',
                     };
                     return [name === 'gaps' ? value : `${value}%`, labels[name] || name];
                   }}
                 />
                 <Legend />
+                
+                {/* Main data lines */}
                 <Line 
                   type="monotone" 
                   dataKey="score" 
@@ -420,6 +503,8 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                   stroke="hsl(var(--chart-2))" 
                   strokeWidth={2}
                   dot={{ r: 3 }}
+                  connectNulls
+                  isAnimationActive={false}
                   name="Cobertura"
                 />
                 <Line 
@@ -428,8 +513,94 @@ export default function MaturityTrendChart({ className }: MaturityTrendChartProp
                   stroke="hsl(var(--chart-3))" 
                   strokeWidth={2}
                   dot={{ r: 3 }}
+                  connectNulls
+                  isAnimationActive={false}
                   name="Evidências"
                 />
+
+                {/* Trend lines (linear regression) */}
+                {showTrendLines && (
+                  <>
+                    <Line 
+                      type="linear" 
+                      dataKey="scoreTrend" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={1}
+                      strokeDasharray="8 4"
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="Tendência Maturidade"
+                      legendType="none"
+                    />
+                    <Line 
+                      type="linear" 
+                      dataKey="coverageTrend" 
+                      stroke="hsl(var(--chart-2))" 
+                      strokeWidth={1}
+                      strokeDasharray="8 4"
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="Tendência Cobertura"
+                      legendType="none"
+                    />
+                    <Line 
+                      type="linear" 
+                      dataKey="evidenceTrend" 
+                      stroke="hsl(var(--chart-3))" 
+                      strokeWidth={1}
+                      strokeDasharray="8 4"
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="Tendência Evidências"
+                      legendType="none"
+                    />
+                  </>
+                )}
+
+                {/* Moving average lines */}
+                {showMovingAverage && (
+                  <>
+                    <Line 
+                      type="monotone" 
+                      dataKey="scoreMA" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      strokeOpacity={0.5}
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="MM Maturidade"
+                      legendType="none"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="coverageMA" 
+                      stroke="hsl(var(--chart-2))" 
+                      strokeWidth={2}
+                      strokeOpacity={0.5}
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="MM Cobertura"
+                      legendType="none"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="evidenceMA" 
+                      stroke="hsl(var(--chart-3))" 
+                      strokeWidth={2}
+                      strokeOpacity={0.5}
+                      dot={false}
+                      connectNulls
+                      isAnimationActive={false}
+                      name="MM Evidências"
+                      legendType="none"
+                    />
+                  </>
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>

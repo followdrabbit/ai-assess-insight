@@ -2,6 +2,12 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { z } from 'zod';
 
+// Helper to get current user ID
+async function getCurrentUserId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || null;
+}
+
 // ============ VALIDATION SCHEMAS ============
 const responseEnum = z.enum(['Sim', 'Parcial', 'Não', 'NA']).nullable();
 
@@ -101,12 +107,13 @@ export interface ChangeLog {
 
 // ============ INITIALIZATION ============
 export async function initializeDatabase(): Promise<void> {
-  // Check if meta exists, if not it was created by migration
+  const userId = await getCurrentUserId();
+  
+  // Check if meta exists for this user
   const { data } = await supabase
     .from('assessment_meta')
     .select('id')
-    .eq('id', 'current')
-    .single();
+    .maybeSingle();
   
   if (!data) {
     // All frameworks enabled by default for community testing
@@ -119,7 +126,8 @@ export async function initializeDatabase(): Promise<void> {
       name: 'TrustLayer - Avaliação de Governança de Segurança',
       enabled_frameworks: allFrameworkIds,
       selected_frameworks: [],
-      version: '2.0.0'
+      version: '2.0.0',
+      user_id: userId
     });
   }
 }
@@ -128,6 +136,7 @@ export async function initializeDatabase(): Promise<void> {
 export async function saveAnswer(answer: Answer): Promise<void> {
   // Validate input
   const validated = answerSchema.parse(answer);
+  const userId = await getCurrentUserId();
   
   const { error } = await supabase
     .from('answers')
@@ -137,7 +146,8 @@ export async function saveAnswer(answer: Answer): Promise<void> {
       response: validated.response,
       evidence_ok: validated.evidenceOk,
       notes: validated.notes,
-      evidence_links: validated.evidenceLinks
+      evidence_links: validated.evidenceLinks,
+      user_id: userId
     }, { onConflict: 'question_id' });
   
   if (error) throw error;
@@ -193,6 +203,7 @@ export async function clearAllAnswers(): Promise<void> {
 export async function bulkSaveAnswers(answers: Answer[]): Promise<void> {
   // Validate all answers
   const validatedAnswers = answers.map(a => answerSchema.parse(a));
+  const userId = await getCurrentUserId();
   
   const rows = validatedAnswers.map(a => ({
     question_id: a.questionId,
@@ -200,7 +211,8 @@ export async function bulkSaveAnswers(answers: Answer[]): Promise<void> {
     response: a.response,
     evidence_ok: a.evidenceOk,
     notes: a.notes,
-    evidence_links: a.evidenceLinks
+    evidence_links: a.evidenceLinks,
+    user_id: userId
   }));
   
   const { error } = await supabase
@@ -227,12 +239,14 @@ export async function getEnabledFrameworks(): Promise<string[]> {
 }
 
 export async function setEnabledFrameworks(frameworkIds: string[]): Promise<void> {
+  const userId = await getCurrentUserId();
   const { error } = await supabase
     .from('assessment_meta')
     .upsert({ 
       id: 'current', 
       enabled_frameworks: frameworkIds,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      user_id: userId
     }, { onConflict: 'id' });
   
   if (error) throw error;
@@ -250,12 +264,14 @@ export async function getSelectedFrameworks(): Promise<string[]> {
 }
 
 export async function setSelectedFrameworks(frameworkIds: string[]): Promise<void> {
+  const userId = await getCurrentUserId();
   const { error } = await supabase
     .from('assessment_meta')
     .upsert({ 
       id: 'current', 
       selected_frameworks: frameworkIds,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      user_id: userId
     }, { onConflict: 'id' });
   
   if (error) throw error;
@@ -274,15 +290,18 @@ export async function getSelectedSecurityDomain(): Promise<string | null> {
 }
 
 export async function setSelectedSecurityDomain(domainId: string): Promise<void> {
+  const userId = await getCurrentUserId();
   const { error } = await supabase
     .from('assessment_meta')
     .upsert({ 
       id: 'current', 
       security_domain_id: domainId,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      user_id: userId
     }, { onConflict: 'id' });
   
   if (error) throw error;
+}
 }
 
 // ============ CUSTOM FRAMEWORKS CRUD ============

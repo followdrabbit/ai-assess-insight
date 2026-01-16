@@ -73,7 +73,11 @@
     "requestNewLink": "Solicitar Novo Link",
     "passwordReset": "Senha Redefinida!",
     "passwordResetSuccess": "Sua senha foi alterada com sucesso",
-    "redirecting": "Você será redirecionado automaticamente..."
+    "redirecting": "Você será redirecionado automaticamente...",
+    "rateLimitLocked": "Muitas tentativas. Tente novamente em {{time}}",
+    "attemptsRemaining": "{{count}} tentativa(s) restante(s) antes do bloqueio",
+    "temporarilyLocked": "Temporariamente Bloqueado",
+    "lockoutProgress": "Tempo restante"
   },
   "navigation": {
     "home": "Início",

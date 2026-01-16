@@ -73,7 +73,11 @@
     "requestNewLink": "Solicitar Nuevo Enlace",
     "passwordReset": "¡Contraseña Restablecida!",
     "passwordResetSuccess": "Tu contraseña ha sido cambiada exitosamente",
-    "redirecting": "Serás redirigido automáticamente..."
+    "redirecting": "Serás redirigido automáticamente...",
+    "rateLimitLocked": "Demasiados intentos. Intenta de nuevo en {{time}}",
+    "attemptsRemaining": "{{count}} intento(s) restante(s) antes del bloqueo",
+    "temporarilyLocked": "Temporalmente Bloqueado",
+    "lockoutProgress": "Tiempo restante"
   },
   "navigation": {
     "home": "Inicio",

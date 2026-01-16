@@ -91,10 +91,13 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Badge 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             className={cn(
-              "cursor-pointer gap-1.5 px-2.5 py-1 hover:bg-accent transition-colors",
+              "h-7 gap-1.5 px-2 rounded-full",
+              "transition-colors hover:bg-accent",
               displayInfo?.bgClass,
               displayInfo?.textClass,
               displayInfo?.borderClass,
@@ -103,9 +106,9 @@ export function DomainSwitcher({ className, showLabel = true, variant = 'default
             )}
           >
             <IconComponent className={cn("h-3.5 w-3.5", isChanging && "animate-pulse")} />
-            {currentDomain?.shortName}
-            <ChevronDown className="h-3 w-3 ml-0.5 opacity-60" />
-          </Badge>
+            <span className="text-xs font-medium">{currentDomain?.shortName}</span>
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 z-50">
           <DropdownMenuLabel>Domínio de Segurança</DropdownMenuLabel>

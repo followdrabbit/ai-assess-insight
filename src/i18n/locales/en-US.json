@@ -77,7 +77,18 @@
     "rateLimitLocked": "Too many attempts. Try again in {{time}}",
     "attemptsRemaining": "{{count}} attempt(s) remaining before lockout",
     "temporarilyLocked": "Temporarily Locked",
-    "lockoutProgress": "Time remaining"
+    "lockoutProgress": "Time remaining",
+    "passwordStrength": "Password strength",
+    "passwordWeak": "Weak",
+    "passwordFair": "Fair",
+    "passwordGood": "Good",
+    "passwordStrong": "Strong",
+    "passwordReqLength": "At least 8 characters",
+    "passwordReqLowercase": "One lowercase letter",
+    "passwordReqUppercase": "One uppercase letter",
+    "passwordReqNumber": "One number",
+    "passwordReqSpecial": "One special character (!@#$%^&*)",
+    "passwordTooWeak": "Password doesn't meet security requirements"
   },
   "navigation": {
     "home": "Home",

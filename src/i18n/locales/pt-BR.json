@@ -77,7 +77,18 @@
     "rateLimitLocked": "Muitas tentativas. Tente novamente em {{time}}",
     "attemptsRemaining": "{{count}} tentativa(s) restante(s) antes do bloqueio",
     "temporarilyLocked": "Temporariamente Bloqueado",
-    "lockoutProgress": "Tempo restante"
+    "lockoutProgress": "Tempo restante",
+    "passwordStrength": "Força da senha",
+    "passwordWeak": "Fraca",
+    "passwordFair": "Razoável",
+    "passwordGood": "Boa",
+    "passwordStrong": "Forte",
+    "passwordReqLength": "Pelo menos 8 caracteres",
+    "passwordReqLowercase": "Uma letra minúscula",
+    "passwordReqUppercase": "Uma letra maiúscula",
+    "passwordReqNumber": "Um número",
+    "passwordReqSpecial": "Um caractere especial (!@#$%^&*)",
+    "passwordTooWeak": "A senha não atende aos requisitos de segurança"
   },
   "navigation": {
     "home": "Início",

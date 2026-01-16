@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, UserPlus, CheckCircle } from 'lucide-react';
+import { PasswordStrengthMeter, usePasswordStrength } from '@/components/auth/PasswordStrengthMeter';
 
 export default function Signup() {
   const { t } = useTranslation();
@@ -20,18 +21,19 @@ export default function Signup() {
   
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const { isValid: isPasswordValid } = usePasswordStrength(password);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (password !== confirmPassword) {
-      setError(t('auth.passwordsNoMatch'));
+    if (!isPasswordValid) {
+      setError(t('auth.passwordTooWeak'));
       return;
     }
 
-    if (password.length < 6) {
-      setError(t('auth.passwordTooShort'));
+    if (password !== confirmPassword) {
+      setError(t('auth.passwordsNoMatch'));
       return;
     }
 
@@ -130,11 +132,8 @@ export default function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                minLength={6}
               />
-              <p className="text-xs text-muted-foreground">
-                {t('auth.passwordTooShort').replace('A senha deve ter pelo menos ', '').replace(' caracteres', '')} min
-              </p>
+              <PasswordStrengthMeter password={password} />
             </div>
             
             <div className="space-y-2">
@@ -147,13 +146,25 @@ export default function Signup() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
-                minLength={6}
               />
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-xs text-destructive">{t('auth.passwordsNoMatch')}</p>
+              )}
+              {confirmPassword && password === confirmPassword && confirmPassword.length > 0 && (
+                <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  {t('common.success')}
+                </p>
+              )}
             </div>
           </CardContent>
           
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || !isPasswordValid || password !== confirmPassword}
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

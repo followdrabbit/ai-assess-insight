@@ -123,8 +123,8 @@ export function AppSidebar() {
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">Security Governance</div>
-              <div className="text-[10px] text-muted-foreground">Multi-Domain Platform</div>
+              <div className="text-sm font-semibold">TrustLayer</div>
+              <div className="text-[10px] text-muted-foreground">Security Governance</div>
             </div>
           )}
         </div>

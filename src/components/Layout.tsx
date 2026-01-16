@@ -25,7 +25,7 @@ export default function Layout() {
           {/* Footer */}
           <footer className="border-t border-border py-3 px-4">
             <div className="text-center text-xs text-muted-foreground">
-              Plataforma de Avaliação de Maturidade em Segurança de IA
+              TrustLayer — Plataforma de Governança de Segurança
             </div>
           </footer>
         </SidebarInset>

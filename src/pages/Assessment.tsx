@@ -57,11 +57,17 @@ export default function Assessment() {
     setPrevDomain(selectedSecurityDomain);
   }, [selectedSecurityDomain, prevDomain, currentStep]);
 
-  // Filter questions based on selected frameworks
+  // Filter questions based on selected frameworks AND security domain
   const filteredQuestions = useMemo(() => {
     if (selectedFrameworks.length === 0) return [];
-    return questions.filter(q => questionBelongsToFrameworks(q.frameworks, selectedFrameworks));
-  }, [selectedFrameworks]);
+    return questions.filter(q => {
+      // Check if question belongs to selected frameworks
+      const belongsToFramework = questionBelongsToFrameworks(q.frameworks, selectedFrameworks);
+      // Check if question belongs to selected security domain (if set)
+      const belongsToDomain = !selectedSecurityDomain || q.securityDomainId === selectedSecurityDomain;
+      return belongsToFramework && belongsToDomain;
+    });
+  }, [selectedFrameworks, selectedSecurityDomain]);
 
   // Group filtered questions by domain and subcategory
   const groupedQuestions = useMemo(() => {

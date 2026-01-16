@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
 import { 
@@ -44,24 +45,24 @@ const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }
   key: Key
 };
 
-const COLOR_OPTIONS = [
-  { value: 'purple', label: 'Roxo' },
-  { value: 'blue', label: 'Azul' },
-  { value: 'green', label: 'Verde' },
-  { value: 'orange', label: 'Laranja' },
-  { value: 'red', label: 'Vermelho' },
-  { value: 'yellow', label: 'Amarelo' }
+const getColorOptions = (t: (key: string) => string) => [
+  { value: 'purple', label: t('settings.colorPurple') },
+  { value: 'blue', label: t('settings.colorBlue') },
+  { value: 'green', label: t('settings.colorGreen') },
+  { value: 'orange', label: t('settings.colorOrange') },
+  { value: 'red', label: t('settings.colorRed') },
+  { value: 'yellow', label: t('settings.colorYellow') }
 ];
 
-const ICON_OPTIONS = [
-  { value: 'brain', label: 'Cérebro (IA)' },
-  { value: 'cloud', label: 'Nuvem' },
-  { value: 'code', label: 'Código' },
-  { value: 'shield', label: 'Escudo' },
-  { value: 'lock', label: 'Cadeado' },
-  { value: 'database', label: 'Banco de Dados' },
-  { value: 'server', label: 'Servidor' },
-  { value: 'key', label: 'Chave' }
+const getIconOptions = (t: (key: string) => string) => [
+  { value: 'brain', label: t('settings.iconBrain') },
+  { value: 'cloud', label: t('settings.iconCloud') },
+  { value: 'code', label: t('settings.iconCode') },
+  { value: 'shield', label: t('settings.iconShield') },
+  { value: 'lock', label: t('settings.iconLock') },
+  { value: 'database', label: t('settings.iconDatabase') },
+  { value: 'server', label: t('settings.iconServer') },
+  { value: 'key', label: t('settings.iconKey') }
 ];
 
 // Interface for new domain creation with taxonomy
@@ -92,6 +93,7 @@ interface TaxonomySubcategory {
 const generateId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`.toUpperCase();
 
 export function DomainManagement() {
+  const { t } = useTranslation();
   const [domains, setDomains] = useState<SecurityDomain[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -148,6 +150,9 @@ export function DomainManagement() {
     criticality: 'medium'
   });
 
+  const COLOR_OPTIONS = getColorOptions(t);
+  const ICON_OPTIONS = getIconOptions(t);
+
   useEffect(() => {
     loadDomains();
   }, []);
@@ -159,7 +164,7 @@ export function DomainManagement() {
       setDomains(data);
     } catch (error) {
       console.error('Error loading domains:', error);
-      toast.error('Erro ao carregar domínios');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -177,7 +182,7 @@ export function DomainManagement() {
     // Prevent disabling if it's the last enabled domain
     const enabledCount = domains.filter(d => d.isEnabled).length;
     if (domain.isEnabled && enabledCount <= 1) {
-      toast.error('Pelo menos um domínio deve estar habilitado');
+      toast.error(t('settings.atLeastOneDomain'));
       return;
     }
 
@@ -197,10 +202,10 @@ export function DomainManagement() {
           : d
       ));
 
-      toast.success(`Domínio ${!domain.isEnabled ? 'habilitado' : 'desabilitado'}`);
+      toast.success(!domain.isEnabled ? t('settings.domainEnabled') : t('settings.domainDisabled'));
     } catch (error) {
       console.error('Error toggling domain:', error);
-      toast.error('Erro ao atualizar domínio');
+      toast.error(t('common.error'));
     } finally {
       setSaving(false);
       setOperatingId(null);
@@ -239,7 +244,7 @@ export function DomainManagement() {
 
   const addTaxonomyDomain = () => {
     if (!currentTaxonomyDomain.name.trim()) {
-      toast.error('Nome do domínio de taxonomia é obrigatório');
+      toast.error(t('settings.taxonomyDomainRequired'));
       return;
     }
 
@@ -254,7 +259,7 @@ export function DomainManagement() {
     }));
 
     setCurrentTaxonomyDomain({ id: '', name: '', description: '', subcategories: [] });
-    toast.success('Domínio de taxonomia adicionado');
+    toast.success(t('settings.taxonomyDomainAdded'));
   };
 
   const removeTaxonomyDomain = (domainId: string) => {
@@ -266,7 +271,7 @@ export function DomainManagement() {
 
   const addSubcategoryToTaxonomyDomain = (taxonomyDomainId: string) => {
     if (!currentSubcategory.name.trim()) {
-      toast.error('Nome da subcategoria é obrigatório');
+      toast.error(t('settings.subcategoryRequired'));
       return;
     }
 
@@ -285,7 +290,7 @@ export function DomainManagement() {
     }));
 
     setCurrentSubcategory({ id: '', name: '', definition: '', objective: '', criticality: 'medium' });
-    toast.success('Subcategoria adicionada');
+    toast.success(t('settings.subcategoryAdded'));
   };
 
   const removeSubcategory = (taxonomyDomainId: string, subcatId: string) => {
@@ -301,16 +306,16 @@ export function DomainManagement() {
 
   const validateBasics = () => {
     if (!newDomainData.domainName.trim()) {
-      toast.error('Nome do domínio é obrigatório');
+      toast.error(t('settings.domainNameRequired'));
       return false;
     }
     if (!newDomainData.shortName.trim()) {
-      toast.error('Nome curto é obrigatório');
+      toast.error(t('settings.shortNameRequired'));
       return false;
     }
     const proposedId = newDomainData.shortName.toUpperCase().replace(/\s+/g, '_');
     if (domains.some(d => d.domainId === proposedId)) {
-      toast.error('Já existe um domínio com este nome curto');
+      toast.error(t('settings.duplicateFrameworkId'));
       return false;
     }
     return true;
@@ -374,13 +379,13 @@ export function DomainManagement() {
         }
       }
 
-      toast.success('Domínio de segurança criado com sucesso!');
+      toast.success(t('settings.domainCreated'));
       setShowCreateDialog(false);
       resetCreateDialog();
       await loadDomains();
     } catch (error) {
       console.error('Error creating domain:', error);
-      toast.error('Erro ao criar domínio de segurança');
+      toast.error(t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -389,7 +394,7 @@ export function DomainManagement() {
   const deleteDomain = async (domain: SecurityDomain) => {
     const coreDomains = ['AI_SECURITY', 'CLOUD_SECURITY', 'DEVSECOPS'];
     if (coreDomains.includes(domain.domainId)) {
-      toast.error('Domínios principais não podem ser excluídos');
+      toast.error(t('settings.coreDomainCannotDelete'));
       return;
     }
 
@@ -402,12 +407,12 @@ export function DomainManagement() {
 
       if (error) throw error;
 
-      toast.success('Domínio excluído com sucesso');
+      toast.success(t('settings.domainDeleted'));
       setDeletingDomain(null);
       await loadDomains();
     } catch (error) {
       console.error('Error deleting domain:', error);
-      toast.error('Erro ao excluir domínio');
+      toast.error(t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -424,13 +429,13 @@ export function DomainManagement() {
       const config = await exportDomainConfig(domain.domainId);
       if (config) {
         downloadDomainConfig(config);
-        toast.success(`Configuração de "${domain.domainName}" exportada com sucesso`);
+        toast.success(t('settings.exportSuccess'));
       } else {
-        toast.error('Erro ao exportar configuração do domínio');
+        toast.error(t('settings.exportError'));
       }
     } catch (error) {
       console.error('Error exporting domain:', error);
-      toast.error('Erro ao exportar configuração do domínio');
+      toast.error(t('settings.exportError'));
     } finally {
       setExporting(null);
     }
@@ -448,13 +453,13 @@ export function DomainManagement() {
       setImportConfig(validation.config);
       setImportOptions({
         newDomainId: '',
-        newDomainName: validation.config.securityDomain.domainName + ' (Importado)',
+        newDomainName: validation.config.securityDomain.domainName + ` (${t('common.import')})`,
         importFrameworks: true,
         importQuestions: true
       });
       setShowImportDialog(true);
     } else {
-      toast.error(validation.errors[0] || 'Arquivo inválido');
+      toast.error(validation.errors[0] || t('settings.invalidFile'));
     }
 
     // Reset file input
@@ -477,15 +482,13 @@ export function DomainManagement() {
       });
 
       if (result.success) {
-        toast.success(
-          `Domínio importado com sucesso! ${result.stats.taxonomyDomains} áreas, ${result.stats.subcategories} subcategorias, ${result.stats.frameworks} frameworks, ${result.stats.questions} perguntas.`
-        );
+        toast.success(t('settings.importSuccess'));
         setShowImportDialog(false);
         setImportConfig(null);
         setImportValidation(null);
         await loadDomains();
       } else {
-        toast.error(result.errors[0] || 'Erro ao importar domínio');
+        toast.error(result.errors[0] || t('common.error'));
       }
 
       if (result.warnings.length > 0) {
@@ -493,7 +496,7 @@ export function DomainManagement() {
       }
     } catch (error) {
       console.error('Error importing domain:', error);
-      toast.error('Erro ao importar configuração do domínio');
+      toast.error(t('common.error'));
     } finally {
       setImporting(false);
     }
@@ -515,7 +518,7 @@ export function DomainManagement() {
     if (!editingDomain) return;
 
     if (!editFormData.domainName.trim() || !editFormData.shortName.trim()) {
-      toast.error('Nome e nome curto são obrigatórios');
+      toast.error(t('settings.domainNameRequired'));
       return;
     }
 
@@ -549,10 +552,10 @@ export function DomainManagement() {
       ));
 
       setEditingDomain(null);
-      toast.success('Domínio atualizado com sucesso');
+      toast.success(t('settings.domainUpdated'));
     } catch (error) {
       console.error('Error saving domain:', error);
-      toast.error('Erro ao salvar domínio');
+      toast.error(t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -574,7 +577,7 @@ export function DomainManagement() {
       )}>
         <CardLoadingOverlay 
           isLoading={operatingId === domain.domainId} 
-          loadingText="Processando..."
+          loadingText={t('settings.processing')}
         />
         <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-start justify-between gap-2">
@@ -590,7 +593,7 @@ export function DomainManagement() {
                   <span className="truncate">{domain.domainName}</span>
                   {isCore && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0">
-                      Principal
+                      {t('settings.main')}
                     </Badge>
                   )}
                 </CardTitle>
@@ -611,7 +614,7 @@ export function DomainManagement() {
         </CardHeader>
         <CardContent className="pt-0 flex-1 flex flex-col">
           <p className="text-xs text-muted-foreground mb-3 line-clamp-2 flex-1">
-            {domain.description || 'Sem descrição'}
+            {domain.description || t('settings.noDescription')}
           </p>
           
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -619,7 +622,7 @@ export function DomainManagement() {
               {frameworkCount} frameworks
             </Badge>
             <Badge variant="outline" className="font-normal text-[10px]">
-              {questionCount} perguntas
+              {questionCount} {t('settings.questions').toLowerCase()}
             </Badge>
           </div>
 

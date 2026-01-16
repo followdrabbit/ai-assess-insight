@@ -243,6 +243,188 @@ Deno.serve(async (req) => {
         version: '2.0.0',
       }, { onConflict: 'id,user_id' });
 
+    // Generate historical maturity snapshots for the last 90 days
+    const securityDomains = ['AI_SECURITY', 'CLOUD_SECURITY', 'DEVSECOPS'];
+    const domainNames: Record<string, string[]> = {
+      'AI_SECURITY': ['Governança de IA', 'Mapeamento de Riscos', 'Gestão de Dados', 'Desenvolvimento Responsável', 'Medição e Avaliação', 'Proteção de Modelos', 'Detecção de Anomalias', 'Resposta a Incidentes'],
+      'CLOUD_SECURITY': ['Identidade e Acesso', 'Proteção de Dados', 'Segurança de Rede', 'Configuração Segura', 'Monitoramento', 'Resposta a Incidentes', 'Conformidade', 'Resiliência'],
+      'DEVSECOPS': ['Planejamento Seguro', 'Desenvolvimento Seguro', 'Build Seguro', 'Teste de Segurança', 'Deploy Seguro', 'Operação Segura', 'Monitoramento', 'Resposta a Incidentes'],
+    };
+    
+    const frameworksByDomain: Record<string, string[]> = {
+      'AI_SECURITY': ['NIST AI RMF', 'ISO/IEC 42001', 'EU AI Act'],
+      'CLOUD_SECURITY': ['CSA CCM', 'CIS Controls', 'NIST CSF'],
+      'DEVSECOPS': ['NIST SSDF', 'OWASP SAMM', 'CIS Controls'],
+    };
+
+    // Check existing snapshots
+    const { data: existingSnapshots } = await supabaseAdmin
+      .from('maturity_snapshots')
+      .select('snapshot_date, security_domain_id')
+      .eq('user_id', demoUserId);
+
+    const existingSnapshotKeys = new Set(
+      (existingSnapshots || []).map(s => `${s.snapshot_date}_${s.security_domain_id}`)
+    );
+
+    const snapshots = [];
+    const today = new Date();
+    
+    for (const domainId of securityDomains) {
+      // Generate snapshots for 90 days with progressive improvement
+      for (let daysAgo = 90; daysAgo >= 0; daysAgo -= 3) { // Every 3 days
+        const snapshotDate = new Date(today);
+        snapshotDate.setDate(snapshotDate.getDate() - daysAgo);
+        const dateStr = snapshotDate.toISOString().split('T')[0];
+        
+        // Skip if snapshot already exists
+        const snapshotKey = `${dateStr}_${domainId}`;
+        if (existingSnapshotKeys.has(snapshotKey)) continue;
+        
+        // Calculate progressive metrics (starting lower, improving over time)
+        const progress = 1 - (daysAgo / 90); // 0 to 1
+        const baseScore = 45 + Math.random() * 10; // Start at 45-55
+        const scoreGrowth = progress * (25 + Math.random() * 10); // Grow by 25-35 points
+        const noise = (Math.random() - 0.5) * 5; // Add some noise
+        
+        const overallScore = Math.min(95, Math.max(30, baseScore + scoreGrowth + noise));
+        const baseCoverage = 50 + Math.random() * 10;
+        const coverageGrowth = progress * (35 + Math.random() * 10);
+        const overallCoverage = Math.min(98, Math.max(40, baseCoverage + coverageGrowth + noise));
+        const evidenceReadiness = Math.min(95, Math.max(25, overallScore - 10 + Math.random() * 15));
+        
+        // Calculate maturity level based on score
+        let maturityLevel = 1;
+        if (overallScore >= 80) maturityLevel = 5;
+        else if (overallScore >= 65) maturityLevel = 4;
+        else if (overallScore >= 50) maturityLevel = 3;
+        else if (overallScore >= 35) maturityLevel = 2;
+        
+        const totalQuestions = domainId === 'AI_SECURITY' ? 143 : domainId === 'CLOUD_SECURITY' ? 36 : 44;
+        const answeredQuestions = Math.floor(totalQuestions * (overallCoverage / 100));
+        const criticalGaps = Math.max(0, Math.floor((100 - overallScore) / 10) - Math.floor(progress * 3));
+        
+        // Generate domain metrics
+        const domainMetrics = (domainNames[domainId] || []).map((name, idx) => {
+          const domainVariance = (Math.random() - 0.5) * 20;
+          return {
+            domainId: `DOM-${idx + 1}`,
+            domainName: name,
+            score: Math.min(100, Math.max(20, overallScore + domainVariance)),
+            coverage: Math.min(100, Math.max(30, overallCoverage + domainVariance * 0.5)),
+            criticalGaps: Math.max(0, Math.floor((100 - overallScore - domainVariance) / 20)),
+          };
+        });
+        
+        // Generate framework metrics
+        const frameworkMetrics = (frameworksByDomain[domainId] || []).map(fw => {
+          const fwVariance = (Math.random() - 0.5) * 15;
+          const fwTotal = Math.floor(totalQuestions / 3);
+          return {
+            framework: fw,
+            score: Math.min(100, Math.max(25, overallScore + fwVariance)),
+            coverage: Math.min(100, Math.max(35, overallCoverage + fwVariance * 0.5)),
+            totalQuestions: fwTotal,
+            answeredQuestions: Math.floor(fwTotal * (overallCoverage / 100)),
+          };
+        });
+
+        // Generate framework category metrics
+        const frameworkCategoryMetrics = [
+          { categoryId: 'CAT-1', categoryName: 'Identificação', score: overallScore + (Math.random() - 0.5) * 10, coverage: overallCoverage },
+          { categoryId: 'CAT-2', categoryName: 'Proteção', score: overallScore + (Math.random() - 0.5) * 10, coverage: overallCoverage },
+          { categoryId: 'CAT-3', categoryName: 'Detecção', score: overallScore + (Math.random() - 0.5) * 10, coverage: overallCoverage },
+          { categoryId: 'CAT-4', categoryName: 'Resposta', score: overallScore + (Math.random() - 0.5) * 10, coverage: overallCoverage },
+          { categoryId: 'CAT-5', categoryName: 'Recuperação', score: overallScore + (Math.random() - 0.5) * 10, coverage: overallCoverage },
+        ];
+        
+        snapshots.push({
+          snapshot_date: dateStr,
+          snapshot_type: 'automatic',
+          security_domain_id: domainId,
+          user_id: demoUserId,
+          overall_score: Math.round(overallScore * 10) / 10,
+          overall_coverage: Math.round(overallCoverage * 10) / 10,
+          evidence_readiness: Math.round(evidenceReadiness * 10) / 10,
+          maturity_level: maturityLevel,
+          total_questions: totalQuestions,
+          answered_questions: answeredQuestions,
+          critical_gaps: criticalGaps,
+          domain_metrics: domainMetrics,
+          framework_metrics: frameworkMetrics,
+          framework_category_metrics: frameworkCategoryMetrics,
+        });
+      }
+    }
+
+    // Insert snapshots in batches
+    let snapshotsCreated = 0;
+    if (snapshots.length > 0) {
+      for (let i = 0; i < snapshots.length; i += batchSize) {
+        const batch = snapshots.slice(i, i + batchSize);
+        const { error: snapshotError } = await supabaseAdmin
+          .from('maturity_snapshots')
+          .insert(batch);
+
+        if (snapshotError) {
+          console.error('Snapshot insert error:', snapshotError);
+          // Continue with other batches even if one fails
+        } else {
+          snapshotsCreated += batch.length;
+        }
+      }
+    }
+
+    // Create chart annotations for key milestones
+    const annotationDates = [
+      { daysAgo: 75, title: 'Início do Programa', type: 'milestone', color: '#22c55e' },
+      { daysAgo: 60, title: 'Auditoria Interna', type: 'audit', color: '#3b82f6' },
+      { daysAgo: 45, title: 'Treinamento de Equipe', type: 'milestone', color: '#8b5cf6' },
+      { daysAgo: 30, title: 'Implementação NIST', type: 'framework', color: '#f59e0b' },
+      { daysAgo: 15, title: 'Revisão de Políticas', type: 'policy', color: '#ef4444' },
+      { daysAgo: 7, title: 'Auditoria Externa', type: 'audit', color: '#06b6d4' },
+    ];
+
+    const { data: existingAnnotations } = await supabaseAdmin
+      .from('chart_annotations')
+      .select('title')
+      .eq('user_id', demoUserId);
+
+    const existingTitles = new Set((existingAnnotations || []).map(a => a.title));
+
+    const annotations = [];
+    for (const domainId of securityDomains) {
+      for (const ann of annotationDates) {
+        const annDate = new Date(today);
+        annDate.setDate(annDate.getDate() - ann.daysAgo);
+        const dateStr = annDate.toISOString().split('T')[0];
+        
+        const fullTitle = `${ann.title} - ${domainId.replace('_', ' ')}`;
+        if (existingTitles.has(fullTitle)) continue;
+        
+        annotations.push({
+          annotation_date: dateStr,
+          title: fullTitle,
+          description: `Marco importante para o domínio ${domainId.replace('_', ' ')}`,
+          annotation_type: ann.type,
+          color: ann.color,
+          security_domain_id: domainId,
+          user_id: demoUserId,
+        });
+      }
+    }
+
+    let annotationsCreated = 0;
+    if (annotations.length > 0) {
+      const { error: annError } = await supabaseAdmin
+        .from('chart_annotations')
+        .insert(annotations);
+
+      if (!annError) {
+        annotationsCreated = annotations.length;
+      }
+    }
+
     // Summary by domain
     const domainSummary: Record<string, { total: number; yes: number; partial: number; no: number; na: number }> = {};
     
@@ -252,9 +434,9 @@ Deno.serve(async (req) => {
         domainSummary[domain] = { total: 0, yes: 0, partial: 0, no: 0, na: 0 };
       }
       domainSummary[domain].total++;
-      if (answer.response === 'Yes') domainSummary[domain].yes++;
-      else if (answer.response === 'Partial') domainSummary[domain].partial++;
-      else if (answer.response === 'No') domainSummary[domain].no++;
+      if (answer.response === 'Sim') domainSummary[domain].yes++;
+      else if (answer.response === 'Parcial') domainSummary[domain].partial++;
+      else if (answer.response === 'Não') domainSummary[domain].no++;
       else domainSummary[domain].na++;
     }
 
@@ -263,6 +445,8 @@ Deno.serve(async (req) => {
         success: true,
         message: 'Demo data created successfully',
         answersCreated: insertedCount,
+        snapshotsCreated,
+        annotationsCreated,
         existingAnswers: existingAnswers?.length || 0,
         domainSummary,
         created: true,

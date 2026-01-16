@@ -14,9 +14,12 @@ import {
   CriticalGapsHelp,
   CriticalityLevelsHelp,
   HeatmapHelp,
-  ResponseDistributionHelp,
-  DomainMetricsHelp,
-  FrameworkCategoryHelp
+  FrameworkCategoryHelp,
+  DomainMetricsHelpAware,
+  DomainFunctionHelp,
+  DomainRiskDistributionHelp,
+  DomainFrameworkCoverageHelp,
+  DomainResponseDistributionHelp,
 } from '@/components/HelpTooltip';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -1175,7 +1178,7 @@ export default function DashboardSpecialist() {
             <div className="card-elevated p-6 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-2 mb-4">
                 <h3 className="font-semibold">Distribuição de Respostas</h3>
-                <ResponseDistributionHelp />
+                <DomainResponseDistributionHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
               </div>
               <p className="text-xs text-muted-foreground mb-2">Clique em uma fatia para ver detalhes</p>
               <div className="h-64">
@@ -1261,7 +1264,7 @@ export default function DashboardSpecialist() {
           <div className="card-elevated p-6 animate-in fade-in-0 zoom-in-95 duration-500">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="font-semibold">Detalhamento por Domínio</h3>
-              <DomainMetricsHelp />
+              <DomainMetricsHelpAware securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
             </div>
             <p className="text-xs text-muted-foreground mb-3">Clique nas barras para ver detalhes</p>
             <div className="h-80">

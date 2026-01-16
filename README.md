@@ -34,6 +34,86 @@ Uma plataforma completa de governança de segurança multi-domínio para **AI Se
 
 </div>
 
+## 📸 Screenshots
+
+<div align="center">
+
+### 🏠 Home - Seleção de Frameworks
+![Home Page](docs/screenshots/home.png)
+*Página inicial com seleção de frameworks e onboarding do usuário*
+
+---
+
+### 📋 Assessment - Questionário de Avaliação
+![Assessment](docs/screenshots/assessment.png)
+*Questionário estruturado por domínios L1/L2 com campos de evidência*
+
+---
+
+### 📊 Dashboard Executivo
+![Executive Dashboard](docs/screenshots/dashboard-executive.png)
+*Visão estratégica com KPIs, gráficos de maturidade e roadmap para CISO*
+
+---
+
+### 📈 Dashboard GRC
+![GRC Dashboard](docs/screenshots/dashboard-grc.png)
+*Governança, Riscos e Compliance com cobertura de frameworks e conformidade*
+
+---
+
+### 🔧 Dashboard Especialista
+![Specialist Dashboard](docs/screenshots/dashboard-specialist.png)
+*Detalhes técnicos com métricas por categoria e gaps críticos*
+
+---
+
+### 📉 Comparação de Períodos
+![Period Comparison](docs/screenshots/period-comparison.png)
+*Análise side-by-side de diferentes intervalos de tempo*
+
+---
+
+### 🤖 Assistente de IA
+![AI Assistant](docs/screenshots/ai-assistant.png)
+*Chat interativo com análise contextual do assessment*
+
+---
+
+### ⚙️ Configurações - Gestão de Frameworks
+![Settings Frameworks](docs/screenshots/settings-frameworks.png)
+*Gerenciamento de frameworks padrão e customizados*
+
+---
+
+### 📝 Configurações - Gestão de Questões
+![Settings Questions](docs/screenshots/settings-questions.png)
+*Criação e edição de questões com versionamento*
+
+---
+
+### 🔗 Configurações - Integrações SIEM
+![Settings SIEM](docs/screenshots/settings-siem.png)
+*Configuração de integrações com sistemas SIEM*
+
+---
+
+### 👤 Perfil do Usuário
+![Profile](docs/screenshots/profile.png)
+*Configurações de perfil, preferências e notificações*
+
+---
+
+### 🌙 Tema Escuro
+![Dark Theme](docs/screenshots/dark-theme.png)
+*Suporte completo a tema escuro em todas as telas*
+
+</div>
+
+> **Nota**: Para adicionar os screenshots, salve as imagens na pasta `docs/screenshots/` com os nomes indicados acima.
+
+---
+
 ## 📋 Sobre o Projeto
 
 Esta ferramenta permite que organizações avaliem sua postura de segurança em múltiplos domínios, identificando gaps críticos, gerando roadmaps de remediação e acompanhando a evolução da maturidade ao longo do tempo.

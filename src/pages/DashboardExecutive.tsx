@@ -11,6 +11,7 @@ export default function DashboardExecutive() {
     isLoading,
     questionsLoading,
     isTransitioning,
+    currentDomainInfo,
     metrics,
     criticalGaps,
     roadmap,
@@ -50,6 +51,7 @@ export default function DashboardExecutive() {
         onFrameworkSelectionChange={handleFrameworkSelectionChange}
         activeQuestions={questionsForDashboard}
         domainSwitcher={<DomainSwitcher variant="badge" />}
+        securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'}
       />
 
       {/* Maturity Trend Chart */}

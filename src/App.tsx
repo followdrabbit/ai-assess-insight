@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAnswersStore } from "@/lib/stores";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Assessment from "./pages/Assessment";
@@ -12,6 +13,8 @@ import DashboardExecutive from "./pages/DashboardExecutive";
 import DashboardGRC from "./pages/DashboardGRC";
 import DashboardSpecialist from "./pages/DashboardSpecialist";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,7 +29,16 @@ function AppContent() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        
+        {/* Protected routes */}
+        <Route path="/" element={
+          <AuthGuard>
+            <Layout />
+          </AuthGuard>
+        }>
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="assessment" element={<Assessment />} />
@@ -35,8 +47,8 @@ function AppContent() {
           <Route path="dashboard/grc" element={<DashboardGRC />} />
           <Route path="dashboard/specialist" element={<DashboardSpecialist />} />
           <Route path="settings" element={<Settings />} />
-          <Route path="settings" element={<Settings />} />
         </Route>
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

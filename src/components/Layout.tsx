@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import { UserMenu } from '@/components/auth/UserMenu';
 
 export default function Layout() {
   return (
@@ -12,9 +13,10 @@ export default function Layout() {
           <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground hidden sm:block">
               Dados sincronizados com a nuvem
             </div>
+            <UserMenu />
           </header>
 
           {/* Main content */}

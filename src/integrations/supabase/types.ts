@@ -502,6 +502,7 @@ export type Database = {
       }
       question_versions: {
         Row: {
+          annotations: Json | null
           change_summary: string | null
           change_type: string
           changed_by: string | null
@@ -521,6 +522,7 @@ export type Database = {
           version_number: number
         }
         Insert: {
+          annotations?: Json | null
           change_summary?: string | null
           change_type?: string
           changed_by?: string | null
@@ -540,6 +542,7 @@ export type Database = {
           version_number?: number
         }
         Update: {
+          annotations?: Json | null
           change_summary?: string | null
           change_type?: string
           changed_by?: string | null

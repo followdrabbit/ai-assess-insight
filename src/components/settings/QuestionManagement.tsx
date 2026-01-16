@@ -45,13 +45,15 @@ import {
   deleteQuestionVersions,
   compareVersions,
   QuestionVersion,
+  VersionAnnotation,
   VersionDiff,
   CHANGE_TYPE_LABELS,
   formatVersionDate
 } from '@/lib/questionVersioning';
 import { VersionComparisonView } from './VersionComparisonView';
+import { VersionAnnotations } from './VersionAnnotations';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare, MessageSquare } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -1460,6 +1462,12 @@ export function QuestionManagement() {
                                     Atual
                                   </Badge>
                                 )}
+                                {version.annotations && version.annotations.length > 0 && (
+                                  <Badge variant="outline" className="text-xs gap-1">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {version.annotations.length}
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-sm line-clamp-2 text-muted-foreground">
                                 {version.questionText}
@@ -1495,7 +1503,7 @@ export function QuestionManagement() {
 
                 {/* Version Details */}
                 {selectedVersion && (
-                  <div className="p-4 rounded-lg bg-muted/50 border space-y-3 mt-4">
+                  <div className="p-4 rounded-lg bg-muted/50 border space-y-4 mt-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-sm">Detalhes da Versão {selectedVersion.versionNumber}</h4>
                       <Button
@@ -1530,6 +1538,22 @@ export function QuestionManagement() {
                         <span className="line-clamp-2">{selectedVersion.expectedEvidence}</span>
                       </div>
                     )}
+                    
+                    {/* Annotations Section */}
+                    <div className="border-t pt-4">
+                      <VersionAnnotations
+                        version={selectedVersion}
+                        onAnnotationsChange={(versionId, newAnnotations) => {
+                          // Update both the selected version and the versions list
+                          setVersions(prev => prev.map(v => 
+                            v.id === versionId ? { ...v, annotations: newAnnotations } : v
+                          ));
+                          if (selectedVersion.id === versionId) {
+                            setSelectedVersion({ ...selectedVersion, annotations: newAnnotations });
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </TabsContent>

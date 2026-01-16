@@ -424,10 +424,10 @@ export function ExecutiveDashboard({
         </div>
       </div>
 
-      {/* Executive KPI Cards - Enhanced with staggered animations */}
+      {/* Executive KPI Cards - Enhanced with staggered animations and hover effects */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
           style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
@@ -438,16 +438,24 @@ export function ExecutiveDashboard({
           <div className="kpi-value" style={{ color: metrics.maturityLevel.color }}>
             {Math.round(metrics.overallScore * 100)}%
           </div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full transition-all duration-700 ease-out" 
+                style={{ 
+                  width: `${metrics.overallScore * 100}%`,
+                  backgroundColor: metrics.maturityLevel.color 
+                }}
+              />
+            </div>
+          </div>
           <div className={cn("maturity-badge mt-2", `maturity-${metrics.maturityLevel.level}`)}>
             Nível {metrics.maturityLevel.level}: {metrics.maturityLevel.name}
-          </div>
-          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            Meta recomendada: 70%+
           </div>
         </div>
 
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
           style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
@@ -456,10 +464,20 @@ export function ExecutiveDashboard({
             <CriticalGapsHelp />
           </div>
           <div className="kpi-value text-destructive">{filteredByFramework.gaps.length}</div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-destructive transition-all duration-700 ease-out" 
+                style={{ 
+                  width: `${Math.min((filteredByFramework.gaps.length / Math.max(coverageStats.total * 0.1, 1)) * 100, 100)}%`
+                }}
+              />
+            </div>
+          </div>
           <div className="text-sm text-muted-foreground mt-2">
             Requerem ação prioritária
           </div>
-          <div className="mt-3 pt-3 border-t text-xs">
+          <div className="mt-2 text-xs">
             <span className={cn(
               filteredByFramework.gaps.length === 0 ? 'text-green-600' :
               filteredByFramework.gaps.length <= 5 ? 'text-amber-600' : 'text-red-600'
@@ -471,7 +489,7 @@ export function ExecutiveDashboard({
         </div>
 
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
           style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full" />
@@ -480,16 +498,21 @@ export function ExecutiveDashboard({
             <CoverageHelp />
           </div>
           <div className="kpi-value">{Math.round(coverageStats.coverage * 100)}%</div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-500 transition-all duration-700 ease-out" 
+                style={{ width: `${coverageStats.coverage * 100}%` }}
+              />
+            </div>
+          </div>
           <div className="text-sm text-muted-foreground mt-2">
             {coverageStats.answered} de {coverageStats.total} perguntas
-          </div>
-          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            {coverageStats.pending} perguntas pendentes
           </div>
         </div>
 
         <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02]"
           style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-bl-full" />
@@ -498,10 +521,15 @@ export function ExecutiveDashboard({
             <EvidenceReadinessHelp />
           </div>
           <div className="kpi-value">{Math.round(metrics.evidenceReadiness * 100)}%</div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Documentação disponível
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-green-500 transition-all duration-700 ease-out" 
+                style={{ width: `${metrics.evidenceReadiness * 100}%` }}
+              />
+            </div>
           </div>
-          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+          <div className="text-sm text-muted-foreground mt-2">
             Preparação para auditoria
           </div>
         </div>

@@ -519,6 +519,7 @@ export type Database = {
           risk_summary: string | null
           security_domain_id: string | null
           subcat_id: string | null
+          tags: string[] | null
           version_number: number
         }
         Insert: {
@@ -539,6 +540,7 @@ export type Database = {
           risk_summary?: string | null
           security_domain_id?: string | null
           subcat_id?: string | null
+          tags?: string[] | null
           version_number?: number
         }
         Update: {
@@ -559,6 +561,7 @@ export type Database = {
           risk_summary?: string | null
           security_domain_id?: string | null
           subcat_id?: string | null
+          tags?: string[] | null
           version_number?: number
         }
         Relationships: []

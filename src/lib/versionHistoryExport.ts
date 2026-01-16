@@ -4,7 +4,7 @@
  * Generates HTML/PDF reports of question version history for audit documentation
  */
 
-import { QuestionVersion, VersionAnnotation, compareVersions, CHANGE_TYPE_LABELS } from './questionVersioning';
+import { QuestionVersion, VersionAnnotation, compareVersions, CHANGE_TYPE_LABELS, VERSION_TAG_OPTIONS } from './questionVersioning';
 
 interface ExportOptions {
   questionId: string;
@@ -12,6 +12,7 @@ interface ExportOptions {
   versions: QuestionVersion[];
   includeAnnotations?: boolean;
   includeChangeDiffs?: boolean;
+  includeTags?: boolean;
   exportDate?: Date;
 }
 
@@ -80,6 +81,21 @@ function generateAnnotationsHtml(annotations: VersionAnnotation[]): string {
   `;
 }
 
+function generateTagsHtml(tags: string[]): string {
+  if (!tags || tags.length === 0) {
+    return '<span class="no-tags">Nenhuma tag</span>';
+  }
+
+  return `
+    <div class="tags-list">
+      ${tags.map(tagId => {
+        const option = VERSION_TAG_OPTIONS.find(t => t.id === tagId);
+        return `<span class="tag tag-${tagId}">${option?.label || tagId}</span>`;
+      }).join('')}
+    </div>
+  `;
+}
+
 function getChangeTypeClass(changeType: string): string {
   switch (changeType) {
     case 'create': return 'change-create';
@@ -96,6 +112,7 @@ export function generateVersionHistoryHtml(options: ExportOptions): string {
     versions,
     includeAnnotations = true,
     includeChangeDiffs = true,
+    includeTags = true,
     exportDate = new Date()
   } = options;
 
@@ -313,10 +330,77 @@ export function generateVersionHistoryHtml(options: ExportOptions): string {
         color: #166534;
       }
       
-      .no-changes, .no-annotations {
+      .no-changes, .no-annotations, .no-tags {
         font-size: 12px;
         color: #9ca3af;
         font-style: italic;
+      }
+      
+      .tags-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      
+      .tag {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 4px;
+        border: 1px solid;
+      }
+      
+      .tag-approved {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #86efac;
+      }
+      
+      .tag-reviewed {
+        background: #dbeafe;
+        color: #1e40af;
+        border-color: #93c5fd;
+      }
+      
+      .tag-baseline {
+        background: #f3e8ff;
+        color: #7e22ce;
+        border-color: #c4b5fd;
+      }
+      
+      .tag-draft {
+        background: #fef9c3;
+        color: #a16207;
+        border-color: #fde047;
+      }
+      
+      .tag-deprecated {
+        background: #fee2e2;
+        color: #991b1b;
+        border-color: #fca5a5;
+      }
+      
+      .tag-audit {
+        background: #ffedd5;
+        color: #9a3412;
+        border-color: #fdba74;
+      }
+      
+      .tag-compliance {
+        background: #ccfbf1;
+        color: #0f766e;
+        border-color: #5eead4;
+      }
+      
+      .tags-section {
+        margin-top: 12px;
+      }
+      
+      .tags-section h4 {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 8px;
       }
       
       .annotations-list {
@@ -410,6 +494,13 @@ export function generateVersionHistoryHtml(options: ExportOptions): string {
               <span class="detail-value">${version.frameworks?.length ? escapeHtml(version.frameworks.join(', ')) : 'Nenhum'}</span>
             </div>
           </div>
+          
+          ${includeTags ? `
+            <div class="tags-section">
+              <h4>Tags</h4>
+              ${generateTagsHtml(version.tags)}
+            </div>
+          ` : ''}
           
           ${includeChangeDiffs && previousVersion ? `
             <div class="diff-section">

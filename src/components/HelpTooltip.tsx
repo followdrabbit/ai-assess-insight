@@ -138,22 +138,150 @@ export function EvidenceReadinessHelp() {
   );
 }
 
-export function CriticalGapsHelp() {
+// Domain-aware Critical Gaps help
+const criticalGapsConfig: Record<string, {
+  title: string;
+  description: string;
+  risks: string[];
+  frameworkRef: string;
+}> = {
+  AI_SECURITY: {
+    title: 'Gaps Críticos de IA',
+    description: 'Controles de segurança de IA com score baixo (<50%) em subcategorias de alta criticidade.',
+    risks: [
+      'Viés e discriminação em modelos de IA',
+      'Vazamento de dados de treinamento',
+      'Ataques adversariais não mitigados',
+      'Não conformidade com regulações de IA',
+    ],
+    frameworkRef: 'Priorização baseada no NIST AI RMF e impacto nos trustworthy AI principles.',
+  },
+  CLOUD_SECURITY: {
+    title: 'Gaps Críticos de Cloud',
+    description: 'Controles de segurança cloud com score baixo (<50%) em subcategorias de alta criticidade.',
+    risks: [
+      'Exposição de dados sensíveis na nuvem',
+      'Configurações inseguras de IAM',
+      'Falta de visibilidade em multi-cloud',
+      'Violação do modelo de responsabilidade compartilhada',
+    ],
+    frameworkRef: 'Priorização baseada no CSA CCM e modelo de responsabilidade compartilhada.',
+  },
+  DEVSECOPS: {
+    title: 'Gaps Críticos de Pipeline',
+    description: 'Práticas de desenvolvimento seguro com score baixo (<50%) em subcategorias de alta criticidade.',
+    risks: [
+      'Vulnerabilidades em dependências',
+      'Secrets expostos no código',
+      'Pipeline de CI/CD comprometido',
+      'Supply chain attacks',
+    ],
+    frameworkRef: 'Priorização baseada no NIST SSDF e SLSA framework.',
+  },
+};
+
+interface DomainCriticalGapsHelpProps {
+  securityDomainId?: string;
+}
+
+export function DomainCriticalGapsHelp({ securityDomainId = 'AI_SECURITY' }: DomainCriticalGapsHelpProps) {
+  const config = criticalGapsConfig[securityDomainId] || criticalGapsConfig.AI_SECURITY;
+  
   return (
-    <HelpTooltip title="O que são?" modalTitle="Gaps Críticos">
+    <HelpTooltip title="O que são?" modalTitle={config.title}>
       <div className="space-y-3">
-        <p><strong>Gaps Críticos</strong> são perguntas com score baixo ({"<"}50%) em subcategorias de criticidade Alta ou Crítica.</p>
+        <p><strong>{config.title}:</strong> {config.description}</p>
         <div className="p-3 bg-muted rounded-lg">
-          <p className="font-medium mb-1">Prioridade:</p>
-          <p>Estes gaps representam os maiores riscos e devem ser priorizados no roadmap de remediação.</p>
+          <p className="font-medium mb-1">Metodologia de Priorização:</p>
+          <p className="text-sm">Gaps são ordenados por criticidade (Crítico → Alto → Médio) e impacto no domínio.</p>
         </div>
         <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="font-medium text-red-700 dark:text-red-400 mb-2">Riscos de gaps não tratados:</p>
-          <ul className="list-disc list-inside space-y-1 text-red-700 dark:text-red-300">
-            <li>Exposição a riscos de alto impacto</li>
-            <li>Não conformidade regulatória</li>
-            <li>Vulnerabilidades exploráveis</li>
+          <p className="font-medium text-red-700 dark:text-red-400 mb-2">Riscos específicos:</p>
+          <ul className="list-disc list-inside space-y-1 text-red-700 dark:text-red-300 text-sm">
+            {config.risks.map((risk) => (
+              <li key={risk}>{risk}</li>
+            ))}
           </ul>
+        </div>
+        <div className="pt-2 border-t text-xs text-muted-foreground">
+          {config.frameworkRef}
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+// Legacy export for backward compatibility
+export function CriticalGapsHelp() {
+  return <DomainCriticalGapsHelp securityDomainId="AI_SECURITY" />;
+}
+
+// Domain-aware Strategic Roadmap help
+const roadmapConfig: Record<string, {
+  title: string;
+  description: string;
+  prioritization: { period: string; criteria: string }[];
+  frameworkRef: string;
+}> = {
+  AI_SECURITY: {
+    title: 'Roadmap de Segurança de IA',
+    description: 'Plano de ações priorizadas para mitigar riscos de IA nos próximos 90 dias.',
+    prioritization: [
+      { period: '0-30 dias', criteria: 'Gaps críticos em GOVERN e MAP do NIST AI RMF. Foco em governança e inventário.' },
+      { period: '30-60 dias', criteria: 'Gaps em MEASURE. Implementar métricas e monitoramento de modelos.' },
+      { period: '60-90 dias', criteria: 'Gaps em MANAGE. Estabelecer processos de resposta e melhoria contínua.' },
+    ],
+    frameworkRef: 'Metodologia alinhada ao ciclo de vida do NIST AI RMF.',
+  },
+  CLOUD_SECURITY: {
+    title: 'Roadmap de Segurança Cloud',
+    description: 'Plano de ações priorizadas para mitigar riscos cloud nos próximos 90 dias.',
+    prioritization: [
+      { period: '0-30 dias', criteria: 'Gaps críticos em IAM e configuração. Hardening imediato.' },
+      { period: '30-60 dias', criteria: 'Gaps em proteção de dados e rede. Criptografia e segmentação.' },
+      { period: '60-90 dias', criteria: 'Gaps em logging e compliance. Visibilidade e auditoria.' },
+    ],
+    frameworkRef: 'Metodologia alinhada aos domínios do CSA CCM.',
+  },
+  DEVSECOPS: {
+    title: 'Roadmap DevSecOps',
+    description: 'Plano de ações priorizadas para fortalecer o pipeline nos próximos 90 dias.',
+    prioritization: [
+      { period: '0-30 dias', criteria: 'Gaps em secrets management e SAST. Proteção de credenciais.' },
+      { period: '30-60 dias', criteria: 'Gaps em SCA e container security. Gestão de dependências.' },
+      { period: '60-90 dias', criteria: 'Gaps em DAST e runtime. Testes dinâmicos e observabilidade.' },
+    ],
+    frameworkRef: 'Metodologia alinhada ao NIST SSDF e OWASP DevSecOps Guidelines.',
+  },
+};
+
+interface DomainRoadmapHelpProps {
+  securityDomainId?: string;
+}
+
+export function DomainRoadmapHelp({ securityDomainId = 'AI_SECURITY' }: DomainRoadmapHelpProps) {
+  const config = roadmapConfig[securityDomainId] || roadmapConfig.AI_SECURITY;
+  
+  return (
+    <HelpTooltip title="Como priorizar?" modalTitle={config.title}>
+      <div className="space-y-3">
+        <p><strong>{config.title}:</strong> {config.description}</p>
+        <div className="space-y-2">
+          {config.prioritization.map((p) => (
+            <div key={p.period} className="p-3 bg-muted rounded-lg">
+              <p className="font-medium text-primary mb-1">{p.period}</p>
+              <p className="text-sm">{p.criteria}</p>
+            </div>
+          ))}
+        </div>
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="text-blue-700 dark:text-blue-300 text-sm">
+            Clique nas ações para navegar diretamente para a pergunta correspondente na avaliação.
+          </p>
+        </div>
+        <div className="pt-2 border-t text-xs text-muted-foreground">
+          {config.frameworkRef}
         </div>
       </div>
     </HelpTooltip>

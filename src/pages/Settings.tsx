@@ -206,9 +206,9 @@ export default function Settings() {
       }, new Date(0))
     : null;
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     try {
-      const blob = exportAnswersToXLSX(answers);
+      const blob = await exportAnswersToXLSX(answers);
       const filename = generateExportFilename();
       downloadXLSX(blob, filename);
       toast.success('Dados exportados com sucesso');

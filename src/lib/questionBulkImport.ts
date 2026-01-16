@@ -4,7 +4,7 @@
  * Allows importing multiple questions at once from spreadsheet files
  */
 
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { supabase } from '@/integrations/supabase/client';
 
 // Interfaces
@@ -72,6 +72,49 @@ const COLUMN_MAPPINGS: Record<string, string[]> = {
   frameworks: ['frameworks', 'framework', 'framework_refs', 'referencias']
 };
 
+// Helper to read workbook from file
+async function readWorkbookFromFile(file: File): Promise<ExcelJS.Workbook> {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(arrayBuffer);
+  return workbook;
+}
+
+// Helper to get sheet data as array of objects
+function sheetToJson<T = any>(worksheet: ExcelJS.Worksheet): T[] {
+  const rows: T[] = [];
+  const headers: string[] = [];
+  
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) {
+      row.eachCell((cell, colNumber) => {
+        headers[colNumber - 1] = String(cell.value || '');
+      });
+    } else {
+      const obj: any = {};
+      row.eachCell((cell, colNumber) => {
+        const header = headers[colNumber - 1];
+        if (header) {
+          obj[header] = cell.value;
+        }
+      });
+      rows.push(obj);
+    }
+  });
+  
+  return rows;
+}
+
+// Helper to get first row as headers
+function getHeaders(worksheet: ExcelJS.Worksheet): string[] {
+  const headers: string[] = [];
+  const firstRow = worksheet.getRow(1);
+  firstRow.eachCell((cell, colNumber) => {
+    headers[colNumber - 1] = String(cell.value || '');
+  });
+  return headers;
+}
+
 // Normalize column name to standard field name
 function normalizeColumnName(header: string): string | null {
   const normalized = header.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
@@ -132,209 +175,180 @@ export async function validateBulkImportFile(
   file: File,
   securityDomainId: string
 ): Promise<BulkImportValidation> {
-  return new Promise(async (resolve) => {
-    const reader = new FileReader();
+  try {
+    const workbook = await readWorkbookFromFile(file);
+    
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const questions: ParsedQuestion[] = [];
+    const columnMapping: Record<string, string> = {};
 
-    reader.onload = async (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        const errors: string[] = [];
-        const warnings: string[] = [];
-        const questions: ParsedQuestion[] = [];
-        const columnMapping: Record<string, string> = {};
-
-        // Get first sheet
-        const sheetName = workbook.SheetNames[0];
-        if (!sheetName) {
-          resolve({
-            isValid: false,
-            totalRows: 0,
-            validRows: 0,
-            errors: ['Arquivo não contém planilhas'],
-            warnings: [],
-            questions: [],
-            columnMapping: {}
-          });
-          return;
-        }
-
-        const sheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json<any>(sheet, { header: 1 });
-
-        if (rows.length < 2) {
-          resolve({
-            isValid: false,
-            totalRows: 0,
-            validRows: 0,
-            errors: ['Arquivo deve conter cabeçalho e pelo menos uma linha de dados'],
-            warnings: [],
-            questions: [],
-            columnMapping: {}
-          });
-          return;
-        }
-
-        // Parse headers
-        const headers = (rows[0] as string[]).map(h => h?.toString() || '');
-        const headerIndexMap: Record<string, number> = {};
-
-        headers.forEach((header, index) => {
-          const field = normalizeColumnName(header);
-          if (field) {
-            headerIndexMap[field] = index;
-            columnMapping[field] = header;
-          }
-        });
-
-        // Check required columns
-        if (!('questionText' in headerIndexMap)) {
-          errors.push('Coluna obrigatória "questionText" (ou "pergunta") não encontrada');
-        }
-
-        // Fetch taxonomy data for validation
-        const { data: taxonomyDomains } = await supabase
-          .from('domains')
-          .select('domain_id, domain_name')
-          .eq('security_domain_id', securityDomainId);
-
-        const { data: subcategories } = await supabase
-          .from('subcategories')
-          .select('subcat_id, subcat_name, domain_id')
-          .eq('security_domain_id', securityDomainId);
-
-        const domainMap = new Map<string, string>();
-        const domainNameMap = new Map<string, string>();
-        (taxonomyDomains || []).forEach(d => {
-          domainMap.set(d.domain_id, d.domain_name);
-          domainNameMap.set(d.domain_name.toLowerCase(), d.domain_id);
-        });
-
-        const subcatMap = new Map<string, { name: string; domainId: string }>();
-        const subcatNameMap = new Map<string, string>();
-        (subcategories || []).forEach(s => {
-          subcatMap.set(s.subcat_id, { name: s.subcat_name, domainId: s.domain_id });
-          subcatNameMap.set(s.subcat_name.toLowerCase(), s.subcat_id);
-        });
-
-        // Parse data rows
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i] as any[];
-          const rowNum = i + 1;
-
-          // Skip empty rows
-          if (!row || row.every(cell => !cell)) continue;
-
-          const getValue = (field: string): string => {
-            const idx = headerIndexMap[field];
-            return idx !== undefined ? (row[idx]?.toString() || '') : '';
-          };
-
-          const questionText = getValue('questionText').trim();
-          const rowErrors: string[] = [];
-
-          if (!questionText) {
-            rowErrors.push('Texto da pergunta é obrigatório');
-          }
-
-          // Resolve domain
-          let domainId = getValue('domainId').trim();
-          const domainName = getValue('domainName').trim();
-
-          if (!domainId && domainName) {
-            const resolved = domainNameMap.get(domainName.toLowerCase());
-            if (resolved) {
-              domainId = resolved;
-            } else {
-              rowErrors.push(`Área "${domainName}" não encontrada`);
-            }
-          }
-
-          if (!domainId && !domainName) {
-            rowErrors.push('Área (domainId ou domainName) é obrigatória');
-          }
-
-          // Resolve subcategory
-          let subcatId = getValue('subcatId').trim();
-          const subcatName = getValue('subcatName').trim();
-
-          if (!subcatId && subcatName) {
-            const resolved = subcatNameMap.get(subcatName.toLowerCase());
-            if (resolved) {
-              subcatId = resolved;
-              // Also verify domain if resolved
-              const subcatInfo = subcatMap.get(subcatId);
-              if (subcatInfo && domainId && subcatInfo.domainId !== domainId) {
-                warnings.push(`Linha ${rowNum}: Subcategoria "${subcatName}" pertence a outra área`);
-              }
-            } else {
-              warnings.push(`Linha ${rowNum}: Subcategoria "${subcatName}" não encontrada`);
-            }
-          }
-
-          const parsedQuestion: ParsedQuestion = {
-            questionId: generateQuestionId(securityDomainId),
-            questionText,
-            domainId,
-            subcatId: subcatId || '',
-            criticality: normalizeCriticality(getValue('criticality')),
-            ownershipType: normalizeOwnership(getValue('ownershipType')),
-            riskSummary: getValue('riskSummary'),
-            expectedEvidence: getValue('expectedEvidence'),
-            imperativeChecks: getValue('imperativeChecks'),
-            frameworks: parseFrameworks(getValue('frameworks')),
-            securityDomainId,
-            isValid: rowErrors.length === 0,
-            errors: rowErrors,
-            rowNumber: rowNum
-          };
-
-          questions.push(parsedQuestion);
-
-          if (rowErrors.length > 0) {
-            errors.push(`Linha ${rowNum}: ${rowErrors.join(', ')}`);
-          }
-        }
-
-        const validQuestions = questions.filter(q => q.isValid);
-
-        resolve({
-          isValid: errors.length === 0 && validQuestions.length > 0,
-          totalRows: questions.length,
-          validRows: validQuestions.length,
-          errors,
-          warnings,
-          questions,
-          columnMapping
-        });
-      } catch (err) {
-        resolve({
-          isValid: false,
-          totalRows: 0,
-          validRows: 0,
-          errors: ['Erro ao processar arquivo: ' + (err as Error).message],
-          warnings: [],
-          questions: [],
-          columnMapping: {}
-        });
-      }
-    };
-
-    reader.onerror = () => {
-      resolve({
+    // Get first sheet
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      return {
         isValid: false,
         totalRows: 0,
         validRows: 0,
-        errors: ['Erro ao ler arquivo'],
+        errors: ['Arquivo não contém planilhas'],
         warnings: [],
         questions: [],
         columnMapping: {}
-      });
-    };
+      };
+    }
 
-    reader.readAsArrayBuffer(file);
-  });
+    const rows = sheetToJson<any>(worksheet);
+    const headers = getHeaders(worksheet);
+
+    if (rows.length < 1) {
+      return {
+        isValid: false,
+        totalRows: 0,
+        validRows: 0,
+        errors: ['Arquivo deve conter cabeçalho e pelo menos uma linha de dados'],
+        warnings: [],
+        questions: [],
+        columnMapping: {}
+      };
+    }
+
+    // Parse headers
+    const headerIndexMap: Record<string, number> = {};
+
+    headers.forEach((header, index) => {
+      const field = normalizeColumnName(header);
+      if (field) {
+        headerIndexMap[field] = index;
+        columnMapping[field] = header;
+      }
+    });
+
+    // Check required columns
+    if (!('questionText' in headerIndexMap)) {
+      errors.push('Coluna obrigatória "questionText" (ou "pergunta") não encontrada');
+    }
+
+    // Fetch taxonomy data for validation
+    const { data: taxonomyDomains } = await supabase
+      .from('domains')
+      .select('domain_id, domain_name')
+      .eq('security_domain_id', securityDomainId);
+
+    const { data: subcategories } = await supabase
+      .from('subcategories')
+      .select('subcat_id, subcat_name, domain_id')
+      .eq('security_domain_id', securityDomainId);
+
+    const domainMap = new Map<string, string>();
+    const domainNameMap = new Map<string, string>();
+    (taxonomyDomains || []).forEach(d => {
+      domainMap.set(d.domain_id, d.domain_name);
+      domainNameMap.set(d.domain_name.toLowerCase(), d.domain_id);
+    });
+
+    const subcatMap = new Map<string, { name: string; domainId: string }>();
+    const subcatNameMap = new Map<string, string>();
+    (subcategories || []).forEach(s => {
+      subcatMap.set(s.subcat_id, { name: s.subcat_name, domainId: s.domain_id });
+      subcatNameMap.set(s.subcat_name.toLowerCase(), s.subcat_id);
+    });
+
+    // Parse data rows
+    rows.forEach((row, index) => {
+      const rowNum = index + 2; // +1 for 0-index, +1 for header row
+
+      const getValue = (field: string): string => {
+        return row[columnMapping[field]]?.toString() || '';
+      };
+
+      const questionText = getValue('questionText').trim();
+      const rowErrors: string[] = [];
+
+      if (!questionText) {
+        rowErrors.push('Texto da pergunta é obrigatório');
+      }
+
+      // Resolve domain
+      let domainId = getValue('domainId').trim();
+      const domainName = getValue('domainName').trim();
+
+      if (!domainId && domainName) {
+        const resolved = domainNameMap.get(domainName.toLowerCase());
+        if (resolved) {
+          domainId = resolved;
+        } else {
+          rowErrors.push(`Área "${domainName}" não encontrada`);
+        }
+      }
+
+      if (!domainId && !domainName) {
+        rowErrors.push('Área (domainId ou domainName) é obrigatória');
+      }
+
+      // Resolve subcategory
+      let subcatId = getValue('subcatId').trim();
+      const subcatName = getValue('subcatName').trim();
+
+      if (!subcatId && subcatName) {
+        const resolved = subcatNameMap.get(subcatName.toLowerCase());
+        if (resolved) {
+          subcatId = resolved;
+          // Also verify domain if resolved
+          const subcatInfo = subcatMap.get(subcatId);
+          if (subcatInfo && domainId && subcatInfo.domainId !== domainId) {
+            warnings.push(`Linha ${rowNum}: Subcategoria "${subcatName}" pertence a outra área`);
+          }
+        } else {
+          warnings.push(`Linha ${rowNum}: Subcategoria "${subcatName}" não encontrada`);
+        }
+      }
+
+      const parsedQuestion: ParsedQuestion = {
+        questionId: generateQuestionId(securityDomainId),
+        questionText,
+        domainId,
+        subcatId: subcatId || '',
+        criticality: normalizeCriticality(getValue('criticality')),
+        ownershipType: normalizeOwnership(getValue('ownershipType')),
+        riskSummary: getValue('riskSummary'),
+        expectedEvidence: getValue('expectedEvidence'),
+        imperativeChecks: getValue('imperativeChecks'),
+        frameworks: parseFrameworks(getValue('frameworks')),
+        securityDomainId,
+        isValid: rowErrors.length === 0,
+        errors: rowErrors,
+        rowNumber: rowNum
+      };
+
+      questions.push(parsedQuestion);
+
+      if (rowErrors.length > 0) {
+        errors.push(`Linha ${rowNum}: ${rowErrors.join(', ')}`);
+      }
+    });
+
+    const validQuestions = questions.filter(q => q.isValid);
+
+    return {
+      isValid: errors.length === 0 && validQuestions.length > 0,
+      totalRows: questions.length,
+      validRows: validQuestions.length,
+      errors,
+      warnings,
+      questions,
+      columnMapping
+    };
+  } catch (err) {
+    return {
+      isValid: false,
+      totalRows: 0,
+      validRows: 0,
+      errors: ['Erro ao processar arquivo: ' + (err as Error).message],
+      warnings: [],
+      questions: [],
+      columnMapping: {}
+    };
+  }
 }
 
 /**
@@ -395,39 +409,45 @@ export async function importBulkQuestions(
 /**
  * Generate a template file for bulk import
  */
-export function generateImportTemplate(securityDomainId: string): Blob {
-  const wb = XLSX.utils.book_new();
+export async function generateImportTemplate(securityDomainId: string): Promise<Blob> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'AI Security Assessment';
+  workbook.created = new Date();
 
   // Template sheet
-  const templateData = [
-    {
-      questionText: 'Exemplo: A organização possui política de segurança documentada?',
-      domainName: 'Governança',
-      subcatName: 'Políticas',
-      criticality: 'High',
-      ownershipType: 'GRC',
-      riskSummary: 'Falta de políticas pode resultar em não conformidade',
-      expectedEvidence: 'Documento de política aprovado e publicado',
-      imperativeChecks: 'Verificar data de aprovação e assinaturas',
-      frameworks: 'ISO_27001,NIST_CSF'
-    }
+  const templateSheet = workbook.addWorksheet('Perguntas');
+  templateSheet.columns = [
+    { header: 'questionText', key: 'questionText', width: 60 },
+    { header: 'domainName', key: 'domainName', width: 20 },
+    { header: 'subcatName', key: 'subcatName', width: 20 },
+    { header: 'criticality', key: 'criticality', width: 12 },
+    { header: 'ownershipType', key: 'ownershipType', width: 15 },
+    { header: 'riskSummary', key: 'riskSummary', width: 50 },
+    { header: 'expectedEvidence', key: 'expectedEvidence', width: 50 },
+    { header: 'imperativeChecks', key: 'imperativeChecks', width: 40 },
+    { header: 'frameworks', key: 'frameworks', width: 30 },
   ];
 
-  const templateSheet = XLSX.utils.json_to_sheet(templateData);
-  templateSheet['!cols'] = [
-    { wch: 60 }, // questionText
-    { wch: 20 }, // domainName
-    { wch: 20 }, // subcatName
-    { wch: 12 }, // criticality
-    { wch: 15 }, // ownershipType
-    { wch: 50 }, // riskSummary
-    { wch: 50 }, // expectedEvidence
-    { wch: 40 }, // imperativeChecks
-    { wch: 30 }  // frameworks
-  ];
-  XLSX.utils.book_append_sheet(wb, templateSheet, 'Perguntas');
+  templateSheet.addRow({
+    questionText: 'Exemplo: A organização possui política de segurança documentada?',
+    domainName: 'Governança',
+    subcatName: 'Políticas',
+    criticality: 'High',
+    ownershipType: 'GRC',
+    riskSummary: 'Falta de políticas pode resultar em não conformidade',
+    expectedEvidence: 'Documento de política aprovado e publicado',
+    imperativeChecks: 'Verificar data de aprovação e assinaturas',
+    frameworks: 'ISO_27001,NIST_CSF'
+  });
 
   // Instructions sheet
+  const instructionsSheet = workbook.addWorksheet('Instruções');
+  instructionsSheet.columns = [
+    { header: 'Campo', key: 'Campo', width: 20 },
+    { header: 'Descrição', key: 'Descrição', width: 50 },
+    { header: 'Exemplo', key: 'Exemplo', width: 30 },
+  ];
+
   const instructionsData = [
     { Campo: 'questionText', Descrição: 'Texto completo da pergunta (obrigatório)', Exemplo: 'A organização possui...' },
     { Campo: 'domainName', Descrição: 'Nome da área/domínio de taxonomia', Exemplo: 'Governança' },
@@ -442,23 +462,17 @@ export function generateImportTemplate(securityDomainId: string): Blob {
     { Campo: 'frameworks', Descrição: 'Frameworks associados (separados por vírgula)', Exemplo: 'ISO_27001,NIST_CSF' }
   ];
 
-  const instructionsSheet = XLSX.utils.json_to_sheet(instructionsData);
-  instructionsSheet['!cols'] = [
-    { wch: 20 },
-    { wch: 50 },
-    { wch: 30 }
-  ];
-  XLSX.utils.book_append_sheet(wb, instructionsSheet, 'Instruções');
+  instructionsData.forEach(row => instructionsSheet.addRow(row));
 
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const buffer = await workbook.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
 /**
  * Download template file
  */
-export function downloadImportTemplate(securityDomainId: string): void {
-  const blob = generateImportTemplate(securityDomainId);
+export async function downloadImportTemplate(securityDomainId: string): Promise<void> {
+  const blob = await generateImportTemplate(securityDomainId);
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -497,7 +511,9 @@ export async function exportQuestionsToExcel(
   securityDomainId: string,
   securityDomainName: string
 ): Promise<Blob> {
-  const wb = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'AI Security Assessment';
+  workbook.created = new Date();
 
   // Fetch taxonomy data for enrichment
   const { data: taxonomyDomains } = await supabase
@@ -515,45 +531,51 @@ export async function exportQuestionsToExcel(
   const subcatMap = new Map<string, string>();
   (subcategories || []).forEach(s => subcatMap.set(s.subcat_id, s.subcat_name));
 
-  // Prepare data rows
-  const exportData = questions.map(q => ({
-    questionId: q.questionId,
-    questionText: q.questionText,
-    domainId: q.domainId,
-    domainName: q.domainName || domainMap.get(q.domainId) || '',
-    subcatId: q.subcatId,
-    subcatName: q.subcatName || subcatMap.get(q.subcatId) || '',
-    criticality: q.criticality || 'Medium',
-    ownershipType: q.ownershipType || '',
-    riskSummary: q.riskSummary || '',
-    expectedEvidence: q.expectedEvidence || '',
-    imperativeChecks: q.imperativeChecks || '',
-    frameworks: (q.frameworks || []).join(', '),
-    isCustom: q.isCustom ? 'Sim' : 'Não',
-    isDisabled: q.isDisabled ? 'Sim' : 'Não'
-  }));
-
   // Questions sheet
-  const questionsSheet = XLSX.utils.json_to_sheet(exportData);
-  questionsSheet['!cols'] = [
-    { wch: 25 }, // questionId
-    { wch: 60 }, // questionText
-    { wch: 15 }, // domainId
-    { wch: 25 }, // domainName
-    { wch: 15 }, // subcatId
-    { wch: 25 }, // subcatName
-    { wch: 12 }, // criticality
-    { wch: 15 }, // ownershipType
-    { wch: 40 }, // riskSummary
-    { wch: 40 }, // expectedEvidence
-    { wch: 40 }, // imperativeChecks
-    { wch: 30 }, // frameworks
-    { wch: 10 }, // isCustom
-    { wch: 12 }  // isDisabled
+  const questionsSheet = workbook.addWorksheet('Perguntas');
+  questionsSheet.columns = [
+    { header: 'questionId', key: 'questionId', width: 25 },
+    { header: 'questionText', key: 'questionText', width: 60 },
+    { header: 'domainId', key: 'domainId', width: 15 },
+    { header: 'domainName', key: 'domainName', width: 25 },
+    { header: 'subcatId', key: 'subcatId', width: 15 },
+    { header: 'subcatName', key: 'subcatName', width: 25 },
+    { header: 'criticality', key: 'criticality', width: 12 },
+    { header: 'ownershipType', key: 'ownershipType', width: 15 },
+    { header: 'riskSummary', key: 'riskSummary', width: 40 },
+    { header: 'expectedEvidence', key: 'expectedEvidence', width: 40 },
+    { header: 'imperativeChecks', key: 'imperativeChecks', width: 40 },
+    { header: 'frameworks', key: 'frameworks', width: 30 },
+    { header: 'isCustom', key: 'isCustom', width: 10 },
+    { header: 'isDisabled', key: 'isDisabled', width: 12 },
   ];
-  XLSX.utils.book_append_sheet(wb, questionsSheet, 'Perguntas');
+
+  questions.forEach(q => {
+    questionsSheet.addRow({
+      questionId: q.questionId,
+      questionText: q.questionText,
+      domainId: q.domainId,
+      domainName: q.domainName || domainMap.get(q.domainId) || '',
+      subcatId: q.subcatId,
+      subcatName: q.subcatName || subcatMap.get(q.subcatId) || '',
+      criticality: q.criticality || 'Medium',
+      ownershipType: q.ownershipType || '',
+      riskSummary: q.riskSummary || '',
+      expectedEvidence: q.expectedEvidence || '',
+      imperativeChecks: q.imperativeChecks || '',
+      frameworks: (q.frameworks || []).join(', '),
+      isCustom: q.isCustom ? 'Sim' : 'Não',
+      isDisabled: q.isDisabled ? 'Sim' : 'Não'
+    });
+  });
 
   // Summary sheet
+  const summarySheet = workbook.addWorksheet('Resumo');
+  summarySheet.columns = [
+    { header: 'Campo', key: 'Campo', width: 25 },
+    { header: 'Valor', key: 'Valor', width: 40 },
+  ];
+
   const summaryData = [
     { Campo: 'Domínio de Segurança', Valor: securityDomainName },
     { Campo: 'ID do Domínio', Valor: securityDomainId },
@@ -564,9 +586,7 @@ export async function exportQuestionsToExcel(
     { Campo: 'Perguntas Desabilitadas', Valor: questions.filter(q => q.isDisabled).length },
     { Campo: 'Data de Exportação', Valor: new Date().toLocaleString('pt-BR') }
   ];
-  const summarySheet = XLSX.utils.json_to_sheet(summaryData);
-  summarySheet['!cols'] = [{ wch: 25 }, { wch: 40 }];
-  XLSX.utils.book_append_sheet(wb, summarySheet, 'Resumo');
+  summaryData.forEach(row => summarySheet.addRow(row));
 
   // Stats by domain
   const domainStats = new Map<string, { total: number; custom: number; disabled: number }>();
@@ -579,16 +599,24 @@ export async function exportQuestionsToExcel(
     domainStats.set(domainName, current);
   });
 
-  const domainStatsData = Array.from(domainStats.entries()).map(([domain, stats]) => ({
-    'Área': domain,
-    'Total': stats.total,
-    'Personalizadas': stats.custom,
-    'Desabilitadas': stats.disabled,
-    'Ativas': stats.total - stats.disabled
-  }));
-  const domainStatsSheet = XLSX.utils.json_to_sheet(domainStatsData);
-  domainStatsSheet['!cols'] = [{ wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
-  XLSX.utils.book_append_sheet(wb, domainStatsSheet, 'Por Área');
+  const domainStatsSheet = workbook.addWorksheet('Por Área');
+  domainStatsSheet.columns = [
+    { header: 'Área', key: 'Área', width: 30 },
+    { header: 'Total', key: 'Total', width: 10 },
+    { header: 'Personalizadas', key: 'Personalizadas', width: 15 },
+    { header: 'Desabilitadas', key: 'Desabilitadas', width: 15 },
+    { header: 'Ativas', key: 'Ativas', width: 10 },
+  ];
+
+  Array.from(domainStats.entries()).forEach(([domain, stats]) => {
+    domainStatsSheet.addRow({
+      'Área': domain,
+      'Total': stats.total,
+      'Personalizadas': stats.custom,
+      'Desabilitadas': stats.disabled,
+      'Ativas': stats.total - stats.disabled
+    });
+  });
 
   // Stats by criticality
   const critStats = { Low: 0, Medium: 0, High: 0, Critical: 0 };
@@ -597,18 +625,22 @@ export async function exportQuestionsToExcel(
     if (crit in critStats) critStats[crit]++;
   });
 
+  const critStatsSheet = workbook.addWorksheet('Por Criticidade');
+  critStatsSheet.columns = [
+    { header: 'Criticidade', key: 'Criticidade', width: 20 },
+    { header: 'Quantidade', key: 'Quantidade', width: 12 },
+  ];
+
   const critStatsData = [
     { Criticidade: 'Baixa (Low)', Quantidade: critStats.Low },
     { Criticidade: 'Média (Medium)', Quantidade: critStats.Medium },
     { Criticidade: 'Alta (High)', Quantidade: critStats.High },
     { Criticidade: 'Crítica (Critical)', Quantidade: critStats.Critical }
   ];
-  const critStatsSheet = XLSX.utils.json_to_sheet(critStatsData);
-  critStatsSheet['!cols'] = [{ wch: 20 }, { wch: 12 }];
-  XLSX.utils.book_append_sheet(wb, critStatsSheet, 'Por Criticidade');
+  critStatsData.forEach(row => critStatsSheet.addRow(row));
 
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const buffer = await workbook.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
 /**

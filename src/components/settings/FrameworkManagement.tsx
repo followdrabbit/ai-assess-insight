@@ -275,7 +275,7 @@ export function FrameworkManagement() {
             Visualize, crie e edite frameworks de avaliação
           </p>
         </div>
-        <Button onClick={openNewDialog}>
+        <Button variant="outline" onClick={openNewDialog}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Framework
         </Button>
@@ -372,12 +372,14 @@ export function FrameworkManagement() {
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openEditDialog(fw)}>
+                    <Button variant="ghost" size="sm" onClick={() => openEditDialog(fw)}>
                       Editar
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">Excluir</Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          Excluir
+                        </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
@@ -598,7 +600,7 @@ export function FrameworkManagement() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
               Cancelar
             </Button>
             <Button onClick={handleConfirmSave}>

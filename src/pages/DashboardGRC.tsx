@@ -14,7 +14,11 @@ import {
   CriticalGapsHelp,
   FrameworkCategoryHelp,
   OwnershipHelp,
-  DomainMetricsHelp
+  DomainMetricsHelpAware,
+  DomainFunctionHelp,
+  DomainRiskDistributionHelp,
+  DomainFrameworkCoverageHelp,
+  DomainResponseDistributionHelp,
 } from '@/components/HelpTooltip';
 import { FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
@@ -777,7 +781,7 @@ export default function DashboardGRC() {
         <TabsContent value="domains" className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-sm font-medium">Métricas por Domínio</h3>
-            <DomainMetricsHelp />
+            <DomainMetricsHelpAware securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
           </div>
           {/* Filter Bar */}
           <div className="filter-bar">

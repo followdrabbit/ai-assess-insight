@@ -78,6 +78,7 @@ export default function DashboardGRC() {
   const {
     isLoading,
     questionsLoading,
+    isTransitioning,
     currentDomainInfo,
     answers,
     enabledFrameworks,
@@ -542,7 +543,12 @@ export default function DashboardGRC() {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
   }
   return (
-    <div className="space-y-6">
+    <div 
+      className={cn(
+        "space-y-6 transition-all duration-300 ease-out",
+        isTransitioning && "opacity-50 scale-[0.99] blur-[1px]"
+      )}
+    >
       {/* Header with Domain Switcher and Framework Selector */}
       <div className="card-elevated p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <div className="flex flex-col gap-4">

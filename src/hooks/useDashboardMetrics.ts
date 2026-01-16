@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, useCallback } from 'react';
+import { useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import { useAnswersStore } from '@/lib/stores';
 import { calculateOverallMetrics, getCriticalGaps, getFrameworkCoverage, generateRoadmap, ActiveQuestion, OverallMetrics, CriticalGap, FrameworkCoverage, RoadmapItem } from '@/lib/scoring';
 import { questions as defaultQuestions } from '@/lib/dataset';
@@ -14,6 +14,7 @@ export interface DashboardMetricsResult {
   // Loading states
   isLoading: boolean;
   questionsLoading: boolean;
+  isTransitioning: boolean; // True during domain switch animation
   
   // Domain info
   currentDomainInfo: SecurityDomain | null;
@@ -68,9 +69,18 @@ export function useDashboardMetrics(): DashboardMetricsResult {
   const [enabledFrameworkIds, setEnabledFrameworkIds] = useState<string[]>([]);
   const [selectedFrameworkIds, setSelectedFrameworkIds] = useState<string[]>([]);
   const [currentDomainInfo, setCurrentDomainInfo] = useState<SecurityDomain | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const previousDomainRef = useRef<string>(selectedSecurityDomain);
 
   // Load active questions and frameworks - filtered by security domain
   const loadData = useCallback(async () => {
+    // Detect domain change for transition animation
+    const isDomainChange = previousDomainRef.current !== selectedSecurityDomain;
+    if (isDomainChange) {
+      setIsTransitioning(true);
+      previousDomainRef.current = selectedSecurityDomain;
+    }
+    
     setQuestionsLoading(true);
     try {
       // Load domain info
@@ -164,6 +174,8 @@ export function useDashboardMetrics(): DashboardMetricsResult {
       setEnabledFrameworks(defaultFrameworks.filter(f => defaultEnabledIds.includes(f.frameworkId)));
     } finally {
       setQuestionsLoading(false);
+      // End transition animation after a short delay for smooth effect
+      setTimeout(() => setIsTransitioning(false), 300);
     }
   }, [selectedSecurityDomain]);
 
@@ -273,6 +285,7 @@ export function useDashboardMetrics(): DashboardMetricsResult {
     // Loading states
     isLoading,
     questionsLoading,
+    isTransitioning,
     
     // Domain info
     currentDomainInfo,

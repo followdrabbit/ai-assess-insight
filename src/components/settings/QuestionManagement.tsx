@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { questions as defaultQuestions, domains, Question } from '@/lib/dataset';
-import { frameworks as defaultFrameworks } from '@/lib/frameworks';
+import { frameworks as defaultFrameworks, mapQuestionFrameworkToId } from '@/lib/frameworks';
 import { 
   CustomQuestion, 
   getAllCustomQuestions, 
@@ -231,20 +231,30 @@ export function QuestionManagement() {
   ], [customFrameworksList]);
 
   // Frameworks that have at least one question (for filter dropdown)
+  // Uses mapQuestionFrameworkToId to properly map question framework strings to framework IDs
   const frameworksWithQuestions = useMemo(() => {
     const allQs = [...defaultQuestions, ...customQuestions];
-    const fwSet = new Set<string>();
+    const fwIdSet = new Set<string>();
     allQs.forEach(q => {
-      q.frameworks.forEach(fw => fwSet.add(fw.toUpperCase()));
+      q.frameworks.forEach(fwString => {
+        // Map the question framework string to a framework ID
+        const mappedId = mapQuestionFrameworkToId(fwString);
+        if (mappedId) {
+          fwIdSet.add(mappedId);
+        }
+        // Also add the raw string in case it matches a custom framework ID directly
+        fwIdSet.add(fwString);
+        fwIdSet.add(fwString.toUpperCase());
+      });
     });
-    return fwSet;
+    return fwIdSet;
   }, [customQuestions]);
 
   // Enabled frameworks only, filtered to those with questions
   const enabledFrameworkOptions = useMemo(() => {
     return allFrameworkOptions.filter(fw => 
       enabledFrameworkIds.includes(fw.frameworkId) && 
-      frameworksWithQuestions.has(fw.frameworkId.toUpperCase())
+      (frameworksWithQuestions.has(fw.frameworkId) || frameworksWithQuestions.has(fw.frameworkId.toUpperCase()))
     );
   }, [allFrameworkOptions, enabledFrameworkIds, frameworksWithQuestions]);
 

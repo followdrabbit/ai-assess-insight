@@ -10,7 +10,10 @@ import {
   CoverageHelp, 
   EvidenceReadinessHelp, 
   CriticalGapsHelp,
-  DomainFunctionHelp 
+  DomainFunctionHelp,
+  DomainRiskDistributionHelp,
+  DomainFrameworkCoverageHelp,
+  DomainMetricsHelpAware,
 } from '@/components/HelpTooltip';
 import { OverallMetrics, CriticalGap, RoadmapItem, FrameworkCoverage } from '@/lib/scoring';
 import { FrameworkCategoryId } from '@/lib/dataset';
@@ -760,7 +763,10 @@ export function ExecutiveDashboard({
           style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-sm">Maturidade por Domínio</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-sm">Maturidade por Domínio</h3>
+              <DomainMetricsHelpAware securityDomainId={securityDomainId} />
+            </div>
             {nistFilter !== 'all' && (
               <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                 Filtro: {nistFunctionLabels[nistFilter]}
@@ -806,7 +812,10 @@ export function ExecutiveDashboard({
           className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
           style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}
         >
-          <h3 className="font-semibold text-sm mb-4">Distribuição de Riscos</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-sm">Distribuição de Riscos</h3>
+            <DomainRiskDistributionHelp securityDomainId={securityDomainId} />
+          </div>
           {riskDistribution.length > 0 ? (
             <>
               <div className="h-40">
@@ -873,7 +882,10 @@ export function ExecutiveDashboard({
           className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
           style={{ animationDelay: '600ms', animationFillMode: 'backwards' }}
         >
-          <h3 className="font-semibold mb-4">Cobertura por Framework</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Cobertura por Framework</h3>
+            <DomainFrameworkCoverageHelp securityDomainId={securityDomainId} />
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {filteredByFramework.coverage.map((fc, idx) => (
               <div 

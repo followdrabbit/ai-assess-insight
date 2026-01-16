@@ -389,11 +389,40 @@ export function OwnershipHelp() {
   );
 }
 
-export function ResponseDistributionHelp() {
+// Domain-aware Response Distribution help
+const responseDistributionConfig: Record<string, {
+  title: string;
+  description: string;
+  context: string;
+}> = {
+  AI_SECURITY: {
+    title: 'Distribuição de Respostas',
+    description: 'mostra como os controles de segurança de IA estão classificados em termos de implementação.',
+    context: 'A distribuição reflete o estado atual dos controles mapeados pelo NIST AI RMF e frameworks correlatos.',
+  },
+  CLOUD_SECURITY: {
+    title: 'Distribuição de Respostas',
+    description: 'mostra como os controles de segurança cloud estão classificados em termos de implementação.',
+    context: 'A distribuição reflete o estado atual dos controles mapeados pelo CSA CCM e boas práticas de cloud security.',
+  },
+  DEVSECOPS: {
+    title: 'Distribuição de Respostas',
+    description: 'mostra como as práticas de desenvolvimento seguro estão classificadas em termos de implementação.',
+    context: 'A distribuição reflete o estado atual das práticas mapeadas pelo NIST SSDF e frameworks de DevSecOps.',
+  },
+};
+
+interface DomainResponseDistributionHelpProps {
+  securityDomainId?: string;
+}
+
+export function DomainResponseDistributionHelp({ securityDomainId = 'AI_SECURITY' }: DomainResponseDistributionHelpProps) {
+  const config = responseDistributionConfig[securityDomainId] || responseDistributionConfig.AI_SECURITY;
+  
   return (
-    <HelpTooltip title="O que significa?" modalTitle="Distribuição de Respostas">
+    <HelpTooltip title="O que significa?" modalTitle={config.title}>
       <div className="space-y-3">
-        <p><strong>Distribuição de Respostas</strong> mostra como os controles estão classificados em termos de implementação.</p>
+        <p><strong>{config.title}</strong> {config.description}</p>
         <div className="space-y-2">
           <div className="flex items-center gap-3 p-2 rounded bg-green-50 dark:bg-green-950/30">
             <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
@@ -430,6 +459,207 @@ export function ResponseDistributionHelp() {
               <span className="text-sm ml-1">Pergunta ainda não respondida.</span>
             </div>
           </div>
+        </div>
+        <div className="pt-2 border-t text-xs text-muted-foreground">
+          {config.context}
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+// Legacy export for backward compatibility
+export function ResponseDistributionHelp() {
+  return <DomainResponseDistributionHelp securityDomainId="AI_SECURITY" />;
+}
+
+// Domain-aware Risk Distribution / Criticality help
+const riskDistributionConfig: Record<string, {
+  title: string;
+  description: string;
+  frameworkRef: string;
+}> = {
+  AI_SECURITY: {
+    title: 'Distribuição de Riscos de IA',
+    description: 'Categorização dos gaps identificados por nível de criticidade em controles de segurança de IA.',
+    frameworkRef: 'A criticidade é determinada com base no impacto potencial conforme NIST AI RMF e requisitos regulatórios.',
+  },
+  CLOUD_SECURITY: {
+    title: 'Distribuição de Riscos Cloud',
+    description: 'Categorização dos gaps identificados por nível de criticidade em controles de segurança cloud.',
+    frameworkRef: 'A criticidade é determinada com base no modelo de responsabilidade compartilhada e controles CSA CCM.',
+  },
+  DEVSECOPS: {
+    title: 'Distribuição de Riscos de Pipeline',
+    description: 'Categorização dos gaps identificados por nível de criticidade nas práticas de desenvolvimento seguro.',
+    frameworkRef: 'A criticidade é determinada com base no impacto na cadeia de supply chain de software (NIST SSDF).',
+  },
+};
+
+interface DomainRiskDistributionHelpProps {
+  securityDomainId?: string;
+}
+
+export function DomainRiskDistributionHelp({ securityDomainId = 'AI_SECURITY' }: DomainRiskDistributionHelpProps) {
+  const config = riskDistributionConfig[securityDomainId] || riskDistributionConfig.AI_SECURITY;
+  
+  return (
+    <HelpTooltip title="Níveis de risco" modalTitle={config.title}>
+      <div className="space-y-3">
+        <p><strong>{config.title}:</strong> {config.description}</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 p-2 rounded bg-red-50 dark:bg-red-950/30">
+            <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Crítico:</span>
+              <span className="text-sm ml-1">Impacto severo. Ação imediata necessária.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-orange-50 dark:bg-orange-950/30">
+            <span className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Alto:</span>
+              <span className="text-sm ml-1">Risco significativo. Prioridade alta.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-blue-50 dark:bg-blue-950/30">
+            <span className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Médio:</span>
+              <span className="text-sm ml-1">Impacto moderado. Médio prazo.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-2 rounded bg-gray-50 dark:bg-gray-950/30">
+            <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Baixo:</span>
+              <span className="text-sm ml-1">Impacto limitado. Conforme recursos.</span>
+            </div>
+          </div>
+        </div>
+        <div className="pt-2 border-t text-xs text-muted-foreground">
+          {config.frameworkRef}
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+// Domain-aware Framework Coverage help
+const frameworkCoverageConfig: Record<string, {
+  title: string;
+  description: string;
+  frameworks: string[];
+}> = {
+  AI_SECURITY: {
+    title: 'Cobertura de Frameworks de IA',
+    description: 'Progresso da avaliação nos frameworks de segurança e governança de IA selecionados.',
+    frameworks: ['NIST AI RMF', 'ISO 42001', 'EU AI Act', 'OWASP ML Top 10'],
+  },
+  CLOUD_SECURITY: {
+    title: 'Cobertura de Frameworks Cloud',
+    description: 'Progresso da avaliação nos frameworks de segurança cloud selecionados.',
+    frameworks: ['CSA CCM', 'CIS Benchmarks', 'SOC 2', 'ISO 27017'],
+  },
+  DEVSECOPS: {
+    title: 'Cobertura de Frameworks DevSecOps',
+    description: 'Progresso da avaliação nos frameworks de desenvolvimento seguro selecionados.',
+    frameworks: ['NIST SSDF', 'OWASP SAMM', 'SLSA', 'BSIMM'],
+  },
+};
+
+interface DomainFrameworkCoverageHelpProps {
+  securityDomainId?: string;
+}
+
+export function DomainFrameworkCoverageHelp({ securityDomainId = 'AI_SECURITY' }: DomainFrameworkCoverageHelpProps) {
+  const config = frameworkCoverageConfig[securityDomainId] || frameworkCoverageConfig.AI_SECURITY;
+  
+  return (
+    <HelpTooltip title="Sobre frameworks" modalTitle={config.title}>
+      <div className="space-y-3">
+        <p><strong>{config.title}:</strong> {config.description}</p>
+        <div className="p-3 bg-muted rounded-lg">
+          <p className="font-medium mb-2">Frameworks de referência:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            {config.frameworks.map((fw) => (
+              <li key={fw}>{fw}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="p-3 bg-muted rounded-lg">
+          <p className="font-medium mb-1">Métricas exibidas:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Score:</strong> Média ponderada das respostas</li>
+            <li><strong>Cobertura:</strong> % de perguntas respondidas</li>
+          </ul>
+        </div>
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="text-blue-700 dark:text-blue-300">
+            Clique nos badges de framework no header para filtrar a visualização.
+          </p>
+        </div>
+      </div>
+    </HelpTooltip>
+  );
+}
+
+// Domain-aware Domain Metrics help
+const domainMetricsConfig: Record<string, {
+  title: string;
+  description: string;
+  examples: string[];
+}> = {
+  AI_SECURITY: {
+    title: 'Domínios de Segurança de IA',
+    description: 'Áreas temáticas que agrupam controles de segurança de IA conforme NIST AI RMF.',
+    examples: ['Governança de IA', 'Privacidade de Dados', 'Robustez de Modelos', 'Transparência'],
+  },
+  CLOUD_SECURITY: {
+    title: 'Domínios de Segurança Cloud',
+    description: 'Áreas temáticas que agrupam controles de segurança cloud conforme CSA CCM.',
+    examples: ['Identidade e Acesso', 'Proteção de Dados', 'Segurança de Rede', 'Compliance'],
+  },
+  DEVSECOPS: {
+    title: 'Domínios DevSecOps',
+    description: 'Áreas temáticas que agrupam práticas de desenvolvimento seguro conforme NIST SSDF.',
+    examples: ['Segurança de Pipeline', 'Análise de Código', 'Gestão de Dependências', 'Deploy Seguro'],
+  },
+};
+
+interface DomainMetricsHelpProps {
+  securityDomainId?: string;
+}
+
+export function DomainMetricsHelpAware({ securityDomainId = 'AI_SECURITY' }: DomainMetricsHelpProps) {
+  const config = domainMetricsConfig[securityDomainId] || domainMetricsConfig.AI_SECURITY;
+  
+  return (
+    <HelpTooltip title="O que são?" modalTitle={config.title}>
+      <div className="space-y-3">
+        <p><strong>{config.title}:</strong> {config.description}</p>
+        <div className="p-3 bg-muted rounded-lg">
+          <p className="font-medium mb-2">Exemplos de domínios:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            {config.examples.map((ex) => (
+              <li key={ex}>{ex}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="p-3 bg-muted rounded-lg">
+          <p className="font-medium mb-2">Métricas exibidas:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Cobertura:</strong> % de perguntas respondidas no domínio</li>
+            <li><strong>Maturidade:</strong> Score ponderado dos controles</li>
+            <li><strong>Gaps:</strong> Número de controles com score {"<"}50%</li>
+          </ul>
+        </div>
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Dica:</p>
+          <p className="text-blue-700 dark:text-blue-300">
+            Clique em um domínio para expandir e ver as subcategorias com suas métricas individuais.
+          </p>
         </div>
       </div>
     </HelpTooltip>

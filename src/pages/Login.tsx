@@ -8,13 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, LogIn, AlertTriangle, Clock } from 'lucide-react';
+import { Loader2, Shield, LogIn, AlertTriangle, Clock, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+
+// Demo credentials for testing/showcase purposes
+const DEMO_EMAIL = 'demo@aiassess.app';
+const DEMO_PASSWORD = 'Demo@2025!';
 
 export default function Login() {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEMO_EMAIL);
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
@@ -89,6 +94,24 @@ export default function Login() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {/* Demo credentials info banner */}
+            <Alert className="border-primary/30 bg-primary/5">
+              <Info className="h-4 w-4 text-primary" />
+              <AlertDescription className="ml-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-primary">Conta Demo para Testes</span>
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <Badge variant="secondary" className="font-mono text-xs">
+                      {DEMO_EMAIL}
+                    </Badge>
+                    <Badge variant="secondary" className="font-mono text-xs">
+                      {DEMO_PASSWORD}
+                    </Badge>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+            
             {locked && (
               <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
                 <Clock className="h-4 w-4" />

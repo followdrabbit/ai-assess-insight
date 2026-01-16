@@ -25,7 +25,8 @@ import {
   getDisabledQuestions,
   disableDefaultQuestion,
   enableDefaultQuestion,
-  getAllCustomFrameworks
+  getAllCustomFrameworks,
+  getEnabledFrameworks
 } from '@/lib/database';
 import { SecurityDomain, getAllSecurityDomains, DOMAIN_COLORS } from '@/lib/securityDomains';
 import { 
@@ -190,16 +191,9 @@ export function QuestionManagement() {
     setCustomFrameworksList(customFw.map(f => ({ frameworkId: f.frameworkId, shortName: f.shortName })));
     setSecurityDomains(secDomains);
 
-    // Load enabled frameworks from assessment_meta
-    const { data: metaData } = await supabase
-      .from('assessment_meta')
-      .select('enabled_frameworks')
-      .eq('id', 'current')
-      .single();
-    
-    if (metaData?.enabled_frameworks) {
-      setEnabledFrameworkIds(metaData.enabled_frameworks);
-    }
+    // Load enabled frameworks (with safe fallback)
+    const enabledFwIds = await getEnabledFrameworks();
+    setEnabledFrameworkIds(enabledFwIds);
 
     // Load taxonomy domains and subcategories from database
     const { data: domainsData } = await supabase

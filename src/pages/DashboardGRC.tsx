@@ -46,7 +46,6 @@ import { Progress } from '@/components/ui/progress';
 import { domains } from '@/lib/dataset';
 import { Framework, getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
-import { DomainSwitcher } from '@/components/DomainSwitcher';
 
 // Rationalized Framework Categories - Authoritative Set Only
 const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
@@ -556,7 +555,6 @@ export default function DashboardGRC() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <DomainSwitcher variant="badge" />
               <Button 
                 variant="outline" 
                 size="sm"

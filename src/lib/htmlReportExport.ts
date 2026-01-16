@@ -1147,12 +1147,13 @@ export function generateHtmlReport(data: ReportData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${getDashboardTitle(dashboardType)} - ${formattedDate}</title>
+  <title>TrustLayer | ${getDashboardTitle(dashboardType)} - ${formattedDate}</title>
   <style>${getBaseStyles()}</style>
 </head>
 <body>
   <div class="container">
     <div class="header">
+      <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem; font-weight: 500;">TrustLayer</div>
       <h1>${getDashboardTitle(dashboardType)}</h1>
       <p>${getDashboardSubtitle(dashboardType)}</p>
       <div class="meta">
@@ -1165,7 +1166,7 @@ export function generateHtmlReport(data: ReportData): string {
     </div>
     
     <div class="footer">
-      Relatório gerado automaticamente pelo Sistema de Avaliação de Maturidade em Segurança de IA · ${formattedDate}
+      TrustLayer — Plataforma de Governança de Segurança · Relatório gerado em ${formattedDate}
     </div>
   </div>
 </body>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, Globe, FileDown, Sparkles, AlertCircle, Pause, Play, SkipForward } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, Globe, FileDown, Sparkles, AlertCircle, Pause, Play, SkipForward, Fingerprint, ShieldCheck, ShieldX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -37,10 +37,15 @@ export function AIAssistantChat() {
     error: sttError,
     currentProvider: sttProvider,
     supportsRealtime,
+    isVoiceProfileEnabled,
+    isVoiceVerified,
+    verificationResult,
+    voiceRejectedCount,
     startListening, 
     stopListening, 
     resetTranscript,
-    clearError: clearSttError 
+    clearError: clearSttError,
+    resetVoiceRejectedCount 
   } = useSyncedSpeechRecognition();
   const { 
     isSpeaking, 
@@ -529,6 +534,69 @@ export function AIAssistantChat() {
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2">
               {t('aiAssistant.whisperMode', 'Whisper: Recording will be transcribed when you stop')}
             </p>
+          )}
+          
+          {/* Voice Profile Verification Indicator */}
+          {sttSupported && isVoiceProfileEnabled && (
+            <div className="flex items-center gap-2 mt-2">
+              <div className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium transition-colors",
+                isVoiceVerified === true && "bg-green-500/10 text-green-600 dark:text-green-400",
+                isVoiceVerified === false && "bg-red-500/10 text-red-600 dark:text-red-400",
+                isVoiceVerified === null && "bg-muted text-muted-foreground"
+              )}>
+                <Fingerprint className="h-3 w-3" />
+                {isVoiceVerified === true && (
+                  <>
+                    <ShieldCheck className="h-3 w-3" />
+                    <span>{t('voiceProfile.verified', 'Voz verificada')}</span>
+                  </>
+                )}
+                {isVoiceVerified === false && (
+                  <>
+                    <ShieldX className="h-3 w-3" />
+                    <span>{t('voiceProfile.rejected', 'Voz não reconhecida')}</span>
+                  </>
+                )}
+                {isVoiceVerified === null && (
+                  <span>{t('voiceProfile.active', 'Perfil de voz ativo')}</span>
+                )}
+              </div>
+              {voiceRejectedCount > 0 && (
+                <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4">
+                  {voiceRejectedCount} {t('voiceProfile.rejectedCount', 'rejeitado(s)')}
+                </Badge>
+              )}
+              {verificationResult && isVoiceVerified !== null && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-[9px] px-1.5 py-0 h-4 cursor-default",
+                        isVoiceVerified ? "border-green-500/50" : "border-red-500/50"
+                      )}
+                    >
+                      {Math.round(verificationResult.confidence * 100)}% confiança
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <div className="space-y-1">
+                      <div>Score: {(verificationResult.matchScore * 100).toFixed(1)}%</div>
+                      <div>Limiar: {(verificationResult.threshold * 100).toFixed(0)}%</div>
+                      {verificationResult.details && (
+                        <>
+                          <div className="border-t pt-1 mt-1 text-muted-foreground">
+                            <div>MFCC: {(verificationResult.details.mfccSimilarity * 100).toFixed(0)}%</div>
+                            <div>Pitch: {(verificationResult.details.pitchSimilarity * 100).toFixed(0)}%</div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           )}
         </div>
       </CardContent>

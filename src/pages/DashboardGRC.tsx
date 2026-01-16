@@ -653,14 +653,14 @@ export default function DashboardGRC() {
         {/* Domains Tab */}
         <TabsContent value="domains" className="space-y-4">
           <DashboardSection
-            title="Métricas por Domínio"
+            title={t('dashboard.domainMetrics')}
             helpTooltip={<DomainMetricsHelpAware securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />}
           />
           {/* Filter Bar */}
           <div className="filter-bar">
             <div className="flex-1 min-w-[200px]">
               <Input
-                placeholder="Buscar domínios ou subcategorias..."
+                placeholder={t('dashboard.searchDomains')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
@@ -668,10 +668,10 @@ export default function DashboardGRC() {
             </div>
             <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Responsável" />
+                <SelectValue placeholder={t('dashboard.owner')} />
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                <SelectItem value="all">Todos Responsáveis</SelectItem>
+                <SelectItem value="all">{t('dashboard.allOwnersOption')}</SelectItem>
                 {ownershipTypes.map(type => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
@@ -679,13 +679,13 @@ export default function DashboardGRC() {
             </Select>
             <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Ordenar por" />
+                <SelectValue placeholder={t('dashboard.sortByPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                <SelectItem value="gaps">Gaps</SelectItem>
-                <SelectItem value="coverage">Cobertura</SelectItem>
-                <SelectItem value="maturity">Maturidade</SelectItem>
-                <SelectItem value="name">Nome</SelectItem>
+                <SelectItem value="gaps">{t('dashboard.sortByGaps')}</SelectItem>
+                <SelectItem value="coverage">{t('dashboard.sortByCoverage')}</SelectItem>
+                <SelectItem value="maturity">{t('dashboard.sortByMaturity')}</SelectItem>
+                <SelectItem value="name">{t('dashboard.sortByName')}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -697,14 +697,14 @@ export default function DashboardGRC() {
             </Button>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Limpar filtros
+                {t('dashboard.clearFilters')}
               </Button>
             )}
           </div>
 
           {/* Results count */}
           <div className="text-sm text-muted-foreground">
-            Exibindo {filteredDomainMetrics.length} de {metrics.domainMetrics.length} domínios
+            {t('dashboard.showing')} {filteredDomainMetrics.length} {t('dashboard.of')} {metrics.domainMetrics.length} {t('dashboard.byDomain').toLowerCase()}
           </div>
 
           {/* Domain Cards with Expandable Subcategories */}
@@ -738,9 +738,9 @@ export default function DashboardGRC() {
                               {dm.nistFunction || '-'}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {dm.totalQuestions} perguntas
+                              {dm.totalQuestions} {t('dashboard.questions')}
                             </span>
-                            <span className="text-xs text-primary/70 ml-1">Clique para detalhes</span>
+                            <span className="text-xs text-primary/70 ml-1">{t('dashboard.clickForDetails')}</span>
                           </div>
                         </div>
                       </div>
@@ -748,7 +748,7 @@ export default function DashboardGRC() {
                       <div className="flex items-center gap-6">
                         {/* Coverage */}
                         <div className="text-center min-w-[80px]">
-                          <div className="text-xs text-muted-foreground mb-1">Cobertura</div>
+                          <div className="text-xs text-muted-foreground mb-1">{t('dashboard.coverage')}</div>
                           <div className="flex items-center gap-2">
                             <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
                               <div 
@@ -762,7 +762,7 @@ export default function DashboardGRC() {
 
                         {/* Maturity */}
                         <div className="text-center min-w-[80px]">
-                          <div className="text-xs text-muted-foreground mb-1">Maturidade</div>
+                          <div className="text-xs text-muted-foreground mb-1">{t('dashboard.maturity')}</div>
                           <div className="flex items-center gap-2">
                             <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
                               <div 
@@ -779,7 +779,7 @@ export default function DashboardGRC() {
 
                         {/* Gaps */}
                         <div className="text-center min-w-[60px]">
-                          <div className="text-xs text-muted-foreground mb-1">Gaps</div>
+                          <div className="text-xs text-muted-foreground mb-1">{t('dashboard.gaps')}</div>
                           <span className={cn(
                             "font-mono text-sm font-medium",
                             dm.criticalGaps > 0 ? "text-destructive" : "text-muted-foreground"
@@ -795,8 +795,8 @@ export default function DashboardGRC() {
                           status === 'at-risk' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
                           'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                         )}>
-                          {status === 'incomplete' ? 'Incompleto' :
-                           status === 'at-risk' ? 'Em Risco' : 'Adequado'}
+                          {status === 'incomplete' ? t('dashboard.incomplete') :
+                           status === 'at-risk' ? t('dashboard.atRisk') : t('dashboard.adequate')}
                         </span>
 
                         {/* Expand indicator */}
@@ -825,7 +825,7 @@ export default function DashboardGRC() {
                                     {sm.ownershipType || 'GRC'}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    · {sm.answeredQuestions}/{sm.totalQuestions} perguntas
+                                    · {sm.answeredQuestions}/{sm.totalQuestions} {t('dashboard.questions')}
                                   </span>
                                 </div>
                               </div>
@@ -857,7 +857,7 @@ export default function DashboardGRC() {
           <div className="filter-bar">
             <div className="flex-1 min-w-[200px]">
               <Input
-                placeholder="Buscar frameworks..."
+                placeholder={t('dashboard.searchFrameworks')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
@@ -868,8 +868,8 @@ export default function DashboardGRC() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Framework Categories */}
             <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Maturidade por Categoria</h3>
-              <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
+              <h3 className="font-semibold mb-4">{t('dashboard.maturityByCategory')}</h3>
+              <p className="text-xs text-muted-foreground mb-3">{t('dashboard.clickForDetails')}</p>
               <div className="space-y-4">
                 {frameworkCategoryData.map((fc, idx) => {
                   const status = fc.coverage < 50 ? 'incomplete' : 
@@ -907,7 +907,7 @@ export default function DashboardGRC() {
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="text-xs text-muted-foreground mb-1">Maturidade</div>
+                          <div className="text-xs text-muted-foreground mb-1">{t('dashboard.maturity')}</div>
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                               <div 
@@ -923,7 +923,7 @@ export default function DashboardGRC() {
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
-                        {fc.answeredQuestions}/{fc.totalQuestions} perguntas respondidas
+                        {fc.answeredQuestions}/{fc.totalQuestions} {t('dashboard.questions')} {t('dashboard.answered').toLowerCase()}
                       </div>
                     </div>
                   );
@@ -933,8 +933,8 @@ export default function DashboardGRC() {
 
             {/* Individual Frameworks */}
             <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Cobertura por Framework ({filteredFrameworkCoverage.length})</h3>
-              <p className="text-xs text-muted-foreground mb-3">Clique para ver detalhes</p>
+              <h3 className="font-semibold mb-4">{t('dashboard.frameworkCoverage')} ({filteredFrameworkCoverage.length})</h3>
+              <p className="text-xs text-muted-foreground mb-3">{t('dashboard.clickForDetails')}</p>
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {filteredFrameworkCoverage.map((fw, idx) => (
                   <div 
@@ -971,15 +971,15 @@ export default function DashboardGRC() {
         <TabsContent value="gaps" className="space-y-4">
           <div className="card-elevated p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Gaps Críticos que Requerem Ação</h3>
+              <h3 className="font-semibold">{t('dashboard.criticalGaps')}</h3>
               <span className="text-sm text-muted-foreground">
-                {criticalGaps.length} itens identificados
+                {criticalGaps.length} {t('dashboard.gapsIdentified').toLowerCase()}
               </span>
             </div>
             
             {criticalGaps.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Nenhum gap crítico identificado. Continue o assessment para uma análise completa.
+                {t('dashboard.noCriticalGaps')}
               </div>
             ) : (
               <div className="space-y-3">
@@ -1011,7 +1011,7 @@ export default function DashboardGRC() {
                         size="sm"
                         onClick={() => navigate(`/assessment?questionId=${gap.questionId}`)}
                       >
-                        Revisar
+                        {t('dashboard.review')}
                       </Button>
                     </div>
                   </div>
@@ -1026,10 +1026,10 @@ export default function DashboardGRC() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card-elevated p-6">
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-semibold">Maturidade por Responsável</h3>
+                <h3 className="font-semibold">{t('dashboard.maturityByOwner')}</h3>
                 <OwnershipHelp />
               </div>
-              <p className="text-xs text-muted-foreground mb-4">Clique para ver detalhes</p>
+              <p className="text-xs text-muted-foreground mb-4">{t('dashboard.clickForDetails')}</p>
               <div className="space-y-4">
                 {ownershipData.map((od, idx) => (
                   <div 
@@ -1050,7 +1050,7 @@ export default function DashboardGRC() {
                         />
                       </div>
                       <span className="text-xs text-muted-foreground w-24">
-                        {od.answered}/{od.total} resp.
+                        {od.answered}/{od.total} {t('dashboard.responding')}
                       </span>
                     </div>
                   </div>
@@ -1059,7 +1059,7 @@ export default function DashboardGRC() {
             </div>
 
             <div className="card-elevated p-6">
-              <h3 className="font-semibold mb-4">Subcategorias com Baixa Prontidão</h3>
+              <h3 className="font-semibold mb-4">{t('dashboard.lowReadinessSubcategories')}</h3>
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {metrics.domainMetrics
                   .flatMap(dm => dm.subcategoryMetrics)
@@ -1075,7 +1075,7 @@ export default function DashboardGRC() {
                       <div className="flex-1">
                         <p className="font-medium text-sm">{sm.subcatName}</p>
                         <p className="text-xs text-muted-foreground">
-                          {sm.ownershipType || 'GRC'} · {sm.answeredQuestions}/{sm.totalQuestions} perguntas
+                          {sm.ownershipType || 'GRC'} · {sm.answeredQuestions}/{sm.totalQuestions} {t('dashboard.questions')}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
@@ -1102,7 +1102,7 @@ export default function DashboardGRC() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">
-              Detalhes: {selectedOwnershipDetails?.name}
+              {t('dashboard.detailsFor', { name: selectedOwnershipDetails?.name })}
             </DialogTitle>
           </DialogHeader>
 
@@ -1114,32 +1114,32 @@ export default function DashboardGRC() {
                   <div className="text-2xl font-bold" style={{ color: selectedOwnershipDetails.score >= 70 ? 'hsl(var(--chart-2))' : selectedOwnershipDetails.score >= 50 ? 'hsl(var(--chart-3))' : 'hsl(var(--destructive))' }}>
                     {selectedOwnershipDetails.score}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Maturidade</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.maturity')}</div>
                 </div>
                 <div className="p-3 bg-muted/50 rounded-lg text-center">
                   <div className="text-2xl font-bold text-primary">
                     {selectedOwnershipDetails.coverage}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Cobertura</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.coverage')}</div>
                 </div>
                 <div className="p-3 bg-muted/50 rounded-lg text-center">
                   <div className="text-2xl font-bold">
                     {selectedOwnershipDetails.answeredQuestions}
                   </div>
-                  <div className="text-xs text-muted-foreground">Respondidas</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.answeredCount')}</div>
                 </div>
                 <div className="p-3 bg-muted/50 rounded-lg text-center">
                   <div className="text-2xl font-bold text-amber-600">
                     {selectedOwnershipDetails.pendingQuestions}
                   </div>
-                  <div className="text-xs text-muted-foreground">Pendentes</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.pendingCount')}</div>
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div>
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span>Progresso do Assessment</span>
+                  <span>{t('dashboard.assessmentProgress')}</span>
                   <span className="font-mono">{selectedOwnershipDetails.answeredQuestions}/{selectedOwnershipDetails.totalQuestions}</span>
                 </div>
                 <Progress value={selectedOwnershipDetails.coverage} className="h-2" />
@@ -1148,13 +1148,13 @@ export default function DashboardGRC() {
               {/* Gaps Summary */}
               {selectedOwnershipDetails.totalGaps > 0 && (
                 <div className="p-4 border border-destructive/30 bg-destructive/5 rounded-lg">
-                  <h4 className="font-medium mb-3">Gaps Identificados ({selectedOwnershipDetails.totalGaps})</h4>
+                  <h4 className="font-medium mb-3">{t('dashboard.gapsCount', { count: selectedOwnershipDetails.totalGaps })}</h4>
                   <div className="flex items-center gap-4 mb-4">
                     {selectedOwnershipDetails.criticalCount > 0 && (
-                      <Badge variant="destructive">{selectedOwnershipDetails.criticalCount} Críticos</Badge>
+                      <Badge variant="destructive">{selectedOwnershipDetails.criticalCount} {t('dashboard.criticals')}</Badge>
                     )}
                     {selectedOwnershipDetails.highCount > 0 && (
-                      <Badge className="bg-orange-500">{selectedOwnershipDetails.highCount} Altos</Badge>
+                      <Badge className="bg-orange-500">{selectedOwnershipDetails.highCount} {t('dashboard.highs')}</Badge>
                     )}
                   </div>
                   <div className="space-y-2 max-h-[200px] overflow-y-auto">
@@ -1180,7 +1180,7 @@ export default function DashboardGRC() {
                             navigate(`/assessment?questionId=${gap.questionId}`);
                           }}
                         >
-                          Revisar
+                          {t('dashboard.review')}
                         </Button>
                       </div>
                     ))}
@@ -1190,7 +1190,7 @@ export default function DashboardGRC() {
 
               {/* Subcategories */}
               <div>
-                <h4 className="font-medium mb-3">Subcategorias ({selectedOwnershipDetails.subcategories.length})</h4>
+                <h4 className="font-medium mb-3">{t('dashboard.subcategoriesCount', { count: selectedOwnershipDetails.subcategories.length })}</h4>
                 <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
                   {selectedOwnershipDetails.subcategories.map(sm => (
                     <div 
@@ -1200,7 +1200,7 @@ export default function DashboardGRC() {
                       <div className="flex-1">
                         <p className="text-sm font-medium">{sm.subcatName}</p>
                         <p className="text-xs text-muted-foreground">
-                          {sm.domainName} · {sm.answeredQuestions}/{sm.totalQuestions} perguntas
+                          {sm.domainName} · {sm.answeredQuestions}/{sm.totalQuestions} {t('dashboard.questions')}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
@@ -1228,7 +1228,7 @@ export default function DashboardGRC() {
                     setSelectedOwnership(null);
                   }}
                 >
-                  Filtrar Dashboard por {selectedOwnershipDetails.name}
+                  {t('dashboard.filterByOwner', { owner: selectedOwnershipDetails.name })}
                 </Button>
               </div>
             </div>

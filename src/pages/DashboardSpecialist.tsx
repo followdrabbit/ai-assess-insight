@@ -963,11 +963,11 @@ export default function DashboardSpecialist() {
       </div>
 
 
-      {/* Quick Filter Pills */}
-      <div className="flex flex-wrap gap-2">
+      {/* Quick Filter Pills - Enhanced with animations */}
+      <div className="flex flex-wrap gap-2 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
         <Badge 
           variant={criticalityFilter === 'all' ? 'default' : 'outline'}
-          className="cursor-pointer"
+          className="cursor-pointer transition-all duration-200 hover:scale-105"
           onClick={() => setCriticalityFilter('all')}
         >
           Todos Gaps ({quickStats.totalGaps})
@@ -975,7 +975,7 @@ export default function DashboardSpecialist() {
         <Badge 
           variant={criticalityFilter === 'Critical' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             criticalityFilter !== 'Critical' && "bg-red-50 text-red-700 hover:bg-red-100 border-red-300"
           )}
           onClick={() => setCriticalityFilter('Critical')}
@@ -985,7 +985,7 @@ export default function DashboardSpecialist() {
         <Badge 
           variant={criticalityFilter === 'High' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             criticalityFilter !== 'High' && "bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-300"
           )}
           onClick={() => setCriticalityFilter('High')}
@@ -996,7 +996,7 @@ export default function DashboardSpecialist() {
         <Badge 
           variant={responseFilter === 'Não respondido' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             responseFilter !== 'Não respondido' && "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300"
           )}
           onClick={() => setResponseFilter(responseFilter === 'Não respondido' ? 'all' : 'Não respondido')}
@@ -1006,7 +1006,7 @@ export default function DashboardSpecialist() {
         <Badge 
           variant={responseFilter === 'Não' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             responseFilter !== 'Não' && "bg-red-50 text-red-700 hover:bg-red-100 border-red-300"
           )}
           onClick={() => setResponseFilter(responseFilter === 'Não' ? 'all' : 'Não')}
@@ -1016,7 +1016,7 @@ export default function DashboardSpecialist() {
         <Badge 
           variant={responseFilter === 'Parcial' ? 'default' : 'outline'}
           className={cn(
-            "cursor-pointer",
+            "cursor-pointer transition-all duration-200 hover:scale-105",
             responseFilter !== 'Parcial' && "bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-300"
           )}
           onClick={() => setResponseFilter(responseFilter === 'Parcial' ? 'all' : 'Parcial')}
@@ -1025,38 +1025,81 @@ export default function DashboardSpecialist() {
         </Badge>
       </div>
 
-      {/* Specialist KPIs */}
-      <div className="stats-grid">
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+      {/* Specialist KPIs - Enhanced with decorative elements */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
           <div className="kpi-label">Total de Perguntas</div>
           <div className="kpi-value">{metrics.totalQuestions}</div>
           <div className="text-sm text-muted-foreground mt-2">
             Em {metrics.domainMetrics.length} domínios
           </div>
+          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+            {enabledFrameworks.length} frameworks ativos
+          </div>
         </div>
 
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-success/10 rounded-bl-full" />
           <div className="kpi-label">Respondidas</div>
           <div className="kpi-value">{metrics.answeredQuestions}</div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-green-500 transition-all duration-700 ease-out" 
+                style={{ width: `${metrics.coverage * 100}%` }}
+              />
+            </div>
+          </div>
           <div className="text-sm text-muted-foreground mt-2">
             {Math.round(metrics.coverage * 100)}% de cobertura
           </div>
         </div>
 
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
           <div className="kpi-label">Controles Ausentes</div>
           <div className="kpi-value text-destructive">
             {quickStats.noCount + quickStats.notRespondedCount}
+          </div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-destructive transition-all duration-700 ease-out" 
+                style={{ width: `${metrics.totalQuestions > 0 ? ((quickStats.noCount + quickStats.notRespondedCount) / metrics.totalQuestions) * 100 : 0}%` }}
+              />
+            </div>
           </div>
           <div className="text-sm text-muted-foreground mt-2">
             Resposta "Não" ou pendente
           </div>
         </div>
 
-        <div className="kpi-card animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
+        <div 
+          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-shadow"
+          style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 bg-warning/10 rounded-bl-full" />
           <div className="kpi-label">Controles Parciais</div>
           <div className="kpi-value text-amber-600">
             {quickStats.partialCount}
+          </div>
+          <div className="mt-3">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-amber-500 transition-all duration-700 ease-out" 
+                style={{ width: `${metrics.totalQuestions > 0 ? (quickStats.partialCount / metrics.totalQuestions) * 100 : 0}%` }}
+              />
+            </div>
           </div>
           <div className="text-sm text-muted-foreground mt-2">
             Implementação incompleta

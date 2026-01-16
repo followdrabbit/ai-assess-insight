@@ -41,11 +41,13 @@ import {
   Info,
   CheckCircle2,
   Activity,
-  Server
+  Server,
+  Bot
 } from 'lucide-react';
 import { AuditLogsPanel } from '@/components/settings/AuditLogsPanel';
 import { SIEMIntegrationsPanel } from '@/components/settings/SIEMIntegrationsPanel';
 import { SIEMHealthPanel } from '@/components/settings/SIEMHealthPanel';
+import { AIProvidersPanel } from '@/components/settings/AIProvidersPanel';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -76,6 +78,11 @@ export default function Settings() {
       label: t('siem.tabTitle'),
       icon: Server,
       description: t('siem.tabDescription')
+    },
+    ai: {
+      label: t('aiProviders.tabTitle', 'Assistente IA'),
+      icon: Bot,
+      description: t('aiProviders.tabDescription', 'Configure provedores de IA')
     },
   };
 
@@ -361,7 +368,7 @@ export default function Settings() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-muted/50">
           {Object.entries(TAB_CONFIG).map(([key, config]) => {
             const Icon = config.icon;
             return (
@@ -943,6 +950,24 @@ export default function Settings() {
 
           {/* Health Monitoring */}
           <SIEMHealthPanel />
+        </TabsContent>
+
+        {/* ========== AI PROVIDERS TAB ========== */}
+        <TabsContent value="ai" className="space-y-6">
+          {/* Tab Header */}
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Bot className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold">{t('aiProviders.title', 'Provedores de IA')}</h2>
+              <p className="text-sm text-muted-foreground">
+                {t('aiProviders.description', 'Configure diferentes provedores de IA para o assistente')}
+              </p>
+            </div>
+          </div>
+
+          <AIProvidersPanel />
         </TabsContent>
       </Tabs>
     </div>

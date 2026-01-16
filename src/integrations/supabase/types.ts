@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_providers: {
+        Row: {
+          api_key_encrypted: string | null
+          created_at: string
+          endpoint_url: string | null
+          extra_config: Json | null
+          id: string
+          is_default: boolean
+          is_enabled: boolean
+          max_tokens: number | null
+          model_id: string | null
+          name: string
+          provider_type: string
+          system_prompt: string | null
+          temperature: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          api_key_encrypted?: string | null
+          created_at?: string
+          endpoint_url?: string | null
+          extra_config?: Json | null
+          id?: string
+          is_default?: boolean
+          is_enabled?: boolean
+          max_tokens?: number | null
+          model_id?: string | null
+          name: string
+          provider_type: string
+          system_prompt?: string | null
+          temperature?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          api_key_encrypted?: string | null
+          created_at?: string
+          endpoint_url?: string | null
+          extra_config?: Json | null
+          id?: string
+          is_default?: boolean
+          is_enabled?: boolean
+          max_tokens?: number | null
+          model_id?: string | null
+          name?: string
+          provider_type?: string
+          system_prompt?: string | null
+          temperature?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       answers: {
         Row: {
           created_at: string | null

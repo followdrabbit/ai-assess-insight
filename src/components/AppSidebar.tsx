@@ -112,94 +112,110 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
-      {/* Domain Selector Header */}
-      <SidebarHeader className="border-b border-border p-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                "w-full flex items-center gap-2 px-2 py-2 rounded-md transition-colors",
-                "hover:bg-accent hover:text-accent-foreground",
-                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                isCollapsed && "justify-center px-0"
-              )}
-            >
-              <div className={cn(
-                "flex items-center justify-center rounded-md p-1.5",
-                domainColors.bg
-              )}>
-                <DomainIcon className={cn("h-4 w-4", domainColors.text)} />
-              </div>
-              {!isCollapsed && (
-                <>
-                  <div className="flex-1 text-left min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {currentDomain?.shortName || 'Selecionar'}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground truncate">
-                      {currentDomain?.domainName || 'Domínio de Segurança'}
-                    </div>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                </>
-              )}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align={isCollapsed ? "start" : "center"} 
-            side={isCollapsed ? "right" : "bottom"}
-            className="w-64"
-          >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Trocar Domínio de Segurança
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {domains.map((domain) => {
-              const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
-              const colors = DOMAIN_COLORS[domain.color] || DOMAIN_COLORS.blue;
-              const isSelected = domain.domainId === selectedSecurityDomain;
-              
-              return (
-                <DropdownMenuItem
-                  key={domain.domainId}
-                  onClick={() => handleDomainChange(domain)}
-                  className={cn(
-                    "cursor-pointer gap-3 py-2.5",
-                    isSelected && "bg-accent"
-                  )}
-                >
-                  <div className={cn(
-                    "flex items-center justify-center rounded-md p-1.5",
-                    colors.bg
-                  )}>
-                    <IconComp className={cn("h-4 w-4", colors.text)} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{domain.shortName}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {domain.description}
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <Check className="h-4 w-4 text-primary shrink-0" />
-                  )}
-                </DropdownMenuItem>
-              );
-            })}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => navigate('/settings')}
-              className="cursor-pointer gap-3"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="text-sm">Gerenciar Domínios</span>
-              <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Clean Header with App Identity */}
+      <SidebarHeader className="border-b border-border p-3">
+        <div className={cn(
+          "flex items-center gap-2",
+          isCollapsed && "justify-center"
+        )}>
+          <div className="flex items-center justify-center rounded-lg bg-primary p-1.5">
+            <Shield className="h-4 w-4 text-primary-foreground" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold">Security Governance</div>
+              <div className="text-[10px] text-muted-foreground">Multi-Domain Platform</div>
+            </div>
+          )}
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Domain Context - Integrated as first navigation element */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Contexto</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={currentDomain?.domainName || "Domínio de Segurança"}
+                      className={cn(
+                        "w-full transition-colors",
+                        domainColors.bg,
+                        "hover:opacity-90"
+                      )}
+                    >
+                      <DomainIcon className={cn("h-4 w-4", domainColors.text)} />
+                      {!isCollapsed && (
+                        <>
+                          <span className={cn("font-medium", domainColors.text)}>
+                            {currentDomain?.shortName || 'Selecionar'}
+                          </span>
+                          <ChevronDown className={cn("ml-auto h-4 w-4", domainColors.text)} />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="start" 
+                    side={isCollapsed ? "right" : "bottom"}
+                    className="w-64"
+                  >
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">
+                      Trocar Domínio de Segurança
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {domains.map((domain) => {
+                      const IconComp = ICON_COMPONENTS[domain.icon] || Shield;
+                      const colors = DOMAIN_COLORS[domain.color] || DOMAIN_COLORS.blue;
+                      const isSelected = domain.domainId === selectedSecurityDomain;
+                      
+                      return (
+                        <DropdownMenuItem
+                          key={domain.domainId}
+                          onClick={() => handleDomainChange(domain)}
+                          className={cn(
+                            "cursor-pointer gap-3 py-2.5",
+                            isSelected && "bg-accent"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex items-center justify-center rounded-md p-1.5",
+                            colors.bg
+                          )}>
+                            <IconComp className={cn("h-4 w-4", colors.text)} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium">{domain.shortName}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {domain.description}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <Check className="h-4 w-4 text-primary shrink-0" />
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => navigate('/settings')}
+                      className="cursor-pointer gap-3"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span className="text-sm">Gerenciar Domínios</span>
+                      <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -313,40 +329,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="border-t border-border p-2">
-        {currentDomain && (
-          <div 
-            className={cn(
-              "flex items-center gap-2 px-2 py-2 rounded-md transition-all",
-              domainColors.bg,
-              isCollapsed && "justify-center px-0"
-            )}
-          >
-            <div 
-              className="w-2.5 h-2.5 rounded-full ring-2 ring-white/50 animate-pulse"
-              style={{ 
-                backgroundColor: currentDomain.color === 'purple' ? '#a855f7' :
-                                 currentDomain.color === 'blue' ? '#3b82f6' :
-                                 currentDomain.color === 'green' ? '#22c55e' :
-                                 currentDomain.color === 'orange' ? '#f97316' :
-                                 currentDomain.color === 'red' ? '#ef4444' :
-                                 currentDomain.color === 'yellow' ? '#eab308' : '#3b82f6'
-              }}
-            />
-            {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <div className={cn("text-xs font-medium truncate", domainColors.text)}>
-                  {currentDomain.shortName}
-                </div>
-                <div className="text-[10px] text-muted-foreground truncate">
-                  Domínio ativo
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </SidebarFooter>
     </Sidebar>
   );
 }

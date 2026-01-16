@@ -1,15 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX, Trash2, StopCircle, Bot, User, Loader2, Command, Navigation, Database, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAIAssistant, ChatMessage } from '@/hooks/useAIAssistant';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { useVoiceCommands } from '@/hooks/useVoiceCommands';
 import { toast } from 'sonner';
 
 export function AIAssistantChat() {
@@ -20,9 +23,38 @@ export function AIAssistantChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastMessageRef = useRef<string>('');
 
-  const { messages, isLoading, error, sendMessage, clearMessages, stopGeneration } = useAIAssistant();
+  const { messages, isLoading, error, sendMessage, clearMessages, stopGeneration, addSystemMessage } = useAIAssistant();
   const { isListening, transcript, isSupported: sttSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
   const { isSpeaking, isSupported: ttsSupported, speak, stop: stopSpeaking } = useSpeechSynthesis();
+  const { executeCommand, getDataFromCommand, isCommand, getAllCommands } = useVoiceCommands();
+
+  // Process voice commands when transcript changes
+  const processVoiceCommand = useCallback((text: string) => {
+    if (!text.trim()) return false;
+
+    // Check for navigation commands first
+    const navResult = executeCommand(text);
+    if (navResult.matched) {
+      toast.success(t('voiceCommands.executed', 'Comando executado: {{command}}', { command: navResult.description }));
+      if (autoSpeak) {
+        speak(navResult.description || 'Comando executado');
+      }
+      return true;
+    }
+
+    // Check for data commands
+    const dataResult = getDataFromCommand(text);
+    if (dataResult.matched && dataResult.data) {
+      // Add the data as a system message to the chat
+      addSystemMessage(dataResult.data);
+      if (autoSpeak) {
+        speak(dataResult.data.replace(/\*\*/g, '')); // Remove markdown for speech
+      }
+      return true;
+    }
+
+    return false;
+  }, [executeCommand, getDataFromCommand, addSystemMessage, autoSpeak, speak, t]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -62,6 +94,14 @@ export function AIAssistantChat() {
     const message = inputValue;
     setInputValue('');
     resetTranscript();
+
+    // Check if it's a voice command first
+    if (isCommand(message)) {
+      const executed = processVoiceCommand(message);
+      if (executed) return;
+    }
+
+    // Otherwise send to AI
     await sendMessage(message);
   };
 
@@ -129,6 +169,45 @@ export function AIAssistantChat() {
                 </TooltipContent>
               </Tooltip>
             )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Command className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-3">
+                  <div className="font-medium text-sm">{t('voiceCommands.title', 'Voice Commands')}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('voiceCommands.description', 'Say or type these commands to control the app')}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Navigation className="h-3 w-3" />
+                      {t('voiceCommands.navigationCategory', 'Navigation')}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {getAllCommands().filter(c => c.category === 'navigation').map(cmd => (
+                        <Badge key={cmd.id} variant="secondary" className="text-xs cursor-pointer" onClick={() => setInputValue(cmd.description)}>
+                          {cmd.description}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mt-2">
+                      <Database className="h-3 w-3" />
+                      {t('voiceCommands.dataCategory', 'Data')}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {getAllCommands().filter(c => c.category === 'data').map(cmd => (
+                        <Badge key={cmd.id} variant="outline" className="text-xs cursor-pointer" onClick={() => setInputValue(cmd.description)}>
+                          {cmd.description}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

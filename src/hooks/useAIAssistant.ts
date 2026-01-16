@@ -3,9 +3,10 @@ import { useDashboardMetrics } from './useDashboardMetrics';
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
+  isCommand?: boolean;
 }
 
 interface UseAIAssistantReturn {
@@ -15,6 +16,7 @@ interface UseAIAssistantReturn {
   sendMessage: (content: string) => Promise<void>;
   clearMessages: () => void;
   stopGeneration: () => void;
+  addSystemMessage: (content: string) => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
@@ -201,6 +203,17 @@ export function useAIAssistant(): UseAIAssistantReturn {
     }
   }, []);
 
+  const addSystemMessage = useCallback((content: string) => {
+    const systemMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+      isCommand: true,
+    };
+    setMessages(prev => [...prev, systemMessage]);
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -208,5 +221,6 @@ export function useAIAssistant(): UseAIAssistantReturn {
     sendMessage,
     clearMessages,
     stopGeneration,
+    addSystemMessage,
   };
 }

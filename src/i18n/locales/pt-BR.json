@@ -1253,6 +1253,25 @@
     "suggestedQuestion3": "Como posso melhorar meu nível de maturidade?",
     "sttNotSupported": "Entrada por voz não suportada neste navegador"
   },
+  "voiceCommands": {
+    "title": "Comandos de Voz",
+    "description": "Diga ou digite estes comandos para controlar o app",
+    "navigationCategory": "Navegação",
+    "dataCategory": "Dados",
+    "executed": "Comando executado: {{command}}",
+    "goToHome": "Ir para Home",
+    "goToDashboard": "Ir para Dashboard",
+    "goToGRC": "Ir para Dashboard GRC",
+    "goToSpecialist": "Ir para Dashboard Especialista",
+    "goToAssessment": "Ir para Avaliação",
+    "goToSettings": "Ir para Configurações",
+    "goToProfile": "Ir para Perfil",
+    "showGaps": "Mostrar Gaps Críticos",
+    "showSummary": "Resumir Postura de Segurança",
+    "showScore": "Mostrar Score",
+    "showMaturity": "Mostrar Nível de Maturidade",
+    "showCoverage": "Mostrar Cobertura"
+  },
   "errors": {
     "generic": "Ocorreu um erro",
     "loadProfile": "Erro ao carregar perfil",

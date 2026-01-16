@@ -1,13 +1,13 @@
 /**
- * Audio Feature Extractor
- * Extracts voice characteristics using Web Audio API for speaker verification
+ * Audio Feature Extractor (Lightweight Version)
+ * Extracts voice characteristics using simple statistical methods
+ * Optimized for mobile devices - no heavy FFT calculations
  */
 
 import { VoiceFeatures } from './types';
 
 export class AudioFeatureExtractor {
   private audioContext: AudioContext | null = null;
-  private analyser: AnalyserNode | null = null;
 
   constructor() {
     if (typeof window !== 'undefined' && window.AudioContext) {
@@ -19,17 +19,13 @@ export class AudioFeatureExtractor {
    * Extract voice features from an audio buffer
    */
   async extractFeatures(audioBuffer: AudioBuffer): Promise<VoiceFeatures> {
-    if (!this.audioContext) {
-      throw new Error('AudioContext not supported');
-    }
-
     const channelData = audioBuffer.getChannelData(0);
     const sampleRate = audioBuffer.sampleRate;
 
-    // Calculate various audio features
-    const mfcc = this.calculateMFCC(channelData, sampleRate);
-    const spectralCentroid = this.calculateSpectralCentroid(channelData, sampleRate);
-    const spectralRolloff = this.calculateSpectralRolloff(channelData, sampleRate);
+    // Use lightweight statistical features instead of heavy FFT
+    const mfcc = this.calculateSimplifiedMFCC(channelData);
+    const spectralCentroid = this.estimateSpectralCentroid(channelData, sampleRate);
+    const spectralRolloff = this.estimateSpectralRolloff(channelData, sampleRate);
     const zeroCrossingRate = this.calculateZeroCrossingRate(channelData);
     const rmsEnergy = this.calculateRMSEnergy(channelData);
     const { pitchMean, pitchStd } = this.calculatePitchStats(channelData, sampleRate);
@@ -55,211 +51,102 @@ export class AudioFeatureExtractor {
       throw new Error('AudioContext not supported');
     }
 
+    // Resume audio context if suspended (required on mobile)
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+
     const arrayBuffer = await blob.arrayBuffer();
     const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
     return this.extractFeatures(audioBuffer);
   }
 
   /**
-   * Calculate simplified MFCC (Mel-frequency cepstral coefficients)
-   * Using a simplified approach suitable for browser
+   * Calculate simplified MFCC-like features using statistical moments
+   * Much faster than real MFCC - O(n) instead of O(n²)
    */
-  private calculateMFCC(samples: Float32Array, sampleRate: number): number[] {
-    const frameSize = 2048;
-    const hopSize = 512;
-    const numMfcc = 13;
-    const numFrames = Math.floor((samples.length - frameSize) / hopSize) + 1;
-    
-    if (numFrames <= 0) {
-      return new Array(numMfcc).fill(0);
-    }
-
-    const mfccSum = new Array(numMfcc).fill(0);
-    let validFrames = 0;
-
-    for (let i = 0; i < numFrames; i++) {
-      const start = i * hopSize;
-      const frame = samples.slice(start, start + frameSize);
-      
-      // Apply Hamming window
-      const windowed = this.applyHammingWindow(frame);
-      
-      // Calculate FFT magnitude spectrum
-      const spectrum = this.calculateFFT(windowed);
-      
-      // Apply mel filterbank
-      const melSpectrum = this.applyMelFilterbank(spectrum, sampleRate, 26);
-      
-      // Calculate DCT to get MFCCs
-      const frameMfcc = this.calculateDCT(melSpectrum, numMfcc);
-      
-      if (frameMfcc.some(v => !isNaN(v) && isFinite(v))) {
-        for (let j = 0; j < numMfcc; j++) {
-          if (!isNaN(frameMfcc[j]) && isFinite(frameMfcc[j])) {
-            mfccSum[j] += frameMfcc[j];
-          }
-        }
-        validFrames++;
-      }
-    }
-
-    // Return average MFCC
-    return mfccSum.map(v => validFrames > 0 ? v / validFrames : 0);
-  }
-
-  /**
-   * Apply Hamming window to a frame
-   */
-  private applyHammingWindow(frame: Float32Array): Float32Array {
-    const windowed = new Float32Array(frame.length);
-    for (let i = 0; i < frame.length; i++) {
-      const window = 0.54 - 0.46 * Math.cos((2 * Math.PI * i) / (frame.length - 1));
-      windowed[i] = frame[i] * window;
-    }
-    return windowed;
-  }
-
-  /**
-   * Simplified FFT magnitude calculation
-   */
-  private calculateFFT(samples: Float32Array): Float32Array {
+  private calculateSimplifiedMFCC(samples: Float32Array): number[] {
+    const numCoeffs = 13;
+    const coeffs = new Array(numCoeffs).fill(0);
     const n = samples.length;
-    const spectrum = new Float32Array(n / 2);
     
-    // Simple DFT for demonstration (in production, use a proper FFT library)
-    for (let k = 0; k < n / 2; k++) {
-      let real = 0;
-      let imag = 0;
-      for (let t = 0; t < n; t++) {
-        const angle = (2 * Math.PI * k * t) / n;
-        real += samples[t] * Math.cos(angle);
-        imag -= samples[t] * Math.sin(angle);
-      }
-      spectrum[k] = Math.sqrt(real * real + imag * imag);
-    }
-    
-    return spectrum;
-  }
+    if (n === 0) return coeffs;
 
-  /**
-   * Apply mel filterbank
-   */
-  private applyMelFilterbank(spectrum: Float32Array, sampleRate: number, numFilters: number): Float32Array {
-    const melSpectrum = new Float32Array(numFilters);
-    const minFreq = 0;
-    const maxFreq = sampleRate / 2;
+    // Divide signal into bands and compute statistics
+    const bandSize = Math.floor(n / numCoeffs);
     
-    const melMin = this.hzToMel(minFreq);
-    const melMax = this.hzToMel(maxFreq);
-    const melPoints = new Float32Array(numFilters + 2);
-    
-    for (let i = 0; i < numFilters + 2; i++) {
-      melPoints[i] = melMin + (i * (melMax - melMin)) / (numFilters + 1);
-    }
-    
-    const fftBins = new Float32Array(numFilters + 2);
-    for (let i = 0; i < numFilters + 2; i++) {
-      fftBins[i] = Math.floor((spectrum.length * 2 * this.melToHz(melPoints[i])) / sampleRate);
-    }
-    
-    for (let i = 0; i < numFilters; i++) {
-      let sum = 0;
-      const startBin = Math.floor(fftBins[i]);
-      const peakBin = Math.floor(fftBins[i + 1]);
-      const endBin = Math.floor(fftBins[i + 2]);
+    for (let i = 0; i < numCoeffs; i++) {
+      const start = i * bandSize;
+      const end = Math.min(start + bandSize, n);
       
-      for (let j = startBin; j < endBin && j < spectrum.length; j++) {
-        let weight = 0;
-        if (j < peakBin && peakBin !== startBin) {
-          weight = (j - startBin) / (peakBin - startBin);
-        } else if (j >= peakBin && endBin !== peakBin) {
-          weight = (endBin - j) / (endBin - peakBin);
-        }
-        sum += spectrum[j] * weight;
+      let sum = 0;
+      let sumSq = 0;
+      let maxVal = 0;
+      
+      for (let j = start; j < end; j++) {
+        const val = Math.abs(samples[j]);
+        sum += val;
+        sumSq += val * val;
+        maxVal = Math.max(maxVal, val);
       }
       
-      melSpectrum[i] = sum > 0 ? Math.log(sum) : -10;
+      const count = end - start;
+      const mean = sum / count;
+      const variance = (sumSq / count) - (mean * mean);
+      
+      // Combine mean, variance and max into a single coefficient
+      coeffs[i] = mean * 0.4 + Math.sqrt(Math.max(0, variance)) * 0.4 + maxVal * 0.2;
     }
     
-    return melSpectrum;
+    return coeffs;
   }
 
   /**
-   * Calculate DCT (Discrete Cosine Transform)
+   * Estimate spectral centroid using zero-crossing rate correlation
+   * Faster approximation that correlates with brightness
    */
-  private calculateDCT(input: Float32Array, numCoeffs: number): number[] {
-    const output = new Array(numCoeffs).fill(0);
-    const n = input.length;
-    
-    for (let k = 0; k < numCoeffs; k++) {
-      let sum = 0;
-      for (let i = 0; i < n; i++) {
-        sum += input[i] * Math.cos((Math.PI * k * (2 * i + 1)) / (2 * n));
-      }
-      output[k] = sum * Math.sqrt(2 / n);
-    }
-    
-    return output;
+  private estimateSpectralCentroid(samples: Float32Array, sampleRate: number): number {
+    const zcr = this.calculateZeroCrossingRate(samples);
+    // ZCR correlates roughly with spectral centroid
+    // Map to approximate frequency range
+    return zcr * sampleRate * 0.5;
   }
 
   /**
-   * Hz to Mel conversion
+   * Estimate spectral rolloff based on energy distribution
    */
-  private hzToMel(hz: number): number {
-    return 2595 * Math.log10(1 + hz / 700);
-  }
-
-  /**
-   * Mel to Hz conversion
-   */
-  private melToHz(mel: number): number {
-    return 700 * (Math.pow(10, mel / 2595) - 1);
-  }
-
-  /**
-   * Calculate spectral centroid (brightness of sound)
-   */
-  private calculateSpectralCentroid(samples: Float32Array, sampleRate: number): number {
-    const spectrum = this.calculateFFT(samples);
-    let numerator = 0;
-    let denominator = 0;
+  private estimateSpectralRolloff(samples: Float32Array, sampleRate: number): number {
+    const n = samples.length;
+    if (n === 0) return sampleRate / 4;
     
-    for (let i = 0; i < spectrum.length; i++) {
-      const freq = (i * sampleRate) / (spectrum.length * 2);
-      numerator += freq * spectrum[i];
-      denominator += spectrum[i];
-    }
-    
-    return denominator > 0 ? numerator / denominator : 0;
-  }
-
-  /**
-   * Calculate spectral rolloff (frequency below which 85% of energy is contained)
-   */
-  private calculateSpectralRolloff(samples: Float32Array, sampleRate: number): number {
-    const spectrum = this.calculateFFT(samples);
-    const threshold = 0.85;
-    
+    // Calculate cumulative energy
     let totalEnergy = 0;
-    for (let i = 0; i < spectrum.length; i++) {
-      totalEnergy += spectrum[i] * spectrum[i];
+    for (let i = 0; i < n; i++) {
+      totalEnergy += samples[i] * samples[i];
     }
     
-    let cumulativeEnergy = 0;
-    for (let i = 0; i < spectrum.length; i++) {
-      cumulativeEnergy += spectrum[i] * spectrum[i];
-      if (cumulativeEnergy >= threshold * totalEnergy) {
-        return (i * sampleRate) / (spectrum.length * 2);
+    const threshold = totalEnergy * 0.85;
+    let cumEnergy = 0;
+    let rolloffIndex = n;
+    
+    for (let i = 0; i < n; i++) {
+      cumEnergy += samples[i] * samples[i];
+      if (cumEnergy >= threshold) {
+        rolloffIndex = i;
+        break;
       }
     }
     
-    return sampleRate / 2;
+    // Map index to approximate frequency
+    return (rolloffIndex / n) * (sampleRate / 2);
   }
 
   /**
-   * Calculate zero crossing rate
+   * Calculate zero crossing rate - O(n)
    */
   private calculateZeroCrossingRate(samples: Float32Array): number {
+    if (samples.length < 2) return 0;
+    
     let crossings = 0;
     for (let i = 1; i < samples.length; i++) {
       if ((samples[i] >= 0 && samples[i - 1] < 0) || (samples[i] < 0 && samples[i - 1] >= 0)) {
@@ -270,9 +157,11 @@ export class AudioFeatureExtractor {
   }
 
   /**
-   * Calculate RMS energy
+   * Calculate RMS energy - O(n)
    */
   private calculateRMSEnergy(samples: Float32Array): number {
+    if (samples.length === 0) return 0;
+    
     let sum = 0;
     for (let i = 0; i < samples.length; i++) {
       sum += samples[i] * samples[i];
@@ -281,17 +170,22 @@ export class AudioFeatureExtractor {
   }
 
   /**
-   * Calculate pitch statistics using autocorrelation
+   * Calculate pitch statistics using simplified autocorrelation
+   * Only checks a subset of lags for speed
    */
   private calculatePitchStats(samples: Float32Array, sampleRate: number): { pitchMean: number; pitchStd: number } {
-    const frameSize = 2048;
+    const frameSize = 1024; // Smaller frame for speed
     const hopSize = 512;
     const pitches: number[] = [];
     
-    for (let i = 0; i + frameSize < samples.length; i += hopSize) {
+    // Process fewer frames for mobile performance
+    const maxFrames = Math.min(20, Math.floor((samples.length - frameSize) / hopSize));
+    
+    for (let f = 0; f < maxFrames; f++) {
+      const i = f * hopSize;
       const frame = samples.slice(i, i + frameSize);
-      const pitch = this.detectPitch(frame, sampleRate);
-      if (pitch > 50 && pitch < 500) { // Valid human voice range
+      const pitch = this.detectPitchFast(frame, sampleRate);
+      if (pitch > 50 && pitch < 500) {
         pitches.push(pitch);
       }
     }
@@ -307,18 +201,22 @@ export class AudioFeatureExtractor {
   }
 
   /**
-   * Simple autocorrelation-based pitch detection
+   * Fast pitch detection using sparse autocorrelation
    */
-  private detectPitch(frame: Float32Array, sampleRate: number): number {
-    const minPeriod = Math.floor(sampleRate / 500); // Max 500Hz
-    const maxPeriod = Math.floor(sampleRate / 50);  // Min 50Hz
+  private detectPitchFast(frame: Float32Array, sampleRate: number): number {
+    const minPeriod = Math.floor(sampleRate / 500);
+    const maxPeriod = Math.floor(sampleRate / 50);
+    const step = 2; // Check every 2nd period for speed
     
     let maxCorr = 0;
     let bestPeriod = 0;
     
-    for (let period = minPeriod; period < maxPeriod && period < frame.length / 2; period++) {
+    // Only compute partial autocorrelation
+    const windowSize = Math.min(frame.length / 2, 256);
+    
+    for (let period = minPeriod; period < maxPeriod && period < frame.length / 2; period += step) {
       let corr = 0;
-      for (let i = 0; i < frame.length - period; i++) {
+      for (let i = 0; i < windowSize; i++) {
         corr += frame[i] * frame[i + period];
       }
       
@@ -335,18 +233,27 @@ export class AudioFeatureExtractor {
    * Estimate speaking rate based on energy envelope
    */
   private estimateSpeakingRate(samples: Float32Array, sampleRate: number): number {
-    const frameSize = Math.floor(sampleRate * 0.025); // 25ms frames
-    const hopSize = Math.floor(sampleRate * 0.010);   // 10ms hop
+    const frameSize = Math.floor(sampleRate * 0.025);
+    const hopSize = Math.floor(sampleRate * 0.015);
+    
+    // Limit number of frames for mobile
+    const maxFrames = Math.min(200, Math.floor((samples.length - frameSize) / hopSize));
     const energies: number[] = [];
     
-    for (let i = 0; i + frameSize < samples.length; i += hopSize) {
-      const frame = samples.slice(i, i + frameSize);
-      const energy = this.calculateRMSEnergy(frame);
-      energies.push(energy);
+    for (let f = 0; f < maxFrames; f++) {
+      const i = f * hopSize;
+      let energy = 0;
+      for (let j = 0; j < frameSize && i + j < samples.length; j++) {
+        energy += samples[i + j] * samples[i + j];
+      }
+      energies.push(Math.sqrt(energy / frameSize));
     }
     
+    if (energies.length === 0) return 0;
+    
     // Detect syllables as energy peaks
-    const threshold = Math.max(...energies) * 0.3;
+    const maxEnergy = Math.max(...energies);
+    const threshold = maxEnergy * 0.3;
     let syllables = 0;
     let inSyllable = false;
     
@@ -386,8 +293,8 @@ export class AudioFeatureExtractor {
   }
 
   destroy(): void {
-    if (this.audioContext) {
-      this.audioContext.close();
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close().catch(() => {});
       this.audioContext = null;
     }
   }

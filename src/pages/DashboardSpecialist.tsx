@@ -119,12 +119,6 @@ export default function DashboardSpecialist() {
   const [selectedFramework, setSelectedFramework] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
-  const categoryLabels: Record<string, string> = {
-    'core': 'Frameworks Principais',
-    'high-value': 'Alto Valor',
-    'tech-focused': 'Foco Técnico'
-  };
-
   // Response distribution for pie chart
   const responseDistribution = useMemo(() => {
     const dist = { Sim: 0, Parcial: 0, Não: 0, NA: 0, 'Não respondido': 0 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,19 +12,25 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
+  Pause,
   Check,
   ArrowRight,
   Sparkles,
   Lock,
   TrendingUp,
   Users,
-  Zap
+  Zap,
+  Presentation,
+  X,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Progress } from '@/components/ui/progress';
 import { LanguageSelector } from '@/components/LanguageSelector';
 
 // Animation variants
@@ -233,18 +239,345 @@ export default function Demo() {
   const { t } = useTranslation();
   const [activeScreenshot, setActiveScreenshot] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  
+  // Presentation mode state
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [autoPlayInterval, setAutoPlayInterval] = useState(5000); // 5 seconds default
+  const [progress, setProgress] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const filteredScreenshots = activeCategory === 'all' 
     ? screenshots 
     : screenshots.filter(s => s.category === activeCategory);
 
-  const nextScreenshot = () => {
+  const nextScreenshot = useCallback(() => {
     setActiveScreenshot((prev) => (prev + 1) % filteredScreenshots.length);
+    setProgress(0);
+  }, [filteredScreenshots.length]);
+
+  const prevScreenshot = useCallback(() => {
+    setActiveScreenshot((prev) => (prev - 1 + filteredScreenshots.length) % filteredScreenshots.length);
+    setProgress(0);
+  }, [filteredScreenshots.length]);
+
+  // Auto-play effect
+  useEffect(() => {
+    if (!isAutoPlaying) {
+      setProgress(0);
+      return;
+    }
+
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          nextScreenshot();
+          return 0;
+        }
+        return prev + (100 / (autoPlayInterval / 100));
+      });
+    }, 100);
+
+    return () => clearInterval(progressInterval);
+  }, [isAutoPlaying, autoPlayInterval, nextScreenshot]);
+
+  // Keyboard navigation for presentation mode
+  useEffect(() => {
+    if (!isPresentationMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowRight':
+        case ' ':
+          nextScreenshot();
+          break;
+        case 'ArrowLeft':
+          prevScreenshot();
+          break;
+        case 'Escape':
+          setIsPresentationMode(false);
+          setIsAutoPlaying(false);
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          }
+          break;
+        case 'p':
+        case 'P':
+          setIsAutoPlaying((prev) => !prev);
+          break;
+        case 'f':
+        case 'F':
+          toggleFullscreen();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPresentationMode, nextScreenshot, prevScreenshot]);
+
+  const toggleFullscreen = async () => {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      await document.exitFullscreen();
+      setIsFullscreen(false);
+    }
   };
 
-  const prevScreenshot = () => {
-    setActiveScreenshot((prev) => (prev - 1 + filteredScreenshots.length) % filteredScreenshots.length);
+  const startPresentationMode = () => {
+    setIsPresentationMode(true);
+    setIsAutoPlaying(true);
+    setActiveScreenshot(0);
+    setProgress(0);
   };
+
+  const exitPresentationMode = () => {
+    setIsPresentationMode(false);
+    setIsAutoPlaying(false);
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+    setIsFullscreen(false);
+  };
+
+  // Presentation Mode Overlay
+  if (isPresentationMode) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background">
+        {/* Header Controls */}
+        <motion.div 
+          className="absolute top-0 left-0 right-0 z-50 p-4 bg-gradient-to-b from-background/90 to-transparent"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center justify-between max-w-6xl mx-auto">
+            <div className="flex items-center gap-3">
+              <Shield className="h-6 w-6 text-primary" />
+              <span className="font-bold text-lg">TrustLayer</span>
+              <Badge variant="secondary">Modo Apresentação</Badge>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Speed Control */}
+              <div className="flex items-center gap-2 mr-4">
+                <span className="text-sm text-muted-foreground">Velocidade:</span>
+                <div className="flex gap-1">
+                  {[3000, 5000, 8000, 10000].map((speed) => (
+                    <Button
+                      key={speed}
+                      variant={autoPlayInterval === speed ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setAutoPlayInterval(speed)}
+                      className="text-xs px-2"
+                    >
+                      {speed / 1000}s
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Play/Pause */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+              >
+                {isAutoPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+
+              {/* Fullscreen Toggle */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleFullscreen}
+              >
+                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+
+              {/* Exit */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={exitPresentationMode}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          {isAutoPlaying && (
+            <div className="max-w-6xl mx-auto mt-3">
+              <Progress value={progress} className="h-1" />
+            </div>
+          )}
+        </motion.div>
+
+        {/* Main Content */}
+        <div className="flex items-center justify-center h-full pt-20 pb-24 px-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeScreenshot}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4 }}
+              className="max-w-5xl w-full"
+            >
+              <Card className="overflow-hidden shadow-2xl">
+                <div className="grid md:grid-cols-2 min-h-[500px]">
+                  {/* Visual Preview */}
+                  <motion.div 
+                    className="bg-gradient-to-br from-primary/10 to-primary/5 p-12 flex items-center justify-center"
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <div className="text-center">
+                      <motion.div 
+                        className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 text-primary"
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ duration: 0.5, type: "spring" }}
+                      >
+                        <div className="scale-150">
+                          {filteredScreenshots[activeScreenshot]?.icon}
+                        </div>
+                      </motion.div>
+                      <div className="w-full max-w-md mx-auto">
+                        <motion.div 
+                          className="bg-background rounded-lg shadow-xl p-6 space-y-4"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ duration: 0.5, delay: 0.2 }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-red-400" />
+                            <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                            <div className="w-3 h-3 rounded-full bg-green-400" />
+                            <div className="flex-1 h-5 bg-muted rounded ml-2" />
+                          </div>
+                          <div className="h-4 bg-muted rounded w-3/4" />
+                          <div className="h-4 bg-muted rounded w-1/2" />
+                          <div className="grid grid-cols-3 gap-3 mt-6">
+                            <div className="h-20 bg-primary/10 rounded" />
+                            <div className="h-20 bg-primary/20 rounded" />
+                            <div className="h-20 bg-primary/10 rounded" />
+                          </div>
+                          <div className="h-28 bg-muted/50 rounded mt-3" />
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Description */}
+                  <motion.div 
+                    className="p-12 flex flex-col justify-center"
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Badge variant="outline" className="w-fit mb-4 text-sm">
+                      {filteredScreenshots[activeScreenshot]?.category === 'dashboard' && 'Dashboard'}
+                      {filteredScreenshots[activeScreenshot]?.category === 'assessment' && 'Avaliação'}
+                      {filteredScreenshots[activeScreenshot]?.category === 'ai' && 'Inteligência Artificial'}
+                      {filteredScreenshots[activeScreenshot]?.category === 'settings' && 'Configurações'}
+                    </Badge>
+                    <h3 className="text-3xl font-bold mb-4">
+                      {filteredScreenshots[activeScreenshot]?.title}
+                    </h3>
+                    <p className="text-muted-foreground mb-8 text-lg">
+                      {filteredScreenshots[activeScreenshot]?.description}
+                    </p>
+                    <ul className="space-y-3">
+                      {filteredScreenshots[activeScreenshot]?.features.map((feature, idx) => (
+                        <motion.li 
+                          key={feature} 
+                          className="flex items-center gap-3 text-base"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 + idx * 0.1 }}
+                        >
+                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                          {feature}
+                        </motion.li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                </div>
+              </Card>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Navigation Arrows */}
+          <motion.div
+            className="absolute left-8 top-1/2 -translate-y-1/2"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-full shadow-lg h-14 w-14"
+              onClick={prevScreenshot}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+          </motion.div>
+          <motion.div
+            className="absolute right-8 top-1/2 -translate-y-1/2"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-full shadow-lg h-14 w-14"
+              onClick={nextScreenshot}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </Button>
+          </motion.div>
+        </div>
+
+        {/* Footer with slide indicators */}
+        <motion.div 
+          className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background/90 to-transparent"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              {filteredScreenshots.map((screenshot, index) => (
+                <motion.button
+                  key={index}
+                  onClick={() => { setActiveScreenshot(index); setProgress(0); }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    index === activeScreenshot 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted hover:bg-muted/80'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="text-sm font-medium">{index + 1}</span>
+                  <span className="text-xs hidden sm:inline">{screenshot.title}</span>
+                </motion.button>
+              ))}
+            </div>
+            <p className="text-center text-sm text-muted-foreground">
+              Use as teclas <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">←</kbd> <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">→</kbd> para navegar, 
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs ml-1">P</kbd> para play/pause, 
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs ml-1">F</kbd> para tela cheia, 
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs ml-1">ESC</kbd> para sair
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -502,6 +835,26 @@ export default function Demo() {
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Conheça os principais recursos da plataforma através de uma galeria interativa.
             </p>
+          </motion.div>
+
+          {/* Presentation Mode Button */}
+          <motion.div
+            className="flex justify-center mb-6"
+            variants={fadeIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <Button
+              size="lg"
+              onClick={startPresentationMode}
+              className="gap-2"
+            >
+              <Presentation className="h-5 w-5" />
+              Modo Apresentação
+              <Badge variant="secondary" className="ml-1 text-xs">Auto-play</Badge>
+            </Button>
           </motion.div>
 
           {/* Category Tabs */}

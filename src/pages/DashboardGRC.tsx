@@ -11,7 +11,6 @@ import {
   MaturityScoreHelp, 
   CoverageHelp, 
   EvidenceReadinessHelp,
-  CriticalGapsHelp,
   FrameworkCategoryHelp,
   OwnershipHelp,
   DomainMetricsHelpAware,
@@ -19,6 +18,8 @@ import {
   DomainRiskDistributionHelp,
   DomainFrameworkCoverageHelp,
   DomainResponseDistributionHelp,
+  DomainCriticalGapsHelp,
+  DomainRoadmapHelp,
 } from '@/components/HelpTooltip';
 import { FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
@@ -747,7 +748,7 @@ export default function DashboardGRC() {
           <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Gaps Críticos</div>
-            <CriticalGapsHelp />
+            <DomainCriticalGapsHelp securityDomainId={currentDomainInfo?.domainId || 'AI_SECURITY'} />
           </div>
           <div className="kpi-value text-destructive">
             {quickStats.criticalGapsCount}

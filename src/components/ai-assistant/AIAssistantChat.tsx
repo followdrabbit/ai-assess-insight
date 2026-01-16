@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAIAssistant, ChatMessage } from '@/hooks/useAIAssistant';
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { useSyncedSpeechRecognition } from '@/hooks/useSyncedSpeechRecognition';
 import { useSyncedSpeechSynthesis } from '@/hooks/useSyncedSpeechSynthesis';
 import { useVoiceCommands } from '@/hooks/useVoiceCommands';
 import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
@@ -35,11 +35,13 @@ export function AIAssistantChat() {
     confidence,
     isSupported: sttSupported, 
     error: sttError,
+    currentProvider: sttProvider,
+    supportsRealtime,
     startListening, 
     stopListening, 
     resetTranscript,
     clearError: clearSttError 
-  } = useSpeechRecognition();
+  } = useSyncedSpeechRecognition();
   const { 
     isSpeaking, 
     isPaused,
@@ -489,9 +491,17 @@ export function AIAssistantChat() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {isListening 
-                      ? t('aiAssistant.stopListening', 'Stop listening') 
-                      : t('aiAssistant.startListening', 'Start voice input')}
+                    <div className="text-center">
+                      <div>
+                        {isListening 
+                          ? t('aiAssistant.stopListening', 'Stop listening') 
+                          : t('aiAssistant.startListening', 'Start voice input')}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {sttProvider === 'openai-whisper' ? 'Whisper' : 
+                         sttProvider === 'custom' ? 'Custom' : 'Web Speech API'}
+                      </div>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -513,6 +523,11 @@ export function AIAssistantChat() {
           {!sttSupported && (
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2">
               {t('aiAssistant.sttNotSupported', 'Voice input not supported in this browser')}
+            </p>
+          )}
+          {sttSupported && !supportsRealtime && (
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2">
+              {t('aiAssistant.whisperMode', 'Whisper: Recording will be transcribed when you stop')}
             </p>
           )}
         </div>

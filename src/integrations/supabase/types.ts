@@ -600,6 +600,10 @@ export type Database = {
           notify_weekly_digest: boolean | null
           organization: string | null
           role: string | null
+          stt_api_key_encrypted: string | null
+          stt_endpoint_url: string | null
+          stt_model: string | null
+          stt_provider: string | null
           updated_at: string
           user_id: string
           voice_auto_speak: boolean | null
@@ -621,6 +625,10 @@ export type Database = {
           notify_weekly_digest?: boolean | null
           organization?: string | null
           role?: string | null
+          stt_api_key_encrypted?: string | null
+          stt_endpoint_url?: string | null
+          stt_model?: string | null
+          stt_provider?: string | null
           updated_at?: string
           user_id: string
           voice_auto_speak?: boolean | null
@@ -642,6 +650,10 @@ export type Database = {
           notify_weekly_digest?: boolean | null
           organization?: string | null
           role?: string | null
+          stt_api_key_encrypted?: string | null
+          stt_endpoint_url?: string | null
+          stt_model?: string | null
+          stt_provider?: string | null
           updated_at?: string
           user_id?: string
           voice_auto_speak?: boolean | null

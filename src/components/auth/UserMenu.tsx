@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,12 +18,13 @@ import { toast } from 'sonner';
 export function UserMenu() {
   const { user, signOut, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   if (!isAuthenticated || !user) {
     return (
       <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
-        Entrar
+        {t('auth.login')}
       </Button>
     );
   }
@@ -33,9 +35,9 @@ export function UserMenu() {
     setLoading(false);
     
     if (error) {
-      toast.error('Erro ao sair: ' + error.message);
+      toast.error(t('auth.logoutError') + ': ' + error.message);
     } else {
-      toast.success('Até logo!');
+      toast.success(t('auth.logoutSuccess'));
       navigate('/login');
     }
   };
@@ -58,7 +60,7 @@ export function UserMenu() {
       <DropdownMenuContent className="w-56 bg-popover" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Minha Conta</p>
+            <p className="text-sm font-medium leading-none">{t('common.myAccount')}</p>
             <p className="text-xs leading-none text-muted-foreground truncate">
               {user.email}
             </p>
@@ -70,7 +72,7 @@ export function UserMenu() {
           onClick={() => navigate('/profile')}
         >
           <User className="mr-2 h-4 w-4" />
-          <span>Perfil</span>
+          <span>{t('navigation.profile')}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
@@ -83,7 +85,7 @@ export function UserMenu() {
           ) : (
             <LogOut className="mr-2 h-4 w-4" />
           )}
-          <span>Sair</span>
+          <span>{t('auth.logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

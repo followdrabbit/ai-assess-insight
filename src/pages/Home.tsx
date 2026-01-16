@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -16,70 +17,72 @@ import {
   Home as HomeIcon,
 } from 'lucide-react';
 
-const breadcrumbItems = [
-  { label: 'Início', icon: HomeIcon }
-];
-const features = [
-  {
-    icon: ClipboardCheck,
-    title: 'Avaliação Completa',
-    description: 'Framework estruturado com 82 questões baseadas no NIST AI RMF, ISO/IEC 42001 e regulamentações BACEN.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Dashboards Executivos',
-    description: 'Visualizações para diferentes perfis: CISO, GRC e especialistas técnicos.',
-  },
-  {
-    icon: FileText,
-    title: 'Relatórios Detalhados',
-    description: 'Exportação para Excel com gaps, roadmap e recomendações priorizadas.',
-  },
-  {
-    icon: Lock,
-    title: 'Dados Seguros',
-    description: 'Seus dados são armazenados de forma segura na nuvem com acesso exclusivo à sua organização.',
-  },
-];
-
-const benefits = [
-  'Alinhamento com NIST AI RMF, ISO 42001, LGPD e regulamentações BACEN',
-  'Identificação de gaps críticos de segurança em IA',
-  'Roadmap priorizado 30/60/90 dias',
-  'Métricas de maturidade por domínio e framework',
-  'Suporte a múltiplos perfis de stakeholders',
-];
-
-const steps = [
-  {
-    number: '1',
-    title: 'Selecione os Frameworks',
-    description: 'Na tela de avaliação, escolha quais frameworks regulatórios deseja utilizar na avaliação (NIST, ISO, LGPD, etc.).',
-    action: 'Ir para Avaliação',
-    route: '/assessment',
-  },
-  {
-    number: '2',
-    title: 'Inicie a Avaliação',
-    description: 'Após selecionar os frameworks, clique em "Iniciar Avaliação" para começar a responder as questões filtradas.',
-  },
-  {
-    number: '3',
-    title: 'Gere Dados Demo',
-    description: 'Clique no botão "Dados Demo" para preencher automaticamente respostas de exemplo e visualizar a ferramenta em ação.',
-    highlight: true,
-  },
-  {
-    number: '4',
-    title: 'Explore os Dashboards',
-    description: 'Consulte os dashboards Executivo, GRC e Especialista para ver métricas, gaps críticos e roadmap de melhorias.',
-    action: 'Ver Dashboards',
-    route: '/dashboard',
-  },
-];
-
 export default function Home() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const breadcrumbItems = [
+    { label: t('navigation.home'), icon: HomeIcon }
+  ];
+
+  const features = [
+    {
+      icon: ClipboardCheck,
+      titleKey: 'home.featureAssessment',
+      descKey: 'home.featureAssessmentDesc',
+    },
+    {
+      icon: BarChart3,
+      titleKey: 'home.featureDashboards',
+      descKey: 'home.featureDashboardsDesc',
+    },
+    {
+      icon: FileText,
+      titleKey: 'home.featureReports',
+      descKey: 'home.featureReportsDesc',
+    },
+    {
+      icon: Lock,
+      titleKey: 'home.featureSecure',
+      descKey: 'home.featureSecureDesc',
+    },
+  ];
+
+  const benefitKeys = [
+    'home.benefit1',
+    'home.benefit2',
+    'home.benefit3',
+    'home.benefit4',
+    'home.benefit5',
+  ];
+
+  const steps = [
+    {
+      number: '1',
+      titleKey: 'home.step1Title',
+      descKey: 'home.step1Desc',
+      actionKey: 'home.step1Action',
+      route: '/assessment',
+    },
+    {
+      number: '2',
+      titleKey: 'home.step2Title',
+      descKey: 'home.step2Desc',
+    },
+    {
+      number: '3',
+      titleKey: 'home.step3Title',
+      descKey: 'home.step3Desc',
+      highlight: true,
+    },
+    {
+      number: '4',
+      titleKey: 'home.step4Title',
+      descKey: 'home.step4Desc',
+      actionKey: 'home.step4Action',
+      route: '/dashboard',
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-12 py-8">
@@ -94,23 +97,21 @@ export default function Home() {
         </div>
         
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground max-w-3xl mx-auto">
-          Governança de Segurança{' '}
-          <span className="text-primary">Multi-Domínio</span>
+          {t('home.heroTitle')}{' '}
+          <span className="text-primary">{t('home.heroHighlight')}</span>
         </h1>
         
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Plataforma completa para avaliar, medir e melhorar a postura de segurança 
-          em AI, Cloud e DevSecOps, alinhada com os principais 
-          frameworks e regulamentações do mercado.
+          {t('home.heroDescription')}
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
           <Button size="lg" onClick={() => navigate('/assessment')} className="gap-2">
-            Iniciar Avaliação
+            {t('home.startAssessment')}
             <ArrowRight className="h-4 w-4" />
           </Button>
           <Button size="lg" variant="outline" onClick={() => navigate('/dashboard')}>
-            Ver Dashboard
+            {t('home.viewDashboard')}
           </Button>
         </div>
       </section>
@@ -120,13 +121,13 @@ export default function Home() {
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-2">
             <PlayCircle className="h-4 w-4" />
-            Começando Agora
+            {t('home.gettingStarted')}
           </div>
           <h2 className="text-2xl font-semibold text-foreground">
-            Como Usar a Ferramenta
+            {t('home.howToUse')}
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Siga estes 4 passos simples para explorar todas as funcionalidades
+            {t('home.howToUseDesc')}
           </p>
         </div>
 
@@ -140,7 +141,7 @@ export default function Home() {
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
                     <Sparkles className="h-3 w-3" />
-                    Dica Rápida
+                    {t('home.quickTip')}
                   </span>
                 </div>
               )}
@@ -150,14 +151,14 @@ export default function Home() {
                     {step.number}
                   </div>
                   <div className="space-y-1">
-                    <CardTitle className="text-base">{step.title}</CardTitle>
+                    <CardTitle className="text-base">{t(step.titleKey)}</CardTitle>
                     <CardDescription className="text-sm">
-                      {step.description}
+                      {t(step.descKey)}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              {step.action && (
+              {step.actionKey && (
                 <CardContent className="pt-0">
                   <Button 
                     variant={step.highlight ? 'default' : 'outline'} 
@@ -165,7 +166,7 @@ export default function Home() {
                     className="w-full gap-2"
                     onClick={() => step.route && navigate(step.route)}
                   >
-                    {step.action}
+                    {t(step.actionKey)}
                     <ArrowRight className="h-3 w-3" />
                   </Button>
                 </CardContent>
@@ -176,7 +177,7 @@ export default function Home() {
 
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Dica:</strong> Use os dados de demonstração para entender o funcionamento antes de iniciar sua avaliação real.
+            💡 <strong>{t('home.tipLabel')}</strong> {t('home.tipText')}
           </p>
         </div>
       </section>
@@ -185,25 +186,25 @@ export default function Home() {
       <section className="space-y-8">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-semibold text-foreground">
-            Recursos Principais
+            {t('home.mainFeatures')}
           </h2>
           <p className="text-muted-foreground">
-            Tudo que você precisa para uma avaliação completa de segurança em IA
+            {t('home.mainFeaturesDesc')}
           </p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature) => (
-            <Card key={feature.title} className="border-border hover:border-primary/50 transition-colors">
+            <Card key={feature.titleKey} className="border-border hover:border-primary/50 transition-colors">
               <CardHeader className="pb-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                   <feature.icon className="h-5 w-5 text-primary" />
                 </div>
-                <CardTitle className="text-base">{feature.title}</CardTitle>
+                <CardTitle className="text-base">{t(feature.titleKey)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-sm">
-                  {feature.description}
+                  {t(feature.descKey)}
                 </CardDescription>
               </CardContent>
             </Card>
@@ -215,13 +216,13 @@ export default function Home() {
       <section className="grid md:grid-cols-2 gap-8 items-center py-8">
         <div className="space-y-6">
           <h2 className="text-2xl font-semibold text-foreground">
-            Por que usar esta ferramenta?
+            {t('home.whyUse')}
           </h2>
           <ul className="space-y-3">
-            {benefits.map((benefit) => (
-              <li key={benefit} className="flex items-start gap-3">
+            {benefitKeys.map((key) => (
+              <li key={key} className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <span className="text-muted-foreground">{benefit}</span>
+                <span className="text-muted-foreground">{t(key)}</span>
               </li>
             ))}
           </ul>
@@ -231,25 +232,24 @@ export default function Home() {
           <CardHeader>
             <div className="flex items-center gap-2 text-primary">
               <TrendingUp className="h-5 w-5" />
-              <span className="text-sm font-medium">Cobertura Completa</span>
+              <span className="text-sm font-medium">{t('home.fullCoverage')}</span>
             </div>
-            <CardTitle className="text-3xl">10 Domínios</CardTitle>
-            <CardDescription>de segurança avaliados</CardDescription>
+            <CardTitle className="text-3xl">{t('home.domainsCount')}</CardTitle>
+            <CardDescription>{t('home.domainsLabel')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="p-3 rounded-lg bg-background/50">
                 <div className="text-2xl font-bold text-foreground">82</div>
-                <div className="text-xs text-muted-foreground">Questões</div>
+                <div className="text-xs text-muted-foreground">{t('home.questionsLabel')}</div>
               </div>
               <div className="p-3 rounded-lg bg-background/50">
                 <div className="text-2xl font-bold text-foreground">6+</div>
-                <div className="text-xs text-muted-foreground">Frameworks</div>
+                <div className="text-xs text-muted-foreground">{t('home.frameworksLabel')}</div>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Baseado em NIST AI RMF, ISO/IEC 42001, ISO 27001, LGPD, 
-              regulamentações BACEN/CMN e EU AI Act.
+              {t('home.basedOn')}
             </p>
           </CardContent>
         </Card>
@@ -258,20 +258,19 @@ export default function Home() {
       {/* CTA Section */}
       <section className="text-center py-12 px-6 rounded-xl bg-muted/50 border border-border">
         <h2 className="text-2xl font-semibold text-foreground mb-3">
-          Pronto para começar?
+          {t('home.readyToStart')}
         </h2>
         <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-          Inicie sua avaliação agora e obtenha insights valiosos sobre a 
-          maturidade de segurança em IA da sua organização.
+          {t('home.readyToStartDesc')}
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" onClick={() => navigate('/assessment')} className="gap-2">
-            Começar Avaliação
+            {t('home.getStarted')}
             <ArrowRight className="h-4 w-4" />
           </Button>
           <Button size="lg" variant="outline" onClick={() => navigate('/assessment')} className="gap-2">
             <Sparkles className="h-4 w-4" />
-            Experimentar com Demo
+            {t('home.tryDemo')}
           </Button>
         </div>
       </section>

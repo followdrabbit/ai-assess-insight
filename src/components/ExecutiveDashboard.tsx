@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie } from 'recharts';
 import { Download } from 'lucide-react';
@@ -22,7 +22,6 @@ import { FrameworkCategoryId } from '@/lib/dataset';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -31,16 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -48,19 +37,15 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Framework, getFrameworkById } from '@/lib/frameworks';
+import { Framework } from '@/lib/frameworks';
 import { getQuestionFrameworkIds } from '@/lib/frameworks';
 import { downloadHtmlReport } from '@/lib/htmlReportExport';
 import {
   DashboardHeader,
   DashboardFrameworkSelector,
-  DashboardSection,
   DashboardKPIGrid,
   DashboardKPICard,
-  DashboardChartsGrid,
-  DashboardChartCard,
-  DashboardGapsList,
-  DashboardRoadmap,
+  DashboardRoadmapGrid,
 } from '@/components/dashboard';
 
 // NIST AI RMF function display names (for AI_SECURITY domain)
@@ -178,7 +163,6 @@ export function ExecutiveDashboard({
   const [nistFilter, setNistFilter] = useState<NistFunctionFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllGaps, setShowAllGaps] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // Modal states
   const [selectedKpiModal, setSelectedKpiModal] = useState<'score' | 'gaps' | 'coverage' | 'evidence' | null>(null);
@@ -471,34 +455,6 @@ export function ExecutiveDashboard({
     }
   };
 
-  const selectAllFrameworks = () => {
-    onFrameworkSelectionChange(enabledFrameworks.map(f => f.frameworkId));
-  };
-
-  const clearFrameworkSelection = () => {
-    onFrameworkSelectionChange([]);
-  };
-
-  // Categorize frameworks
-  const frameworksByCategory = useMemo(() => {
-    const categories: Record<string, Framework[]> = {
-      core: [],
-      'high-value': [],
-      'tech-focused': []
-    };
-    enabledFrameworks.forEach(f => {
-      if (categories[f.category]) {
-        categories[f.category].push(f);
-      }
-    });
-    return categories;
-  }, [enabledFrameworks]);
-
-  const categoryLabels: Record<string, string> = {
-    core: 'Principais',
-    'high-value': 'Alto Valor',
-    'tech-focused': 'Técnicos'
-  };
 
   const handleExportReport = useCallback(() => {
     const selectedFws = selectedFrameworkIds.length > 0 
@@ -555,115 +511,51 @@ export function ExecutiveDashboard({
         />
       </DashboardHeader>
 
-      {/* Executive KPI Cards - Enhanced with staggered animations and hover effects */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-primary/30"
-          style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+      {/* Executive KPI Cards - Standardized */}
+      <DashboardKPIGrid columns={4}>
+        <DashboardKPICard
+          label="Score Geral"
+          value={Math.round(metrics.overallScore * 100)}
+          suffix="%"
+          helpTooltip={<MaturityScoreHelp />}
+          progress={metrics.overallScore * 100}
+          subtitle={`Nível ${metrics.maturityLevel.level}: ${metrics.maturityLevel.name}`}
+          animationDelay={0}
           onClick={() => setSelectedKpiModal('score')}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Score Geral</div>
-            <MaturityScoreHelp />
-          </div>
-          <div className="kpi-value" style={{ color: metrics.maturityLevel.color }}>
-            {Math.round(metrics.overallScore * 100)}%
-          </div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full transition-all duration-700 ease-out" 
-                style={{ 
-                  width: `${metrics.overallScore * 100}%`,
-                  backgroundColor: metrics.maturityLevel.color 
-                }}
-              />
-            </div>
-          </div>
-          <div className={cn("maturity-badge mt-2", `maturity-${metrics.maturityLevel.level}`)}>
-            Nível {metrics.maturityLevel.level}: {metrics.maturityLevel.name}
-          </div>
-          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-destructive/30"
-          style={{ animationDelay: '75ms', animationFillMode: 'backwards' }}
+        />
+        <DashboardKPICard
+          label="Gaps Críticos"
+          value={filteredByFramework.gaps.length}
+          helpTooltip={<DomainCriticalGapsHelp securityDomainId={securityDomainId} />}
+          progress={Math.min((filteredByFramework.gaps.length / Math.max(coverageStats.total * 0.1, 1)) * 100, 100)}
+          subtitle="Requerem ação prioritária"
+          animationDelay={75}
+          variant="danger"
           onClick={() => setSelectedKpiModal('gaps')}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Gaps Críticos</div>
-            <DomainCriticalGapsHelp securityDomainId={securityDomainId} />
-          </div>
-          <div className="kpi-value text-destructive">{filteredByFramework.gaps.length}</div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-destructive transition-all duration-700 ease-out" 
-                style={{ 
-                  width: `${Math.min((filteredByFramework.gaps.length / Math.max(coverageStats.total * 0.1, 1)) * 100, 100)}%`
-                }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Requerem ação prioritária
-          </div>
-          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-blue-500/30"
-          style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+        />
+        <DashboardKPICard
+          label="Cobertura"
+          value={Math.round(coverageStats.coverage * 100)}
+          suffix="%"
+          helpTooltip={<CoverageHelp />}
+          progress={coverageStats.coverage * 100}
+          subtitle={`${coverageStats.answered} de ${coverageStats.total} perguntas`}
+          animationDelay={150}
+          variant="info"
           onClick={() => setSelectedKpiModal('coverage')}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Cobertura</div>
-            <CoverageHelp />
-          </div>
-          <div className="kpi-value">{Math.round(coverageStats.coverage * 100)}%</div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all duration-700 ease-out" 
-                style={{ width: `${coverageStats.coverage * 100}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            {coverageStats.answered} de {coverageStats.total} perguntas
-          </div>
-          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
-        </div>
-
-        <div 
-          className="kpi-card relative overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer hover:border-green-500/30"
-          style={{ animationDelay: '225ms', animationFillMode: 'backwards' }}
+        />
+        <DashboardKPICard
+          label="Prontidão de Evidências"
+          value={Math.round(metrics.evidenceReadiness * 100)}
+          suffix="%"
+          helpTooltip={<EvidenceReadinessHelp />}
+          progress={metrics.evidenceReadiness * 100}
+          subtitle="Preparação para auditoria"
+          animationDelay={225}
+          variant="success"
           onClick={() => setSelectedKpiModal('evidence')}
-        >
-          <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-bl-full" />
-          <div className="flex items-center justify-between mb-1">
-            <div className="kpi-label">Prontidão de Evidências</div>
-            <EvidenceReadinessHelp />
-          </div>
-          <div className="kpi-value">{Math.round(metrics.evidenceReadiness * 100)}%</div>
-          <div className="mt-3">
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-green-500 transition-all duration-700 ease-out" 
-                style={{ width: `${metrics.evidenceReadiness * 100}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Preparação para auditoria
-          </div>
-          <div className="text-xs text-primary/70 mt-2">Clique para detalhes</div>
-        </div>
-      </div>
+        />
+      </DashboardKPIGrid>
 
       {/* Domain-Specific Indicators */}
       <DomainSpecificIndicators 
@@ -924,72 +816,14 @@ export function ExecutiveDashboard({
         </div>
       </div>
 
-      {/* Strategic Roadmap */}
-      {filteredByFramework.roadmapItems.length > 0 && (
-        <div 
-          className="card-elevated p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '850ms', animationFillMode: 'backwards' }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold">Roadmap Estratégico</h3>
-              <DomainRoadmapHelp securityDomainId={securityDomainId} />
-            </div>
-            <div className="flex items-center gap-4">
-              <p className="text-xs text-muted-foreground">Ações prioritárias para os próximos 90 dias</p>
-              <div className="flex gap-2 text-xs">
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500" /> 0-30 dias
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" /> 30-60 dias
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" /> 60-90 dias
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {['immediate', 'short', 'medium'].map((priority, idx) => {
-              const items = filteredByFramework.roadmapItems.filter(r => r.priority === priority);
-              const config = {
-                immediate: { label: '0-30 dias', color: 'border-red-500', bg: 'bg-red-50 dark:bg-red-950/20' },
-                short: { label: '30-60 dias', color: 'border-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/20' },
-                medium: { label: '60-90 dias', color: 'border-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/20' },
-              }[priority]!;
-              
-              return (
-                <div 
-                  key={priority} 
-                  className={cn(
-                    "rounded-lg p-4 border-l-4 animate-in fade-in-0 slide-in-from-left-4 duration-400",
-                    config.color, 
-                    config.bg
-                  )}
-                  style={{ animationDelay: `${950 + idx * 100}ms`, animationFillMode: 'backwards' }}
-                >
-                  <h4 className="font-medium text-sm mb-3">{config.label}</h4>
-                  <div className="space-y-2">
-                    {items.length > 0 ? items.map((item, itemIdx) => (
-                      <div 
-                        key={itemIdx} 
-                        className="text-xs cursor-pointer hover:bg-muted/50 p-1.5 rounded -mx-1.5 transition-colors group"
-                        onClick={() => navigate(`/assessment?questionId=${item.questionId}`)}
-                      >
-                        <p className="font-medium group-hover:text-primary transition-colors">{item.action}</p>
-                        <p className="text-muted-foreground mt-0.5">{item.domain} · {item.ownershipType}</p>
-                      </div>
-                    )) : (
-                      <p className="text-xs text-muted-foreground">Nenhuma ação pendente</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Strategic Roadmap - Standardized */}
+      <DashboardRoadmapGrid
+        items={filteredByFramework.roadmapItems}
+        title="Roadmap Estratégico"
+        subtitle="Ações prioritárias para os próximos 90 dias"
+        helpTooltip={<DomainRoadmapHelp securityDomainId={securityDomainId} />}
+        animationDelay={850}
+      />
 
       {/* Critical Gaps with Filters */}
       <div 

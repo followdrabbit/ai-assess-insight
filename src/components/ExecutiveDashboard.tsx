@@ -9,11 +9,12 @@ import {
   MaturityScoreHelp,
   CoverageHelp, 
   EvidenceReadinessHelp, 
-  CriticalGapsHelp,
   DomainFunctionHelp,
   DomainRiskDistributionHelp,
   DomainFrameworkCoverageHelp,
   DomainMetricsHelpAware,
+  DomainCriticalGapsHelp,
+  DomainRoadmapHelp,
 } from '@/components/HelpTooltip';
 import { OverallMetrics, CriticalGap, RoadmapItem, FrameworkCoverage } from '@/lib/scoring';
 import { FrameworkCategoryId } from '@/lib/dataset';
@@ -630,7 +631,7 @@ export function ExecutiveDashboard({
           <div className="absolute top-0 right-0 w-16 h-16 bg-destructive/10 rounded-bl-full" />
           <div className="flex items-center justify-between mb-1">
             <div className="kpi-label">Gaps Críticos</div>
-            <CriticalGapsHelp />
+            <DomainCriticalGapsHelp securityDomainId={securityDomainId} />
           </div>
           <div className="kpi-value text-destructive">{filteredByFramework.gaps.length}</div>
           <div className="mt-3">
@@ -966,20 +967,23 @@ export function ExecutiveDashboard({
           style={{ animationDelay: '850ms', animationFillMode: 'backwards' }}
         >
           <div className="flex items-center justify-between mb-4">
-            <div>
+            <div className="flex items-center gap-2">
               <h3 className="font-semibold">Roadmap Estratégico</h3>
-              <p className="text-xs text-muted-foreground mt-1">Ações prioritárias para os próximos 90 dias</p>
+              <DomainRoadmapHelp securityDomainId={securityDomainId} />
             </div>
-            <div className="flex gap-2 text-xs">
-              <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-red-500" /> 0-30 dias
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-amber-500" /> 30-60 dias
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-blue-500" /> 60-90 dias
-              </span>
+            <div className="flex items-center gap-4">
+              <p className="text-xs text-muted-foreground">Ações prioritárias para os próximos 90 dias</p>
+              <div className="flex gap-2 text-xs">
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500" /> 0-30 dias
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" /> 30-60 dias
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" /> 60-90 dias
+                </span>
+              </div>
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
@@ -1025,12 +1029,15 @@ export function ExecutiveDashboard({
         style={{ animationDelay: '1000ms', animationFillMode: 'backwards' }}
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-          <div>
-            <h3 className="font-semibold">Gaps Críticos</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              {filteredGaps.length} gaps encontrados
-              {hasActiveFilters && ` (de ${filteredByFramework.gaps.length} total)`}
-            </p>
+          <div className="flex items-center gap-2">
+            <div>
+              <h3 className="font-semibold">Gaps Críticos</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                {filteredGaps.length} gaps encontrados
+                {hasActiveFilters && ` (de ${filteredByFramework.gaps.length} total)`}
+              </p>
+            </div>
+            <DomainCriticalGapsHelp securityDomainId={securityDomainId} />
           </div>
           
           {/* Filters */}

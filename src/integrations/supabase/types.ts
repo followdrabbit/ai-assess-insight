@@ -512,6 +512,10 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          notify_assessment_updates: boolean | null
+          notify_new_features: boolean | null
+          notify_security_alerts: boolean | null
+          notify_weekly_digest: boolean | null
           organization: string | null
           role: string | null
           updated_at: string
@@ -522,6 +526,10 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          notify_assessment_updates?: boolean | null
+          notify_new_features?: boolean | null
+          notify_security_alerts?: boolean | null
+          notify_weekly_digest?: boolean | null
           organization?: string | null
           role?: string | null
           updated_at?: string
@@ -532,6 +540,10 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          notify_assessment_updates?: boolean | null
+          notify_new_features?: boolean | null
+          notify_security_alerts?: boolean | null
+          notify_weekly_digest?: boolean | null
           organization?: string | null
           role?: string | null
           updated_at?: string

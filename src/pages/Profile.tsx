@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 
@@ -18,6 +18,13 @@ interface Profile {
   email: string | null;
 }
 
+interface NotificationPreferences {
+  notify_assessment_updates: boolean;
+  notify_security_alerts: boolean;
+  notify_weekly_digest: boolean;
+  notify_new_features: boolean;
+}
+
 export default function Profile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile>({
@@ -26,12 +33,18 @@ export default function Profile() {
     role: '',
     email: '',
   });
+  const [notifications, setNotifications] = useState<NotificationPreferences>({
+    notify_assessment_updates: true,
+    notify_security_alerts: true,
+    notify_weekly_digest: false,
+    notify_new_features: true,
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Password change state
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
@@ -48,7 +61,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, organization, role, email')
+        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features')
         .eq('user_id', user.id)
         .single();
       
@@ -65,6 +78,12 @@ export default function Profile() {
           organization: data.organization || '',
           role: data.role || '',
           email: data.email || user.email || '',
+        });
+        setNotifications({
+          notify_assessment_updates: data.notify_assessment_updates ?? true,
+          notify_security_alerts: data.notify_security_alerts ?? true,
+          notify_weekly_digest: data.notify_weekly_digest ?? false,
+          notify_new_features: data.notify_new_features ?? true,
         });
       }
     } catch (err: any) {
@@ -126,6 +145,34 @@ export default function Profile() {
     }
   };
 
+  const handleSaveNotifications = async (key: keyof NotificationPreferences, value: boolean) => {
+    if (!user) return;
+    
+    const updatedNotifications = { ...notifications, [key]: value };
+    setNotifications(updatedNotifications);
+    setSavingNotifications(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          [key]: value,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      toast.success('Preferência atualizada!');
+    } catch (err: any) {
+      // Revert on error
+      setNotifications(notifications);
+      toast.error(err.message || 'Erro ao salvar preferência');
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -150,7 +197,6 @@ export default function Profile() {
       if (error) throw error;
       
       toast.success('Senha alterada com sucesso!');
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
@@ -342,6 +388,82 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Notification Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Preferências de Notificação
+          </CardTitle>
+          <CardDescription>
+            Gerencie como e quando você recebe notificações por email
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="notify_assessment_updates">Atualizações de Avaliação</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receba notificações quando suas avaliações forem atualizadas
+                </p>
+              </div>
+              <Switch
+                id="notify_assessment_updates"
+                checked={notifications.notify_assessment_updates}
+                onCheckedChange={(checked) => handleSaveNotifications('notify_assessment_updates', checked)}
+                disabled={savingNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="notify_security_alerts">Alertas de Segurança</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receba alertas importantes sobre segurança e compliance
+                </p>
+              </div>
+              <Switch
+                id="notify_security_alerts"
+                checked={notifications.notify_security_alerts}
+                onCheckedChange={(checked) => handleSaveNotifications('notify_security_alerts', checked)}
+                disabled={savingNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="notify_weekly_digest">Resumo Semanal</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receba um resumo semanal do seu progresso e métricas
+                </p>
+              </div>
+              <Switch
+                id="notify_weekly_digest"
+                checked={notifications.notify_weekly_digest}
+                onCheckedChange={(checked) => handleSaveNotifications('notify_weekly_digest', checked)}
+                disabled={savingNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="notify_new_features">Novidades e Recursos</Label>
+                <p className="text-sm text-muted-foreground">
+                  Fique por dentro de novos recursos e melhorias da plataforma
+                </p>
+              </div>
+              <Switch
+                id="notify_new_features"
+                checked={notifications.notify_new_features}
+                onCheckedChange={(checked) => handleSaveNotifications('notify_new_features', checked)}
+                disabled={savingNotifications}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Account Info */}
       <Card>

@@ -64,6 +64,7 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
     isLoading,
     isEnrolling,
     isRecording,
+    recordingDuration,
     currentPhraseIndex,
     enrollmentProgress,
     enrolledSamples,
@@ -172,9 +173,14 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
 
           {/* Recording Status */}
           {isRecording && (
-            <div className="flex items-center justify-center gap-2 text-destructive animate-pulse">
-              <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
-              <span>Gravando...</span>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2 text-destructive">
+                <div className="h-4 w-4 rounded-full bg-destructive animate-pulse" />
+                <span className="text-lg font-medium">Gravando... {recordingDuration}s</span>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Para automaticamente em {15 - recordingDuration}s
+              </p>
             </div>
           )}
 
@@ -209,8 +215,13 @@ export function VoiceProfileCard({ language = 'pt-BR' }: VoiceProfileCardProps) 
             )}
 
             {isRecording && (
-              <Button onClick={stopRecording} variant="destructive" size="lg" className="gap-2">
-                <MicOff className="h-5 w-5" />
+              <Button 
+                onClick={stopRecording} 
+                variant="destructive" 
+                size="lg" 
+                className="gap-2 min-h-[56px] min-w-[200px] text-lg font-semibold shadow-lg active:scale-95 transition-transform touch-manipulation"
+              >
+                <MicOff className="h-6 w-6" />
                 Parar Gravação
               </Button>
             )}

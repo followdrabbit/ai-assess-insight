@@ -559,94 +559,88 @@ export function DomainManagement() {
 
     return (
       <Card className={cn(
-        "transition-all",
+        "transition-all h-full flex flex-col",
         domain.isEnabled 
           ? "border-primary/50" 
           : "opacity-60 border-muted"
       )}>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
+        <CardHeader className="pb-3 flex-shrink-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
               <div className={cn(
-                "p-2.5 rounded-lg",
+                "p-2 rounded-lg flex-shrink-0",
                 colorStyles.bg
               )}>
-                <IconComponent className={cn("h-5 w-5", colorStyles.text)} />
+                <IconComponent className={cn("h-4 w-4", colorStyles.text)} />
               </div>
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  {domain.domainName}
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-sm flex items-center gap-1.5 flex-wrap">
+                  <span className="truncate">{domain.domainName}</span>
                   {isCore && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0">
                       Principal
-                    </Badge>
-                  )}
-                  {!domain.isEnabled && (
-                    <Badge variant="secondary" className="text-xs">
-                      Desabilitado
                     </Badge>
                   )}
                 </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
-                  {domain.shortName} • Ordem: {domain.displayOrder}
+                  {domain.shortName}
                 </CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => handleExportDomain(domain)}
-                className="h-8 w-8"
-                disabled={exporting === domain.domainId}
-                title="Exportar configuração"
-              >
-                <Download className={cn("h-4 w-4", exporting === domain.domainId && "animate-pulse")} />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => openEditDialog(domain)}
-                className="h-8 w-8"
-                title="Editar domínio"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              {!isCore && (
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setDeletingDomain(domain)}
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  title="Excluir domínio"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+            <div className="flex items-center gap-0.5 flex-shrink-0">
               <Switch
                 checked={domain.isEnabled}
                 onCheckedChange={() => toggleDomainEnabled(domain)}
                 disabled={saving}
+                className="scale-90"
               />
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+        <CardContent className="pt-0 flex-1 flex flex-col">
+          <p className="text-xs text-muted-foreground mb-3 line-clamp-2 flex-1">
             {domain.description || 'Sem descrição'}
           </p>
           
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Badge variant="outline" className={cn("font-normal", colorStyles.border)}>
-                {frameworkCount} frameworks
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Badge variant="outline" className="font-normal">
-                {questionCount} perguntas
-              </Badge>
-            </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
+            <Badge variant="outline" className={cn("font-normal text-[10px]", colorStyles.border)}>
+              {frameworkCount} frameworks
+            </Badge>
+            <Badge variant="outline" className="font-normal text-[10px]">
+              {questionCount} perguntas
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-1 pt-2 border-t">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleExportDomain(domain)}
+              className="h-7 px-2 text-xs gap-1"
+              disabled={exporting === domain.domainId}
+            >
+              <Download className={cn("h-3 w-3", exporting === domain.domainId && "animate-pulse")} />
+              Exportar
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => openEditDialog(domain)}
+              className="h-7 px-2 text-xs gap-1"
+            >
+              <Pencil className="h-3 w-3" />
+              Editar
+            </Button>
+            {!isCore && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setDeletingDomain(domain)}
+                className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive ml-auto"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -705,22 +699,22 @@ export function DomainManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6">
             <div>
-              <div className="text-2xl font-bold">{domains.length}</div>
-              <div className="text-sm text-muted-foreground">Domínios totais</div>
+              <div className="text-xl sm:text-2xl font-bold">{domains.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Domínios totais</div>
             </div>
-            <div className="border-l border-border pl-6">
-              <div className="text-2xl font-bold">{domains.filter(d => d.isEnabled).length}</div>
-              <div className="text-sm text-muted-foreground">Domínios ativos</div>
+            <div className="border-l border-border pl-4 sm:pl-6">
+              <div className="text-xl sm:text-2xl font-bold">{domains.filter(d => d.isEnabled).length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Domínios ativos</div>
             </div>
-            <div className="border-l border-border pl-6">
-              <div className="text-2xl font-bold">{questions.length}</div>
-              <div className="text-sm text-muted-foreground">Perguntas totais</div>
+            <div className="border-l border-border pl-4 sm:pl-6">
+              <div className="text-xl sm:text-2xl font-bold">{questions.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Perguntas totais</div>
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {domains.map(domain => (
               <DomainCard key={domain.domainId} domain={domain} />
             ))}

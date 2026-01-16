@@ -37,24 +37,49 @@ export const FRAMEWORK_DOMAIN_MAP: Record<string, string> = {
   
   // Cloud Security Frameworks
   'CSA_CCM': 'CLOUD_SECURITY',
+  'CIS_BENCHMARKS': 'CLOUD_SECURITY',
+  'ISO_27017': 'CLOUD_SECURITY', // Cloud-specific ISO extension
+  'ISO_27018': 'CLOUD_SECURITY', // Cloud privacy
+  'NIST_800_144': 'CLOUD_SECURITY', // NIST Cloud Computing Guidelines
   
   // DevSecOps Frameworks
   'NIST_SSDF': 'DEVSECOPS',
   'OWASP_API': 'DEVSECOPS',
+  'OWASP_ASVS': 'DEVSECOPS',
+  'SLSA': 'DEVSECOPS',
 };
 
 /**
  * Get the security domain ID for a framework
+ * First checks the explicit map, then falls back to the framework's securityDomainId property
  */
 export function getFrameworkSecurityDomain(frameworkId: string): string {
-  return FRAMEWORK_DOMAIN_MAP[frameworkId] || 'AI_SECURITY';
+  // Check explicit map first
+  if (FRAMEWORK_DOMAIN_MAP[frameworkId]) {
+    return FRAMEWORK_DOMAIN_MAP[frameworkId];
+  }
+  // Fall back to the framework's own securityDomainId property from JSON
+  const framework = frameworks.find(f => f.frameworkId === frameworkId);
+  if (framework?.securityDomainId) {
+    return framework.securityDomainId;
+  }
+  // Default to AI_SECURITY for backwards compatibility
+  return 'AI_SECURITY';
 }
 
 /**
  * Get all frameworks for a specific security domain
+ * Checks both the explicit map and the framework's securityDomainId property
  */
 export function getFrameworksBySecurityDomain(securityDomainId: string): Framework[] {
-  return frameworks.filter(f => getFrameworkSecurityDomain(f.frameworkId) === securityDomainId);
+  return frameworks.filter(f => {
+    // Check explicit map first
+    if (FRAMEWORK_DOMAIN_MAP[f.frameworkId]) {
+      return FRAMEWORK_DOMAIN_MAP[f.frameworkId] === securityDomainId;
+    }
+    // Fall back to the framework's own securityDomainId property
+    return f.securityDomainId === securityDomainId;
+  });
 }
 
 // Helper functions
@@ -121,6 +146,22 @@ const FRAMEWORK_PATTERNS: { pattern: RegExp; frameworkId: string }[] = [
   { pattern: /CSA\s*CCM/i, frameworkId: 'CSA_CCM' },
   { pattern: /CSA\s*Cloud\s*Controls/i, frameworkId: 'CSA_CCM' },
   
+  // CIS Controls / Benchmarks - Cloud Security
+  { pattern: /CIS\s*Controls?/i, frameworkId: 'CIS_BENCHMARKS' },
+  { pattern: /CIS\s*Benchmarks?/i, frameworkId: 'CIS_BENCHMARKS' },
+  { pattern: /CIS\s+\d/i, frameworkId: 'CIS_BENCHMARKS' }, // e.g., "CIS 1", "CIS 8"
+  
+  // ISO 27017 - Cloud-specific security
+  { pattern: /ISO\s*\/?\s*IEC?\s*27017/i, frameworkId: 'CSA_CCM' }, // Map to CSA CCM as they're complementary for cloud
+  { pattern: /ISO\s*27017/i, frameworkId: 'CSA_CCM' },
+  
+  // NIST SP 800-144 - Cloud Computing Guidelines
+  { pattern: /NIST\s*SP\s*800-?144/i, frameworkId: 'CSA_CCM' }, // Map to CSA CCM
+  { pattern: /NIST\s*800-?144/i, frameworkId: 'CSA_CCM' },
+  
+  // NIST SP 800-53 - Security and Privacy Controls (Cloud context)
+  { pattern: /NIST\s*SP\s*800-?53/i, frameworkId: 'CSA_CCM' }, // Map to CSA CCM in cloud context
+  
   // CSA AI - Cloud Security Alliance AI guidance
   { pattern: /CSA\s*AI/i, frameworkId: 'CSA_AI' },
   
@@ -135,17 +176,21 @@ const FRAMEWORK_PATTERNS: { pattern: RegExp; frameworkId: string }[] = [
   { pattern: /API[1-9]:/i, frameworkId: 'OWASP_API' },
   { pattern: /API10:/i, frameworkId: 'OWASP_API' },
   
+  // OWASP ASVS - Application Security Verification Standard
+  { pattern: /OWASP\s*ASVS/i, frameworkId: 'OWASP_ASVS' },
+  { pattern: /ASVS/i, frameworkId: 'OWASP_ASVS' },
+  
+  // SLSA - Supply Chain Levels for Software Artifacts
+  { pattern: /SLSA/i, frameworkId: 'SLSA' },
+  
   // NOTE: The following frameworks are intentionally NOT mapped to other frameworks
   // to ensure strict filtering. If a question only references these, it won't appear
   // unless explicitly enabled:
   // - ISO 31000 (standalone risk management)
   // - NIST CSF (standalone cybersecurity framework)
-  // - NIST 800-53 (standalone security controls)
   // - EU AI Act (standalone regulation)
   // - GDPR (use LGPD for privacy)
-  // - CIS Benchmarks (infrastructure hardening)
   // - MITRE ATLAS (adversarial threats)
-  // - SLSA, SBOM (supply chain - use NIST SSDF)
 ];
 
 /**

@@ -18,7 +18,7 @@ import {
   FrameworkCategoryHelp,
 } from '@/components/HelpTooltip';
 import { OverallMetrics, CriticalGap, RoadmapItem, FrameworkCoverage } from '@/lib/scoring';
-import { FrameworkCategoryId } from '@/lib/dataset';
+import { frameworkCategoryLabels, frameworkCategoryColors, FrameworkCategoryId } from '@/lib/frameworkCategories';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -98,24 +98,7 @@ const domainChartConfig: Record<string, { title: string; description: string; fu
   },
 };
 
-// Rationalized Framework Categories - Authoritative Set Only
-const frameworkCategoryLabels: Record<FrameworkCategoryId, string> = {
-  NIST_AI_RMF: 'NIST AI RMF',
-  SECURITY_BASELINE: 'ISO 27001/27002',
-  AI_RISK_MGMT: 'ISO 23894 / Gestão de Riscos',
-  SECURE_DEVELOPMENT: 'NIST SSDF / CSA',
-  PRIVACY_LGPD: 'LGPD / Privacidade',
-  THREAT_EXPOSURE: 'OWASP LLM + API',
-};
-
-const frameworkCategoryColors: Record<FrameworkCategoryId, string> = {
-  NIST_AI_RMF: 'hsl(var(--chart-1))',
-  SECURITY_BASELINE: 'hsl(var(--chart-2))',
-  AI_RISK_MGMT: 'hsl(var(--chart-3))',
-  SECURE_DEVELOPMENT: 'hsl(var(--chart-4))',
-  PRIVACY_LGPD: 'hsl(var(--chart-5))',
-  THREAT_EXPOSURE: 'hsl(221, 83%, 53%)',
-};
+// Framework category labels and colors imported from shared lib
 
 export interface ActiveQuestion {
   questionId: string;

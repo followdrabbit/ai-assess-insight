@@ -49,8 +49,9 @@ import {
   CHANGE_TYPE_LABELS,
   formatVersionDate
 } from '@/lib/questionVersioning';
+import { VersionComparisonView } from './VersionComparisonView';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye } from 'lucide-react';
+import { Brain, Cloud, Code, Shield, Lock, Database, Server, Key, Plus, Filter, FolderTree, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, History, RotateCcw, Eye, GitCompare } from 'lucide-react';
 
 type CriticalityType = 'Low' | 'Medium' | 'High' | 'Critical';
 type OwnershipType = 'Executive' | 'GRC' | 'Engineering';
@@ -1399,128 +1400,149 @@ export function QuestionManagement() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {loadingVersions ? (
-              <div className="py-8 text-center text-muted-foreground">
-                Carregando versões...
-              </div>
-            ) : versions.length === 0 ? (
-              <div className="py-8 text-center">
-                <History className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">Nenhuma versão registrada</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  O histórico de versões começa a partir da próxima edição
-                </p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[400px]">
-                <div className="space-y-3 pr-4">
-                  {versions.map((version, index) => (
-                    <Card 
-                      key={version.id} 
-                      className={cn(
-                        "cursor-pointer transition-all hover:border-primary/50",
-                        selectedVersion?.id === version.id && "border-primary bg-primary/5"
-                      )}
-                      onClick={() => setSelectedVersion(version)}
-                    >
-                      <CardContent className="py-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className="text-xs">
-                                v{version.versionNumber}
-                              </Badge>
-                              <Badge 
-                                variant="secondary" 
-                                className={cn(
-                                  "text-xs",
-                                  version.changeType === 'create' && "bg-green-500/10 text-green-600",
-                                  version.changeType === 'update' && "bg-blue-500/10 text-blue-600",
-                                  version.changeType === 'revert' && "bg-orange-500/10 text-orange-600"
-                                )}
-                              >
-                                {CHANGE_TYPE_LABELS[version.changeType]}
-                              </Badge>
-                              {index === 0 && (
-                                <Badge variant="default" className="text-xs">
-                                  Atual
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm line-clamp-2 text-muted-foreground">
-                              {version.questionText}
-                            </p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                              <span>{formatVersionDate(version.createdAt)}</span>
-                              {version.changeSummary && (
-                                <span className="text-muted-foreground/70">• {version.changeSummary}</span>
-                              )}
-                            </div>
-                          </div>
-                          {index > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRevertToVersion(version);
-                              }}
-                              disabled={reverting}
-                            >
-                              <RotateCcw className="h-4 w-4 mr-1" />
-                              Reverter
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
+          {loadingVersions ? (
+            <div className="py-8 text-center text-muted-foreground">
+              Carregando versões...
+            </div>
+          ) : versions.length === 0 ? (
+            <div className="py-8 text-center">
+              <History className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+              <p className="text-muted-foreground">Nenhuma versão registrada</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                O histórico de versões começa a partir da próxima edição
+              </p>
+            </div>
+          ) : (
+            <Tabs defaultValue="timeline" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="timeline" className="gap-2">
+                  <History className="h-4 w-4" />
+                  Linha do Tempo
+                </TabsTrigger>
+                <TabsTrigger value="compare" className="gap-2">
+                  <GitCompare className="h-4 w-4" />
+                  Comparar Versões
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Version Details */}
-            {selectedVersion && (
-              <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">Detalhes da Versão {selectedVersion.versionNumber}</h4>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedVersion(null)}
-                  >
-                    Fechar
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Área:</span>{' '}
-                    {selectedVersion.domainId}
+              <TabsContent value="timeline" className="mt-4">
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3 pr-4">
+                    {versions.map((version, index) => (
+                      <Card 
+                        key={version.id} 
+                        className={cn(
+                          "cursor-pointer transition-all hover:border-primary/50",
+                          selectedVersion?.id === version.id && "border-primary bg-primary/5"
+                        )}
+                        onClick={() => setSelectedVersion(version)}
+                      >
+                        <CardContent className="py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline" className="text-xs">
+                                  v{version.versionNumber}
+                                </Badge>
+                                <Badge 
+                                  variant="secondary" 
+                                  className={cn(
+                                    "text-xs",
+                                    version.changeType === 'create' && "bg-green-500/10 text-green-600",
+                                    version.changeType === 'update' && "bg-blue-500/10 text-blue-600",
+                                    version.changeType === 'revert' && "bg-orange-500/10 text-orange-600"
+                                  )}
+                                >
+                                  {CHANGE_TYPE_LABELS[version.changeType]}
+                                </Badge>
+                                {index === 0 && (
+                                  <Badge variant="default" className="text-xs">
+                                    Atual
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm line-clamp-2 text-muted-foreground">
+                                {version.questionText}
+                              </p>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                <span>{formatVersionDate(version.createdAt)}</span>
+                                {version.changeSummary && (
+                                  <span className="text-muted-foreground/70">• {version.changeSummary}</span>
+                                )}
+                              </div>
+                            </div>
+                            {index > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRevertToVersion(version);
+                                }}
+                                disabled={reverting}
+                              >
+                                <RotateCcw className="h-4 w-4 mr-1" />
+                                Reverter
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Criticidade:</span>{' '}
-                    {selectedVersion.criticality || 'Não definida'}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Responsável:</span>{' '}
-                    {selectedVersion.ownershipType || 'Não definido'}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Frameworks:</span>{' '}
-                    {(selectedVersion.frameworks || []).join(', ') || 'Nenhum'}
-                  </div>
-                </div>
-                {selectedVersion.expectedEvidence && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Evidência:</span>{' '}
-                    <span className="line-clamp-2">{selectedVersion.expectedEvidence}</span>
+                </ScrollArea>
+
+                {/* Version Details */}
+                {selectedVersion && (
+                  <div className="p-4 rounded-lg bg-muted/50 border space-y-3 mt-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Detalhes da Versão {selectedVersion.versionNumber}</h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedVersion(null)}
+                      >
+                        Fechar
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Área:</span>{' '}
+                        {selectedVersion.domainId}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Criticidade:</span>{' '}
+                        {selectedVersion.criticality || 'Não definida'}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Responsável:</span>{' '}
+                        {selectedVersion.ownershipType || 'Não definido'}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Frameworks:</span>{' '}
+                        {(selectedVersion.frameworks || []).join(', ') || 'Nenhum'}
+                      </div>
+                    </div>
+                    {selectedVersion.expectedEvidence && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Evidência:</span>{' '}
+                        <span className="line-clamp-2">{selectedVersion.expectedEvidence}</span>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
-          </div>
+              </TabsContent>
+
+              <TabsContent value="compare" className="mt-4">
+                <VersionComparisonView
+                  versions={versions}
+                  onRevert={handleRevertToVersion}
+                  reverting={reverting}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowVersionDialog(false)}>

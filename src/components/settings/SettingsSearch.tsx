@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Search, X, ArrowRight, Layers, BookMarked, ClipboardList, Settings, Shield, BookOpen, Building2, FileDown, Trash2, Info } from 'lucide-react';
+import { Search, X, ArrowRight, Layers, BookMarked, ClipboardList, Settings, Shield, BookOpen, Building2, FileDown, Trash2, Info, Sun, Volume2, Bell, Mic, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ interface SearchableItem {
   title: string;
   description: string;
   keywords: string[];
-  tab: 'content' | 'assessment' | 'system';
+  tab: 'content' | 'assessment' | 'preferences' | 'system';
   section?: string;
   icon: React.ElementType;
 }
@@ -66,6 +66,53 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
     section: 'Selecionar Frameworks para Avaliação',
     icon: Shield,
   },
+
+  // Preferences Tab
+  {
+    id: 'appearance',
+    title: 'Aparência',
+    description: 'Tema (claro, escuro, sistema) e idioma da interface',
+    keywords: ['aparência', 'tema', 'claro', 'escuro', 'dark', 'light', 'idioma', 'language', 'português', 'inglês', 'espanhol', 'interface'],
+    tab: 'preferences',
+    section: 'Aparência',
+    icon: Sun,
+  },
+  {
+    id: 'voice-settings',
+    title: 'Configurações de Voz',
+    description: 'Idioma, velocidade, tom e volume da síntese de fala',
+    keywords: ['voz', 'voice', 'fala', 'speech', 'velocidade', 'rate', 'tom', 'pitch', 'volume', 'tts', 'síntese', 'synthesis'],
+    tab: 'preferences',
+    section: 'Configurações de Voz',
+    icon: Volume2,
+  },
+  {
+    id: 'stt-config',
+    title: 'Reconhecimento de Voz (STT)',
+    description: 'Configurar provedor de Speech-to-Text e chave de API',
+    keywords: ['stt', 'speech to text', 'reconhecimento', 'whisper', 'transcrição', 'microfone', 'api key'],
+    tab: 'preferences',
+    section: 'Speech-to-Text',
+    icon: Mic,
+  },
+  {
+    id: 'voice-profile',
+    title: 'Perfil de Voz',
+    description: 'Cadastrar e gerenciar biometria vocal para autenticação',
+    keywords: ['perfil', 'biometria', 'biometric', 'voice profile', 'speaker', 'reconhecimento', 'verificação'],
+    tab: 'preferences',
+    section: 'Perfil de Voz',
+    icon: Mic,
+  },
+  {
+    id: 'notifications',
+    title: 'Notificações',
+    description: 'Configurar alertas de segurança, atualizações e resumo semanal',
+    keywords: ['notificação', 'notification', 'alerta', 'alert', 'email', 'semanal', 'digest', 'atualização', 'novidades'],
+    tab: 'preferences',
+    section: 'Preferências de Notificação',
+    icon: Bell,
+  },
   
   // System Tab
   {
@@ -118,6 +165,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
 const TAB_CONFIG = {
   content: { label: 'Conteúdo', icon: BookMarked, color: 'bg-primary/10 text-primary' },
   assessment: { label: 'Avaliação', icon: ClipboardList, color: 'bg-amber-500/10 text-amber-700' },
+  preferences: { label: 'Preferências', icon: Palette, color: 'bg-pink-500/10 text-pink-700' },
   system: { label: 'Geral', icon: Settings, color: 'bg-gray-500/10 text-gray-700' },
 };
 

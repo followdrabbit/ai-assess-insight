@@ -1701,83 +1701,79 @@ export default function Settings() {
 
         {/* ========== AUDIT LOGS TAB ========== */}
         <TabsContent value="audit" className="space-y-6">
-          <motion.div
-            key={`audit-${activeTab === 'audit'}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-6"
-          >
-          {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Activity className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold">{t('auditLogs.title')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('auditLogs.description')}
-              </p>
-            </div>
-          </div>
+          <StaggerContainer className="space-y-6">
+            {/* Tab Header */}
+            <StaggerItem>
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">{t('auditLogs.title')}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t('auditLogs.description')}
+                  </p>
+                </div>
+              </div>
+            </StaggerItem>
 
-          <AuditLogsPanel />
-          </motion.div>
+            <StaggerItem>
+              <AuditLogsPanel />
+            </StaggerItem>
+          </StaggerContainer>
         </TabsContent>
 
         {/* ========== SIEM INTEGRATIONS TAB ========== */}
         <TabsContent value="siem" className="space-y-6">
-          <motion.div
-            key={`siem-${activeTab === 'siem'}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-6"
-          >
-          {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Server className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold">{t('siem.title')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('siem.description')}
-              </p>
-            </div>
-          </div>
+          <StaggerContainer className="space-y-6">
+            {/* Tab Header */}
+            <StaggerItem>
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Server className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">{t('siem.title')}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t('siem.description')}
+                  </p>
+                </div>
+              </div>
+            </StaggerItem>
 
-          <SIEMIntegrationsPanel />
+            <StaggerItem>
+              <SIEMIntegrationsPanel />
+            </StaggerItem>
 
-          {/* Health Monitoring */}
-          <SIEMHealthPanel />
-          </motion.div>
+            {/* Health Monitoring */}
+            <StaggerItem>
+              <SIEMHealthPanel />
+            </StaggerItem>
+          </StaggerContainer>
         </TabsContent>
 
         {/* ========== AI PROVIDERS TAB ========== */}
         <TabsContent value="ai" className="space-y-6">
-          <motion.div
-            key={`ai-${activeTab === 'ai'}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-6"
-          >
-          {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Bot className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold">{t('aiProviders.title', 'Provedores de IA')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('aiProviders.description', 'Configure diferentes provedores de IA para o assistente')}
-              </p>
-            </div>
-          </div>
+          <StaggerContainer className="space-y-6">
+            {/* Tab Header */}
+            <StaggerItem>
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">{t('aiProviders.title', 'Provedores de IA')}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t('aiProviders.description', 'Configure diferentes provedores de IA para o assistente')}
+                  </p>
+                </div>
+              </div>
+            </StaggerItem>
 
-          <AIProvidersPanel />
-          </motion.div>
+            <StaggerItem>
+              <AIProvidersPanel />
+            </StaggerItem>
+          </StaggerContainer>
         </TabsContent>
       </Tabs>
     </div>

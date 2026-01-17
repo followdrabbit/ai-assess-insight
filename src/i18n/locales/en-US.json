@@ -1364,5 +1364,85 @@
     "loginError": "An error occurred while logging in",
     "signupError": "An error occurred while creating account",
     "resetError": "An error occurred while sending recovery email"
+  },
+  "settingsSearch": {
+    "placeholder": "Search settings...",
+    "noResults": "No results for \"{{query}}\"",
+    "tryTerms": "Try terms like \"framework\", \"export\" or \"voice\"",
+    "domains": {
+      "title": "Security Domains",
+      "description": "Manage domains like AI Security, Cloud Security, DevSecOps",
+      "section": "Security Domains"
+    },
+    "frameworks": {
+      "title": "Frameworks",
+      "description": "Create, edit, import, and delete assessment frameworks",
+      "section": "Frameworks"
+    },
+    "questions": {
+      "title": "Questions",
+      "description": "Create, edit, import, version, and search questions",
+      "section": "Questions"
+    },
+    "assessmentInfo": {
+      "title": "Assessment Information",
+      "description": "Assessment name, organization, and reassessment cadence",
+      "section": "Assessment Information"
+    },
+    "frameworkSelection": {
+      "title": "Select Frameworks",
+      "description": "Choose active frameworks for the current assessment",
+      "section": "Select Frameworks for Assessment"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Theme (light, dark, system) and interface language",
+      "section": "Appearance"
+    },
+    "voiceSettings": {
+      "title": "Voice Settings",
+      "description": "Language, speed, pitch, and volume for speech synthesis",
+      "section": "Voice Settings"
+    },
+    "sttConfig": {
+      "title": "Voice Recognition (STT)",
+      "description": "Configure Speech-to-Text provider and API key",
+      "section": "Speech-to-Text"
+    },
+    "voiceProfile": {
+      "title": "Voice Profile",
+      "description": "Register and manage voice biometrics for authentication",
+      "section": "Voice Profile"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Configure security alerts, updates, and weekly digest",
+      "section": "Notification Preferences"
+    },
+    "export": {
+      "title": "Export Data",
+      "description": "Export answers and settings to Excel",
+      "section": "Export & Backup"
+    },
+    "demoData": {
+      "title": "Demo Data",
+      "description": "Generate sample data to explore dashboards",
+      "section": "Export & Backup"
+    },
+    "clearAnswers": {
+      "title": "Clear Answers",
+      "description": "Remove all assessment answers",
+      "section": "Danger Zone"
+    },
+    "restoreDefaults": {
+      "title": "Restore Defaults",
+      "description": "Reset settings and data to initial state",
+      "section": "Danger Zone"
+    },
+    "about": {
+      "title": "About the Platform",
+      "description": "Information about version, methodology, and supported frameworks",
+      "section": "About the Platform"
+    }
   }
 }

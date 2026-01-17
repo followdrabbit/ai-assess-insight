@@ -1,10 +1,21 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, X, ArrowRight, Layers, BookMarked, ClipboardList, Settings, Shield, BookOpen, Building2, FileDown, Trash2, Info, Sun, Volume2, Bell, Mic, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+
+interface SearchableItemConfig {
+  id: string;
+  titleKey: string;
+  descriptionKey: string;
+  keywords: string[];
+  tab: 'content' | 'assessment' | 'preferences' | 'system';
+  sectionKey?: string;
+  icon: React.ElementType;
+}
 
 interface SearchableItem {
   id: string;
@@ -16,173 +27,188 @@ interface SearchableItem {
   icon: React.ElementType;
 }
 
-// Define all searchable items in settings
-const SEARCHABLE_ITEMS: SearchableItem[] = [
+// Define all searchable items in settings with translation keys
+const SEARCHABLE_ITEMS_CONFIG: SearchableItemConfig[] = [
   // Content Tab
   {
     id: 'domains',
-    title: 'Domínios de Segurança',
-    description: 'Gerenciar domínios como AI Security, Cloud Security, DevSecOps',
-    keywords: ['domínio', 'security domain', 'ai security', 'cloud security', 'devsecops', 'habilitar', 'desabilitar'],
+    titleKey: 'settingsSearch.domains.title',
+    descriptionKey: 'settingsSearch.domains.description',
+    keywords: ['domínio', 'domain', 'security domain', 'ai security', 'cloud security', 'devsecops', 'habilitar', 'desabilitar', 'enable', 'disable'],
     tab: 'content',
-    section: 'Domínios de Segurança',
+    sectionKey: 'settingsSearch.domains.section',
     icon: Layers,
   },
   {
     id: 'frameworks-management',
-    title: 'Frameworks',
-    description: 'Criar, editar, importar e excluir frameworks de avaliação',
-    keywords: ['framework', 'nist', 'iso', 'cis', 'owasp', 'criar framework', 'importar framework', 'excluir framework'],
+    titleKey: 'settingsSearch.frameworks.title',
+    descriptionKey: 'settingsSearch.frameworks.description',
+    keywords: ['framework', 'nist', 'iso', 'cis', 'owasp', 'criar', 'create', 'importar', 'import', 'excluir', 'delete'],
     tab: 'content',
-    section: 'Frameworks',
+    sectionKey: 'settingsSearch.frameworks.section',
     icon: Shield,
   },
   {
     id: 'questions-management',
-    title: 'Perguntas',
-    description: 'Criar, editar, importar, versionar e pesquisar perguntas',
-    keywords: ['pergunta', 'questão', 'criar pergunta', 'importar perguntas', 'versão', 'histórico'],
+    titleKey: 'settingsSearch.questions.title',
+    descriptionKey: 'settingsSearch.questions.description',
+    keywords: ['pergunta', 'question', 'questão', 'criar', 'create', 'importar', 'import', 'versão', 'version', 'histórico', 'history'],
     tab: 'content',
-    section: 'Perguntas',
+    sectionKey: 'settingsSearch.questions.section',
     icon: BookOpen,
   },
   
   // Assessment Tab
   {
     id: 'assessment-info',
-    title: 'Informações da Avaliação',
-    description: 'Nome da avaliação, organização e cadência de reavaliação',
-    keywords: ['nome', 'organização', 'empresa', 'cadência', 'reavaliação', 'mensal', 'trimestral', 'anual'],
+    titleKey: 'settingsSearch.assessmentInfo.title',
+    descriptionKey: 'settingsSearch.assessmentInfo.description',
+    keywords: ['nome', 'name', 'organização', 'organization', 'empresa', 'company', 'cadência', 'cadence', 'reavaliação', 'reassessment'],
     tab: 'assessment',
-    section: 'Informações da Avaliação',
+    sectionKey: 'settingsSearch.assessmentInfo.section',
     icon: Building2,
   },
   {
     id: 'framework-selection',
-    title: 'Selecionar Frameworks',
-    description: 'Escolher frameworks ativos para a avaliação atual',
-    keywords: ['ativar framework', 'selecionar', 'escolher', 'habilitar', 'desabilitar', 'todos', 'padrão'],
+    titleKey: 'settingsSearch.frameworkSelection.title',
+    descriptionKey: 'settingsSearch.frameworkSelection.description',
+    keywords: ['ativar', 'activate', 'selecionar', 'select', 'escolher', 'choose', 'habilitar', 'enable', 'desabilitar', 'disable'],
     tab: 'assessment',
-    section: 'Selecionar Frameworks para Avaliação',
+    sectionKey: 'settingsSearch.frameworkSelection.section',
     icon: Shield,
   },
 
   // Preferences Tab
   {
     id: 'appearance',
-    title: 'Aparência',
-    description: 'Tema (claro, escuro, sistema) e idioma da interface',
-    keywords: ['aparência', 'tema', 'claro', 'escuro', 'dark', 'light', 'idioma', 'language', 'português', 'inglês', 'espanhol', 'interface'],
+    titleKey: 'settingsSearch.appearance.title',
+    descriptionKey: 'settingsSearch.appearance.description',
+    keywords: ['aparência', 'appearance', 'tema', 'theme', 'claro', 'light', 'escuro', 'dark', 'idioma', 'language'],
     tab: 'preferences',
-    section: 'Aparência',
+    sectionKey: 'settingsSearch.appearance.section',
     icon: Sun,
   },
   {
     id: 'voice-settings',
-    title: 'Configurações de Voz',
-    description: 'Idioma, velocidade, tom e volume da síntese de fala',
-    keywords: ['voz', 'voice', 'fala', 'speech', 'velocidade', 'rate', 'tom', 'pitch', 'volume', 'tts', 'síntese', 'synthesis'],
+    titleKey: 'settingsSearch.voiceSettings.title',
+    descriptionKey: 'settingsSearch.voiceSettings.description',
+    keywords: ['voz', 'voice', 'fala', 'speech', 'velocidade', 'speed', 'rate', 'tom', 'pitch', 'volume', 'tts', 'síntese', 'synthesis'],
     tab: 'preferences',
-    section: 'Configurações de Voz',
+    sectionKey: 'settingsSearch.voiceSettings.section',
     icon: Volume2,
   },
   {
     id: 'stt-config',
-    title: 'Reconhecimento de Voz (STT)',
-    description: 'Configurar provedor de Speech-to-Text e chave de API',
-    keywords: ['stt', 'speech to text', 'reconhecimento', 'whisper', 'transcrição', 'microfone', 'api key'],
+    titleKey: 'settingsSearch.sttConfig.title',
+    descriptionKey: 'settingsSearch.sttConfig.description',
+    keywords: ['stt', 'speech to text', 'reconhecimento', 'recognition', 'whisper', 'transcrição', 'transcription', 'microfone', 'microphone', 'api key'],
     tab: 'preferences',
-    section: 'Speech-to-Text',
+    sectionKey: 'settingsSearch.sttConfig.section',
     icon: Mic,
   },
   {
     id: 'voice-profile',
-    title: 'Perfil de Voz',
-    description: 'Cadastrar e gerenciar biometria vocal para autenticação',
-    keywords: ['perfil', 'biometria', 'biometric', 'voice profile', 'speaker', 'reconhecimento', 'verificação'],
+    titleKey: 'settingsSearch.voiceProfile.title',
+    descriptionKey: 'settingsSearch.voiceProfile.description',
+    keywords: ['perfil', 'profile', 'biometria', 'biometric', 'voice profile', 'speaker', 'reconhecimento', 'recognition', 'verificação', 'verification'],
     tab: 'preferences',
-    section: 'Perfil de Voz',
+    sectionKey: 'settingsSearch.voiceProfile.section',
     icon: Mic,
   },
   {
     id: 'notifications',
-    title: 'Notificações',
-    description: 'Configurar alertas de segurança, atualizações e resumo semanal',
-    keywords: ['notificação', 'notification', 'alerta', 'alert', 'email', 'semanal', 'digest', 'atualização', 'novidades'],
+    titleKey: 'settingsSearch.notifications.title',
+    descriptionKey: 'settingsSearch.notifications.description',
+    keywords: ['notificação', 'notification', 'alerta', 'alert', 'email', 'semanal', 'weekly', 'digest', 'atualização', 'update', 'novidades', 'news'],
     tab: 'preferences',
-    section: 'Preferências de Notificação',
+    sectionKey: 'settingsSearch.notifications.section',
     icon: Bell,
   },
   
   // System Tab
   {
     id: 'export',
-    title: 'Exportar Dados',
-    description: 'Exportar respostas e configurações para Excel',
-    keywords: ['exportar', 'excel', 'xlsx', 'download', 'backup', 'salvar'],
+    titleKey: 'settingsSearch.export.title',
+    descriptionKey: 'settingsSearch.export.description',
+    keywords: ['exportar', 'export', 'excel', 'xlsx', 'download', 'backup', 'salvar', 'save'],
     tab: 'system',
-    section: 'Exportar & Backup',
+    sectionKey: 'settingsSearch.export.section',
     icon: FileDown,
   },
   {
     id: 'demo-data',
-    title: 'Dados de Demonstração',
-    description: 'Gerar dados de exemplo para explorar dashboards',
-    keywords: ['demo', 'demonstração', 'exemplo', 'teste', 'gerar dados', 'simular'],
+    titleKey: 'settingsSearch.demoData.title',
+    descriptionKey: 'settingsSearch.demoData.description',
+    keywords: ['demo', 'demonstração', 'demonstration', 'exemplo', 'example', 'teste', 'test', 'gerar', 'generate', 'simular', 'simulate'],
     tab: 'system',
-    section: 'Exportar & Backup',
+    sectionKey: 'settingsSearch.demoData.section',
     icon: FileDown,
   },
   {
     id: 'clear-answers',
-    title: 'Limpar Respostas',
-    description: 'Remover todas as respostas da avaliação',
-    keywords: ['limpar', 'apagar', 'deletar', 'remover', 'respostas', 'reset'],
+    titleKey: 'settingsSearch.clearAnswers.title',
+    descriptionKey: 'settingsSearch.clearAnswers.description',
+    keywords: ['limpar', 'clear', 'apagar', 'erase', 'deletar', 'delete', 'remover', 'remove', 'respostas', 'answers', 'reset'],
     tab: 'system',
-    section: 'Zona de Perigo',
+    sectionKey: 'settingsSearch.clearAnswers.section',
     icon: Trash2,
   },
   {
     id: 'restore-defaults',
-    title: 'Restaurar Padrões',
-    description: 'Resetar configurações e dados para o estado inicial',
-    keywords: ['restaurar', 'padrão', 'reset', 'resetar', 'inicial', 'original'],
+    titleKey: 'settingsSearch.restoreDefaults.title',
+    descriptionKey: 'settingsSearch.restoreDefaults.description',
+    keywords: ['restaurar', 'restore', 'padrão', 'default', 'reset', 'resetar', 'inicial', 'initial', 'original'],
     tab: 'system',
-    section: 'Zona de Perigo',
+    sectionKey: 'settingsSearch.restoreDefaults.section',
     icon: Trash2,
   },
   {
     id: 'about',
-    title: 'Sobre a Plataforma',
-    description: 'Informações sobre versão, metodologia e frameworks suportados',
-    keywords: ['sobre', 'versão', 'metodologia', 'informações', 'plataforma', 'ajuda'],
+    titleKey: 'settingsSearch.about.title',
+    descriptionKey: 'settingsSearch.about.description',
+    keywords: ['sobre', 'about', 'versão', 'version', 'metodologia', 'methodology', 'informações', 'information', 'plataforma', 'platform', 'ajuda', 'help'],
     tab: 'system',
-    section: 'Sobre a Plataforma',
+    sectionKey: 'settingsSearch.about.section',
     icon: Info,
   },
 ];
-
-const TAB_CONFIG = {
-  content: { label: 'Conteúdo', icon: BookMarked, color: 'bg-primary/10 text-primary' },
-  assessment: { label: 'Avaliação', icon: ClipboardList, color: 'bg-amber-500/10 text-amber-700' },
-  preferences: { label: 'Preferências', icon: Palette, color: 'bg-pink-500/10 text-pink-700' },
-  system: { label: 'Geral', icon: Settings, color: 'bg-gray-500/10 text-gray-700' },
-};
 
 interface SettingsSearchProps {
   onNavigate: (tab: string, sectionId?: string) => void;
 }
 
 export function SettingsSearch({ onNavigate }: SettingsSearchProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+
+  // Tab configuration with translated labels
+  const TAB_CONFIG = useMemo(() => ({
+    content: { label: t('settings.contentTab'), icon: BookMarked, color: 'bg-primary/10 text-primary' },
+    assessment: { label: t('settings.assessmentTab'), icon: ClipboardList, color: 'bg-amber-500/10 text-amber-700' },
+    preferences: { label: t('settings.preferencesTab'), icon: Palette, color: 'bg-pink-500/10 text-pink-700' },
+    system: { label: t('settings.systemTab'), icon: Settings, color: 'bg-gray-500/10 text-gray-700' },
+  }), [t]);
+
+  // Translate searchable items
+  const searchableItems: SearchableItem[] = useMemo(() => {
+    return SEARCHABLE_ITEMS_CONFIG.map(item => ({
+      id: item.id,
+      title: t(item.titleKey),
+      description: t(item.descriptionKey),
+      keywords: item.keywords,
+      tab: item.tab,
+      section: item.sectionKey ? t(item.sectionKey) : undefined,
+      icon: item.icon,
+    }));
+  }, [t]);
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
     
     const searchTerms = query.toLowerCase().split(' ').filter(Boolean);
     
-    return SEARCHABLE_ITEMS.filter(item => {
+    return searchableItems.filter(item => {
       const searchableText = [
         item.title,
         item.description,
@@ -192,7 +218,7 @@ export function SettingsSearch({ onNavigate }: SettingsSearchProps) {
       
       return searchTerms.every(term => searchableText.includes(term));
     }).slice(0, 6); // Limit to 6 results
-  }, [query]);
+  }, [query, searchableItems]);
 
   const handleSelect = useCallback((item: SearchableItem) => {
     onNavigate(item.tab, item.id);
@@ -212,7 +238,7 @@ export function SettingsSearch({ onNavigate }: SettingsSearchProps) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Buscar configurações..."
+          placeholder={t('settingsSearch.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -274,8 +300,8 @@ export function SettingsSearch({ onNavigate }: SettingsSearchProps) {
           ) : (
             <div className="p-4 text-center text-sm text-muted-foreground">
               <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              <p>Nenhum resultado para "{query}"</p>
-              <p className="text-xs mt-1">Tente termos como "framework", "exportar" ou "domínio"</p>
+              <p>{t('settingsSearch.noResults', { query })}</p>
+              <p className="text-xs mt-1">{t('settingsSearch.tryTerms')}</p>
             </div>
           )}
         </div>

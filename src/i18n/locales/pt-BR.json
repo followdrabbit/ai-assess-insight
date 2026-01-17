@@ -1364,5 +1364,85 @@
     "loginError": "Ocorreu um erro ao fazer login",
     "signupError": "Ocorreu um erro ao criar conta",
     "resetError": "Ocorreu um erro ao enviar o email de recuperação"
+  },
+  "settingsSearch": {
+    "placeholder": "Buscar configurações...",
+    "noResults": "Nenhum resultado para \"{{query}}\"",
+    "tryTerms": "Tente termos como \"framework\", \"exportar\" ou \"voz\"",
+    "domains": {
+      "title": "Domínios de Segurança",
+      "description": "Gerenciar domínios como AI Security, Cloud Security, DevSecOps",
+      "section": "Domínios de Segurança"
+    },
+    "frameworks": {
+      "title": "Frameworks",
+      "description": "Criar, editar, importar e excluir frameworks de avaliação",
+      "section": "Frameworks"
+    },
+    "questions": {
+      "title": "Perguntas",
+      "description": "Criar, editar, importar, versionar e pesquisar perguntas",
+      "section": "Perguntas"
+    },
+    "assessmentInfo": {
+      "title": "Informações da Avaliação",
+      "description": "Nome da avaliação, organização e cadência de reavaliação",
+      "section": "Informações da Avaliação"
+    },
+    "frameworkSelection": {
+      "title": "Selecionar Frameworks",
+      "description": "Escolher frameworks ativos para a avaliação atual",
+      "section": "Selecionar Frameworks para Avaliação"
+    },
+    "appearance": {
+      "title": "Aparência",
+      "description": "Tema (claro, escuro, sistema) e idioma da interface",
+      "section": "Aparência"
+    },
+    "voiceSettings": {
+      "title": "Configurações de Voz",
+      "description": "Idioma, velocidade, tom e volume da síntese de fala",
+      "section": "Configurações de Voz"
+    },
+    "sttConfig": {
+      "title": "Reconhecimento de Voz (STT)",
+      "description": "Configurar provedor de Speech-to-Text e chave de API",
+      "section": "Speech-to-Text"
+    },
+    "voiceProfile": {
+      "title": "Perfil de Voz",
+      "description": "Cadastrar e gerenciar biometria vocal para autenticação",
+      "section": "Perfil de Voz"
+    },
+    "notifications": {
+      "title": "Notificações",
+      "description": "Configurar alertas de segurança, atualizações e resumo semanal",
+      "section": "Preferências de Notificação"
+    },
+    "export": {
+      "title": "Exportar Dados",
+      "description": "Exportar respostas e configurações para Excel",
+      "section": "Exportar & Backup"
+    },
+    "demoData": {
+      "title": "Dados de Demonstração",
+      "description": "Gerar dados de exemplo para explorar os dashboards",
+      "section": "Exportar & Backup"
+    },
+    "clearAnswers": {
+      "title": "Limpar Respostas",
+      "description": "Remover todas as respostas da avaliação",
+      "section": "Zona de Perigo"
+    },
+    "restoreDefaults": {
+      "title": "Restaurar Padrões",
+      "description": "Resetar configurações e dados para o estado inicial",
+      "section": "Zona de Perigo"
+    },
+    "about": {
+      "title": "Sobre a Plataforma",
+      "description": "Informações sobre versão, metodologia e frameworks suportados",
+      "section": "Sobre a Plataforma"
+    }
   }
 }

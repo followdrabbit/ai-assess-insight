@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SIEMSkeleton } from '@/components/settings/AnimatedSkeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -236,16 +237,7 @@ export function SIEMHealthPanel() {
   }, [metrics, timeRange, locale]);
 
   if (loading && integrations.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-[300px]" />
-      </div>
-    );
+    return <SIEMSkeleton />;
   }
 
   return (

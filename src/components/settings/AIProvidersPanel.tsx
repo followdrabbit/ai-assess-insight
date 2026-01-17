@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AIProvidersSkeleton } from '@/components/settings/AnimatedSkeleton';
 import { useAIProviders, AIProvider, PROVIDER_TEMPLATES, ProviderTemplate } from '@/hooks/useAIProviders';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -109,19 +110,7 @@ export function AIProvidersPanel() {
   };
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-72 mt-2" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2].map(i => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </CardContent>
-      </Card>
-    );
+    return <AIProvidersSkeleton />;
   }
 
   return (

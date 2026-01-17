@@ -42,6 +42,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { getDetailedAuditLogs, getAuditLogStats, detectSuspiciousAccess, type DetailedAuditLog, type SuspiciousAccessAlert } from '@/lib/auditLog';
+import { AuditLogsSkeleton } from '@/components/settings/AnimatedSkeleton';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 const COLORS = {
@@ -226,16 +227,7 @@ export function AuditLogsPanel() {
   };
 
   if (loading && logs.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-[400px]" />
-      </div>
-    );
+    return <AuditLogsSkeleton />;
   }
 
   return (

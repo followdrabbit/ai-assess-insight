@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SIEMSkeleton } from '@/components/settings/AnimatedSkeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
@@ -256,16 +257,7 @@ export function SIEMIntegrationsPanel() {
   };
 
   if (loading && integrations.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-[300px]" />
-      </div>
-    );
+    return <SIEMSkeleton />;
   }
 
   return (

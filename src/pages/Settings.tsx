@@ -1,10 +1,18 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from 'next-themes';
 import { useAnswersStore } from '@/lib/stores';
 import { frameworks, Framework } from '@/lib/frameworks';
 import { questions } from '@/lib/dataset';
 import { getQuestionFrameworkIds } from '@/lib/frameworks';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useSyncedSpeechSynthesis } from '@/hooks/useSyncedSpeechSynthesis';
+import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
+import { STTProviderType } from '@/lib/sttProviders';
+import { STTConfigurationCard } from '@/components/settings/STTConfigurationCard';
+import { VoiceProfileCard } from '@/components/settings/VoiceProfileCard';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +22,10 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportAnswersToXLSX, downloadXLSX, generateExportFilename } from '@/lib/xlsxExport';
@@ -42,15 +52,50 @@ import {
   CheckCircle2,
   Activity,
   Server,
-  Bot
+  Bot,
+  Sun,
+  Moon,
+  Monitor,
+  Globe,
+  Volume2,
+  Mic,
+  Play,
+  Bell,
+  Palette
 } from 'lucide-react';
 import { AuditLogsPanel } from '@/components/settings/AuditLogsPanel';
 import { SIEMIntegrationsPanel } from '@/components/settings/SIEMIntegrationsPanel';
 import { SIEMHealthPanel } from '@/components/settings/SIEMHealthPanel';
 import { AIProvidersPanel } from '@/components/settings/AIProvidersPanel';
 
+const LANGUAGES = [
+  { code: 'pt-BR', name: 'Português (Brasil)', flag: '🇧🇷' },
+  { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
+  { code: 'es-ES', name: 'Español (España)', flag: '🇪🇸' },
+] as const;
+
+interface NotificationPreferences {
+  notify_assessment_updates: boolean;
+  notify_security_alerts: boolean;
+  notify_weekly_digest: boolean;
+  notify_new_features: boolean;
+}
+
+interface VoiceSettings {
+  voice_language: string;
+  voice_rate: number;
+  voice_pitch: number;
+  voice_volume: number;
+  voice_name: string | null;
+  voice_auto_speak: boolean;
+}
+
 export default function Settings() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const { voices, speak, stop, isSpeaking } = useSyncedSpeechSynthesis();
+  const { updateSettings: updateVoiceSettingsContext } = useVoiceSettings();
   
   // Tab configuration with clear labels
   const TAB_CONFIG = {
@@ -63,6 +108,11 @@ export default function Settings() {
       label: t('settings.assessmentTab'), 
       icon: ClipboardList,
       description: t('settings.configureAssessmentDesc')
+    },
+    preferences: {
+      label: t('settings.preferencesTab', 'Preferências'),
+      icon: Palette,
+      description: t('settings.preferencesDesc', 'Aparência, idioma, voz e notificações')
     },
     system: { 
       label: t('settings.systemTab'), 
@@ -99,6 +149,230 @@ export default function Settings() {
   const [organizationName, setOrganizationName] = useState('');
   const [reassessmentInterval, setReassessmentInterval] = useState('quarterly');
   const [highlightedSection, setHighlightedSection] = useState<string | null>(null);
+
+  // Preferences state
+  const [language, setLanguage] = useState('pt-BR');
+  const [notifications, setNotifications] = useState<NotificationPreferences>({
+    notify_assessment_updates: true,
+    notify_security_alerts: true,
+    notify_weekly_digest: false,
+    notify_new_features: true,
+  });
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
+    voice_language: 'pt-BR',
+    voice_rate: 1.0,
+    voice_pitch: 1.0,
+    voice_volume: 1.0,
+    voice_name: null,
+    voice_auto_speak: false,
+  });
+  const [sttSettings, setSttSettings] = useState({
+    stt_provider: 'web-speech-api' as STTProviderType,
+    stt_api_key: null as string | null,
+    stt_model: 'whisper-1',
+    stt_endpoint_url: null as string | null,
+  });
+  const [savingLanguage, setSavingLanguage] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
+  const [savingVoice, setSavingVoice] = useState(false);
+  const [savingSTT, setSavingSTT] = useState(false);
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+
+  // Load preferences from profile
+  useEffect(() => {
+    if (!user) {
+      setPreferencesLoading(false);
+      return;
+    }
+
+    async function loadPreferences() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('language, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features, voice_language, voice_rate, voice_pitch, voice_volume, voice_name, voice_auto_speak, stt_provider, stt_api_key_encrypted, stt_model, stt_endpoint_url')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error loading preferences:', error);
+        } else if (data) {
+          setLanguage((data as any).language || 'pt-BR');
+          setNotifications({
+            notify_assessment_updates: data.notify_assessment_updates ?? true,
+            notify_security_alerts: data.notify_security_alerts ?? true,
+            notify_weekly_digest: data.notify_weekly_digest ?? false,
+            notify_new_features: data.notify_new_features ?? true,
+          });
+          setVoiceSettings({
+            voice_language: (data as any).voice_language || 'pt-BR',
+            voice_rate: Number((data as any).voice_rate) || 1.0,
+            voice_pitch: Number((data as any).voice_pitch) || 1.0,
+            voice_volume: Number((data as any).voice_volume) || 1.0,
+            voice_name: (data as any).voice_name || null,
+            voice_auto_speak: (data as any).voice_auto_speak ?? false,
+          });
+          setSttSettings({
+            stt_provider: ((data as any).stt_provider as STTProviderType) || 'web-speech-api',
+            stt_api_key: (data as any).stt_api_key_encrypted || null,
+            stt_model: (data as any).stt_model || 'whisper-1',
+            stt_endpoint_url: (data as any).stt_endpoint_url || null,
+          });
+        }
+      } catch (err) {
+        console.error('Error loading preferences:', err);
+      } finally {
+        setPreferencesLoading(false);
+      }
+    }
+
+    loadPreferences();
+  }, [user]);
+
+  // Save language preference
+  const handleSaveLanguage = async (newLanguage: string) => {
+    if (!user) return;
+
+    const previousLanguage = language;
+    setLanguage(newLanguage);
+    setSavingLanguage(true);
+
+    try {
+      i18n.changeLanguage(newLanguage);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          language: newLanguage,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const langName = LANGUAGES.find(l => l.code === newLanguage)?.name || newLanguage;
+      toast.success(t('profile.languageChanged', { language: langName }));
+    } catch (err: any) {
+      setLanguage(previousLanguage);
+      i18n.changeLanguage(previousLanguage);
+      toast.error(err.message || t('errors.saveLanguage'));
+    } finally {
+      setSavingLanguage(false);
+    }
+  };
+
+  // Save notification preference
+  const handleSaveNotifications = async (key: keyof NotificationPreferences, value: boolean) => {
+    if (!user) return;
+
+    const updatedNotifications = { ...notifications, [key]: value };
+    setNotifications(updatedNotifications);
+    setSavingNotifications(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          [key]: value,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success(t('settings.preferenceSaved', 'Preferência salva!'));
+    } catch (err: any) {
+      setNotifications(notifications);
+      toast.error(err.message || 'Erro ao salvar preferência');
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
+
+  // Save voice setting
+  const handleSaveVoiceSetting = async <K extends keyof VoiceSettings>(key: K, value: VoiceSettings[K]) => {
+    if (!user) return;
+
+    const previousValue = voiceSettings[key];
+    setVoiceSettings(prev => ({ ...prev, [key]: value }));
+    setSavingVoice(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          [key]: value,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      updateVoiceSettingsContext({ [key]: value });
+
+      toast.success(t('profile.voiceSettingsSaved', 'Configuração de voz salva!'));
+    } catch (err: any) {
+      setVoiceSettings(prev => ({ ...prev, [key]: previousValue }));
+      toast.error(err.message || t('errors.saveVoiceSettings', 'Erro ao salvar configuração de voz'));
+    } finally {
+      setSavingVoice(false);
+    }
+  };
+
+  // Test voice
+  const testVoice = () => {
+    const voice = voices.find(v => v.name === voiceSettings.voice_name) ||
+                  voices.find(v => v.lang === voiceSettings.voice_language) ||
+                  voices[0];
+
+    const testText = voiceSettings.voice_language.startsWith('pt')
+      ? 'Olá! Esta é uma demonstração das configurações de voz.'
+      : voiceSettings.voice_language.startsWith('es')
+      ? '¡Hola! Esta es una demostración de la configuración de voz.'
+      : 'Hello! This is a demonstration of the voice settings.';
+
+    if (isSpeaking) {
+      stop();
+    } else {
+      speak(testText, {
+        voice,
+        rate: voiceSettings.voice_rate,
+        pitch: voiceSettings.voice_pitch,
+        volume: voiceSettings.voice_volume,
+      });
+    }
+  };
+
+  // Save STT setting
+  const handleSaveSTTSetting = async (key: string, value: string | null) => {
+    if (!user) return;
+
+    const dbKey = key === 'stt_api_key' ? 'stt_api_key_encrypted' : key;
+    setSavingSTT(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          [dbKey]: value,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setSttSettings(prev => ({ ...prev, [key]: value }));
+      updateVoiceSettingsContext({ [key]: value } as any);
+
+      toast.success(t('profile.sttSettingsSaved', 'Configuração de STT salva!'));
+    } catch (err: any) {
+      toast.error(err.message || t('errors.saveSTTSettings', 'Erro ao salvar configuração de STT'));
+    } finally {
+      setSavingSTT(false);
+    }
+  };
+
+  // Filter voices by selected language
+  const filteredVoices = voices.filter(v => v.lang.startsWith(voiceSettings.voice_language.split('-')[0]));
 
   // Refs for scrolling to sections
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -368,7 +642,7 @@ export default function Settings() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-muted/50">
           {Object.entries(TAB_CONFIG).map(([key, config]) => {
             const Icon = config.icon;
             return (
@@ -659,6 +933,414 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ========== PREFERENCES TAB ========== */}
+        <TabsContent value="preferences" className="space-y-6">
+          {/* Tab Header */}
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-pink-500/5 to-transparent rounded-lg border border-pink-500/10">
+            <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
+              <Palette className="h-5 w-5 text-pink-600" />
+            </div>
+            <div>
+              <h2 className="font-semibold">{t('settings.preferencesTab', 'Preferências')}</h2>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.preferencesDesc', 'Aparência, idioma, voz e notificações')}
+              </p>
+            </div>
+          </div>
+
+          {preferencesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Appearance Settings */}
+              <div ref={setSectionRef('appearance')}>
+                <Card className={cn(
+                  "transition-all duration-500",
+                  highlightedSection === 'appearance' && "ring-2 ring-primary ring-offset-2"
+                )}>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sun className="h-4 w-4" />
+                      {t('profile.appearance', 'Aparência')}
+                    </CardTitle>
+                    <CardDescription>
+                      {t('profile.appearanceDescription', 'Personalize a aparência da plataforma')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>{t('profile.theme', 'Tema')}</Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.themeDescription', 'Escolha entre modo claro, escuro ou automático')}
+                          </p>
+                        </div>
+                        <ToggleGroup
+                          type="single"
+                          value={theme}
+                          onValueChange={(value) => value && setTheme(value)}
+                          className="bg-muted rounded-lg p-1"
+                        >
+                          <ToggleGroupItem
+                            value="light"
+                            aria-label="Modo claro"
+                            className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                          >
+                            <Sun className="h-4 w-4" />
+                          </ToggleGroupItem>
+                          <ToggleGroupItem
+                            value="dark"
+                            aria-label="Modo escuro"
+                            className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                          >
+                            <Moon className="h-4 w-4" />
+                          </ToggleGroupItem>
+                          <ToggleGroupItem
+                            value="system"
+                            aria-label="Seguir sistema"
+                            className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                          >
+                            <Monitor className="h-4 w-4" />
+                          </ToggleGroupItem>
+                        </ToggleGroup>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="flex items-center gap-2">
+                            <Globe className="h-4 w-4" />
+                            {t('profile.language', 'Idioma')}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.languageDescription', 'Selecione o idioma da interface')}
+                          </p>
+                        </div>
+                        <Select
+                          value={language}
+                          onValueChange={handleSaveLanguage}
+                          disabled={savingLanguage}
+                        >
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Selecionar idioma" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.map((lang) => (
+                              <SelectItem key={lang.code} value={lang.code}>
+                                <span className="flex items-center gap-2">
+                                  <span>{lang.flag}</span>
+                                  <span>{lang.name}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Voice Settings */}
+              <div ref={setSectionRef('voice-settings')}>
+                <Card className={cn(
+                  "transition-all duration-500",
+                  highlightedSection === 'voice-settings' && "ring-2 ring-primary ring-offset-2"
+                )}>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Volume2 className="h-4 w-4" />
+                      {t('profile.voiceSettings', 'Configurações de Voz')}
+                    </CardTitle>
+                    <CardDescription>
+                      {t('profile.voiceSettingsDescription', 'Configure reconhecimento de voz e síntese de fala')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Voice Language */}
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="flex items-center gap-2">
+                            <Mic className="h-4 w-4" />
+                            {t('profile.voiceLanguage', 'Idioma da Voz')}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.voiceLanguageDescription', 'Idioma para reconhecimento e síntese de fala')}
+                          </p>
+                        </div>
+                        <Select
+                          value={voiceSettings.voice_language}
+                          onValueChange={(v) => handleSaveVoiceSetting('voice_language', v)}
+                          disabled={savingVoice}
+                        >
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Selecionar idioma" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.map((lang) => (
+                              <SelectItem key={lang.code} value={lang.code}>
+                                <span className="flex items-center gap-2">
+                                  <span>{lang.flag}</span>
+                                  <span>{lang.name}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Voice Selection */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>{t('profile.preferredVoice', 'Voz Preferida')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.preferredVoiceDescription', 'Selecione uma voz para síntese de fala')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={voiceSettings.voice_name || 'auto'}
+                              onValueChange={(v) => handleSaveVoiceSetting('voice_name', v === 'auto' ? null : v)}
+                              disabled={savingVoice}
+                            >
+                              <SelectTrigger className="w-[200px]">
+                                <SelectValue placeholder={t('profile.selectVoice', 'Selecionar voz')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="auto">
+                                  {t('profile.autoSelectVoice', 'Auto (Padrão do Sistema)')}
+                                </SelectItem>
+                                {filteredVoices.length > 0 ? (
+                                  filteredVoices.map((voice) => (
+                                    <SelectItem key={voice.name} value={voice.name}>
+                                      {voice.name} ({voice.lang})
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  voices.slice(0, 10).map((voice) => (
+                                    <SelectItem key={voice.name} value={voice.name}>
+                                      {voice.name} ({voice.lang})
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={testVoice}
+                              className={isSpeaking ? 'text-primary' : ''}
+                            >
+                              <Play className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Speech Rate */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>{t('profile.speechRate', 'Velocidade da Fala')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.speechRateDescription', 'Quão rápido a voz fala')}
+                            </p>
+                          </div>
+                          <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_rate.toFixed(1)}x</span>
+                        </div>
+                        <Slider
+                          value={[voiceSettings.voice_rate]}
+                          min={0.5}
+                          max={2}
+                          step={0.1}
+                          onValueCommit={(value) => handleSaveVoiceSetting('voice_rate', value[0])}
+                          onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_rate: value[0] }))}
+                          disabled={savingVoice}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{t('profile.slower', 'Mais Lento')}</span>
+                          <span>{t('profile.normal', 'Normal')}</span>
+                          <span>{t('profile.faster', 'Mais Rápido')}</span>
+                        </div>
+                      </div>
+
+                      {/* Pitch */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>{t('profile.voicePitch', 'Tom da Voz')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.voicePitchDescription', 'Quão agudo ou grave a voz soa')}
+                            </p>
+                          </div>
+                          <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_pitch.toFixed(1)}</span>
+                        </div>
+                        <Slider
+                          value={[voiceSettings.voice_pitch]}
+                          min={0.5}
+                          max={2}
+                          step={0.1}
+                          onValueCommit={(value) => handleSaveVoiceSetting('voice_pitch', value[0])}
+                          onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_pitch: value[0] }))}
+                          disabled={savingVoice}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{t('profile.lower', 'Mais Grave')}</span>
+                          <span>{t('profile.default', 'Padrão')}</span>
+                          <span>{t('profile.higher', 'Mais Agudo')}</span>
+                        </div>
+                      </div>
+
+                      {/* Volume */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>{t('profile.voiceVolume', 'Volume da Voz')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.voiceVolumeDescription', 'Nível de volume para síntese de fala')}
+                            </p>
+                          </div>
+                          <span className="text-sm font-medium w-12 text-right">{Math.round(voiceSettings.voice_volume * 100)}%</span>
+                        </div>
+                        <Slider
+                          value={[voiceSettings.voice_volume]}
+                          min={0}
+                          max={1}
+                          step={0.1}
+                          onValueCommit={(value) => handleSaveVoiceSetting('voice_volume', value[0])}
+                          onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_volume: value[0] }))}
+                          disabled={savingVoice}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Auto-speak */}
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="voice_auto_speak" className="flex items-center gap-2">
+                            <Volume2 className="h-4 w-4" />
+                            {t('profile.autoSpeak', 'Falar Respostas Automaticamente')}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.autoSpeakDescription', 'Ler automaticamente respostas do assistente IA')}
+                          </p>
+                        </div>
+                        <Switch
+                          id="voice_auto_speak"
+                          checked={voiceSettings.voice_auto_speak}
+                          onCheckedChange={(checked) => handleSaveVoiceSetting('voice_auto_speak', checked)}
+                          disabled={savingVoice}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* STT Configuration */}
+              <div ref={setSectionRef('stt-config')}>
+                <STTConfigurationCard
+                  settings={sttSettings}
+                  onSave={handleSaveSTTSetting}
+                  isSaving={savingSTT}
+                />
+              </div>
+
+              {/* Voice Profile (Speaker Recognition) */}
+              <div ref={setSectionRef('voice-profile')}>
+                <VoiceProfileCard language={voiceSettings.voice_language} />
+              </div>
+
+              {/* Notification Preferences */}
+              <div ref={setSectionRef('notifications')}>
+                <Card className={cn(
+                  "transition-all duration-500",
+                  highlightedSection === 'notifications' && "ring-2 ring-primary ring-offset-2"
+                )}>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      {t('profile.notificationPreferences', 'Preferências de Notificação')}
+                    </CardTitle>
+                    <CardDescription>
+                      {t('profile.notificationDescription', 'Gerencie como e quando você recebe notificações')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="notify_assessment_updates">{t('profile.assessmentUpdates', 'Atualizações de Avaliação')}</Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.assessmentUpdatesDescription', 'Receba notificações quando suas avaliações forem atualizadas')}
+                          </p>
+                        </div>
+                        <Switch
+                          id="notify_assessment_updates"
+                          checked={notifications.notify_assessment_updates}
+                          onCheckedChange={(checked) => handleSaveNotifications('notify_assessment_updates', checked)}
+                          disabled={savingNotifications}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="notify_security_alerts">{t('profile.securityAlerts', 'Alertas de Segurança')}</Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.securityAlertsDescription', 'Receba alertas importantes sobre segurança e compliance')}
+                          </p>
+                        </div>
+                        <Switch
+                          id="notify_security_alerts"
+                          checked={notifications.notify_security_alerts}
+                          onCheckedChange={(checked) => handleSaveNotifications('notify_security_alerts', checked)}
+                          disabled={savingNotifications}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="notify_weekly_digest">{t('profile.weeklyDigest', 'Resumo Semanal')}</Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.weeklyDigestDescription', 'Receba um resumo semanal do seu progresso e métricas')}
+                          </p>
+                        </div>
+                        <Switch
+                          id="notify_weekly_digest"
+                          checked={notifications.notify_weekly_digest}
+                          onCheckedChange={(checked) => handleSaveNotifications('notify_weekly_digest', checked)}
+                          disabled={savingNotifications}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="notify_new_features">{t('profile.newFeatures', 'Novidades e Recursos')}</Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t('profile.newFeaturesDescription', 'Receba novidades sobre recursos e atualizações da plataforma')}
+                          </p>
+                        </div>
+                        <Switch
+                          id="notify_new_features"
+                          checked={notifications.notify_new_features}
+                          onCheckedChange={(checked) => handleSaveNotifications('notify_new_features', checked)}
+                          disabled={savingNotifications}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* ========== SYSTEM TAB ========== */}

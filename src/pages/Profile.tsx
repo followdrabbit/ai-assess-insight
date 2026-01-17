@@ -1,31 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useSyncedSpeechSynthesis } from '@/hooks/useSyncedSpeechSynthesis';
-import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
-import { STTProviderType } from '@/lib/sttProviders';
-import { STTConfigurationCard } from '@/components/settings/STTConfigurationCard';
-import { VoiceProfileCard } from '@/components/settings/VoiceProfileCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Loader2, User, Building, Mail, Shield, Save, CheckCircle, KeyRound, Bell, Moon, Sun, Monitor, Globe, Volume2, Mic, Play } from 'lucide-react';
+import { Loader2, User, Building, Mail, Save, KeyRound, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-const LANGUAGES = [
-  { code: 'pt-BR', name: 'Português (Brasil)', flag: '🇧🇷' },
-  { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
-  { code: 'es-ES', name: 'Español (España)', flag: '🇪🇸' },
-] as const;
 
 interface Profile {
   display_name: string | null;
@@ -34,28 +19,9 @@ interface Profile {
   email: string | null;
 }
 
-interface NotificationPreferences {
-  notify_assessment_updates: boolean;
-  notify_security_alerts: boolean;
-  notify_weekly_digest: boolean;
-  notify_new_features: boolean;
-}
-
-interface VoiceSettings {
-  voice_language: string;
-  voice_rate: number;
-  voice_pitch: number;
-  voice_volume: number;
-  voice_name: string | null;
-  voice_auto_speak: boolean;
-}
-
 export default function Profile() {
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
-  const { t, i18n } = useTranslation();
-  const { voices, speak, stop, isSpeaking } = useSyncedSpeechSynthesis();
-  const { updateSettings: updateVoiceSettingsContext } = useVoiceSettings();
+  const { t } = useTranslation();
   
   const [profile, setProfile] = useState<Profile>({
     display_name: '',
@@ -63,33 +29,8 @@ export default function Profile() {
     role: '',
     email: '',
   });
-  const [notifications, setNotifications] = useState<NotificationPreferences>({
-    notify_assessment_updates: true,
-    notify_security_alerts: true,
-    notify_weekly_digest: false,
-    notify_new_features: true,
-  });
-  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
-    voice_language: 'pt-BR',
-    voice_rate: 1.0,
-    voice_pitch: 1.0,
-    voice_volume: 1.0,
-    voice_name: null,
-    voice_auto_speak: false,
-  });
-  const [sttSettings, setSttSettings] = useState({
-    stt_provider: 'web-speech-api' as STTProviderType,
-    stt_api_key: null as string | null,
-    stt_model: 'whisper-1',
-    stt_endpoint_url: null as string | null,
-  });
-  const [language, setLanguage] = useState('pt-BR');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [savingNotifications, setSavingNotifications] = useState(false);
-  const [savingLanguage, setSavingLanguage] = useState(false);
-  const [savingVoice, setSavingVoice] = useState(false);
-  const [savingSTT, setSavingSTT] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Password change state
@@ -109,13 +50,12 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, organization, role, email, notify_assessment_updates, notify_security_alerts, notify_weekly_digest, notify_new_features, language, voice_language, voice_rate, voice_pitch, voice_volume, voice_name, voice_auto_speak, stt_provider, stt_api_key_encrypted, stt_model, stt_endpoint_url')
+        .select('display_name, organization, role, email')
         .eq('user_id', user.id)
         .single();
       
       if (error) {
         if (error.code === 'PGRST116') {
-          // Profile doesn't exist, create one
           await createProfile();
         } else {
           throw error;
@@ -127,29 +67,6 @@ export default function Profile() {
           role: data.role || '',
           email: data.email || user.email || '',
         });
-        setNotifications({
-          notify_assessment_updates: data.notify_assessment_updates ?? true,
-          notify_security_alerts: data.notify_security_alerts ?? true,
-          notify_weekly_digest: data.notify_weekly_digest ?? false,
-          notify_new_features: data.notify_new_features ?? true,
-        });
-        setVoiceSettings({
-          voice_language: (data as any).voice_language || 'pt-BR',
-          voice_rate: Number((data as any).voice_rate) || 1.0,
-          voice_pitch: Number((data as any).voice_pitch) || 1.0,
-          voice_volume: Number((data as any).voice_volume) || 1.0,
-          voice_name: (data as any).voice_name || null,
-          voice_auto_speak: (data as any).voice_auto_speak ?? false,
-        });
-        setSttSettings({
-          stt_provider: ((data as any).stt_provider as STTProviderType) || 'web-speech-api',
-          stt_api_key: (data as any).stt_api_key_encrypted || null,
-          stt_model: (data as any).stt_model || 'whisper-1',
-          stt_endpoint_url: (data as any).stt_endpoint_url || null,
-        });
-        const userLang = (data as any).language || 'pt-BR';
-        setLanguage(userLang);
-        i18n.changeLanguage(userLang);
       }
     } catch (err: any) {
       setError(err.message || t('errors.loadProfile'));
@@ -202,72 +119,11 @@ export default function Profile() {
       
       if (error) throw error;
       
-      toast.success('Perfil atualizado com sucesso!');
+      toast.success(t('profile.profileUpdated', 'Perfil atualizado com sucesso!'));
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar perfil');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSaveNotifications = async (key: keyof NotificationPreferences, value: boolean) => {
-    if (!user) return;
-    
-    const updatedNotifications = { ...notifications, [key]: value };
-    setNotifications(updatedNotifications);
-    setSavingNotifications(true);
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          [key]: value,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      toast.success('Preferência atualizada!');
-    } catch (err: any) {
-      // Revert on error
-      setNotifications(notifications);
-      toast.error(err.message || 'Erro ao salvar preferência');
-    } finally {
-      setSavingNotifications(false);
-    }
-  };
-
-  const handleSaveLanguage = async (newLanguage: string) => {
-    if (!user) return;
-    
-    const previousLanguage = language;
-    setLanguage(newLanguage);
-    setSavingLanguage(true);
-
-    try {
-      // Update i18next language
-      i18n.changeLanguage(newLanguage);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          language: newLanguage,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      const langName = LANGUAGES.find(l => l.code === newLanguage)?.name || newLanguage;
-      toast.success(t('profile.languageChanged', { language: langName }));
-    } catch (err: any) {
-      // Revert on error
-      setLanguage(previousLanguage);
-      i18n.changeLanguage(previousLanguage);
-      toast.error(err.message || t('errors.saveLanguage'));
-    } finally {
-      setSavingLanguage(false);
     }
   };
 
@@ -276,12 +132,12 @@ export default function Profile() {
     setError(null);
 
     if (newPassword !== confirmPassword) {
-      setError('As senhas não coincidem');
+      setError(t('profile.passwordsMismatch', 'As senhas não coincidem'));
       return;
     }
 
     if (newPassword.length < 6) {
-      setError('A nova senha deve ter pelo menos 6 caracteres');
+      setError(t('profile.passwordTooShort', 'A nova senha deve ter pelo menos 6 caracteres'));
       return;
     }
 
@@ -294,7 +150,7 @@ export default function Profile() {
       
       if (error) throw error;
       
-      toast.success('Senha alterada com sucesso!');
+      toast.success(t('profile.passwordChanged', 'Senha alterada com sucesso!'));
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
@@ -303,94 +159,6 @@ export default function Profile() {
       setChangingPassword(false);
     }
   };
-
-  const handleSaveVoiceSetting = async <K extends keyof VoiceSettings>(key: K, value: VoiceSettings[K]) => {
-    if (!user) return;
-    
-    const previousValue = voiceSettings[key];
-    setVoiceSettings(prev => ({ ...prev, [key]: value }));
-    setSavingVoice(true);
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          [key]: value,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // Sync with context so other components get the update
-      updateVoiceSettingsContext({ [key]: value });
-      
-      toast.success(t('profile.voiceSettingsSaved', 'Voice setting saved!'));
-    } catch (err: any) {
-      // Revert on error
-      setVoiceSettings(prev => ({ ...prev, [key]: previousValue }));
-      toast.error(err.message || t('errors.saveVoiceSettings', 'Error saving voice setting'));
-    } finally {
-      setSavingVoice(false);
-    }
-  };
-
-  const testVoice = () => {
-    const voice = voices.find(v => v.name === voiceSettings.voice_name) || 
-                  voices.find(v => v.lang === voiceSettings.voice_language) ||
-                  voices[0];
-    
-    const testText = voiceSettings.voice_language.startsWith('pt') 
-      ? 'Olá! Esta é uma demonstração das configurações de voz.'
-      : voiceSettings.voice_language.startsWith('es')
-      ? '¡Hola! Esta es una demostración de la configuración de voz.'
-      : 'Hello! This is a demonstration of the voice settings.';
-
-    if (isSpeaking) {
-      stop();
-    } else {
-      speak(testText, {
-        voice,
-        rate: voiceSettings.voice_rate,
-        pitch: voiceSettings.voice_pitch,
-        volume: voiceSettings.voice_volume,
-      });
-    }
-  };
-
-  const handleSaveSTTSetting = async (key: string, value: string | null) => {
-    if (!user) return;
-    
-    const dbKey = key === 'stt_api_key' ? 'stt_api_key_encrypted' : key;
-    setSavingSTT(true);
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          [dbKey]: value,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setSttSettings(prev => ({ ...prev, [key]: value }));
-      
-      // Sync with context
-      updateVoiceSettingsContext({ [key]: value } as any);
-      
-      toast.success(t('profile.sttSettingsSaved', 'STT setting saved!'));
-    } catch (err: any) {
-      toast.error(err.message || t('errors.saveSTTSettings', 'Error saving STT setting'));
-    } finally {
-      setSavingSTT(false);
-    }
-  };
-
-  // Filter voices by selected language
-  const filteredVoices = voices.filter(v => v.lang.startsWith(voiceSettings.voice_language.split('-')[0]));
 
   if (loading) {
     return (
@@ -404,18 +172,26 @@ export default function Profile() {
     <div className="space-y-6">
       <PageBreadcrumb 
         items={[
-          { label: 'Perfil', href: '/profile' }
+          { label: t('profile.title', 'Perfil'), href: '/profile' }
         ]} 
       />
 
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-full bg-primary/10">
-          <User className="h-6 w-6 text-primary" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-full bg-primary/10">
+            <User className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{t('profile.myProfile', 'Meu Perfil')}</h1>
+            <p className="text-muted-foreground">{t('profile.managePersonalInfo', 'Gerencie suas informações pessoais')}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Meu Perfil</h1>
-          <p className="text-muted-foreground">Gerencie suas informações pessoais e configurações de conta</p>
-        </div>
+        <Button variant="outline" asChild>
+          <Link to="/settings" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            {t('profile.goToSettings', 'Ir para Configurações')}
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -424,10 +200,10 @@ export default function Profile() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Informações Pessoais
+              {t('profile.personalInfo', 'Informações Pessoais')}
             </CardTitle>
             <CardDescription>
-              Atualize seu nome de exibição e organização
+              {t('profile.updateNameOrg', 'Atualize seu nome de exibição e organização')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -451,19 +227,19 @@ export default function Profile() {
                   className="bg-muted"
                 />
                 <p className="text-xs text-muted-foreground">
-                  O email não pode ser alterado
+                  {t('profile.emailCannotChange', 'O email não pode ser alterado')}
                 </p>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="display_name" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Nome de Exibição
+                  {t('profile.displayName', 'Nome de Exibição')}
                 </Label>
                 <Input
                   id="display_name"
                   type="text"
-                  placeholder="Seu nome"
+                  placeholder={t('profile.yourName', 'Seu nome')}
                   value={profile.display_name || ''}
                   onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
                   disabled={saving}
@@ -473,29 +249,15 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label htmlFor="organization" className="flex items-center gap-2">
                   <Building className="h-4 w-4" />
-                  Organização
+                  {t('profile.organization', 'Organização')}
                 </Label>
                 <Input
                   id="organization"
                   type="text"
-                  placeholder="Nome da sua empresa"
+                  placeholder={t('profile.companyName', 'Nome da sua empresa')}
                   value={profile.organization || ''}
                   onChange={(e) => setProfile({ ...profile, organization: e.target.value })}
                   disabled={saving}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="role" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Função
-                </Label>
-                <Input
-                  id="role"
-                  type="text"
-                  value={profile.role || 'user'}
-                  disabled
-                  className="bg-muted capitalize"
                 />
               </div>
               
@@ -503,12 +265,12 @@ export default function Profile() {
                 {saving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
+                    {t('common.saving', 'Salvando...')}
                   </>
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Salvar Alterações
+                    {t('common.saveChanges', 'Salvar Alterações')}
                   </>
                 )}
               </Button>
@@ -521,16 +283,16 @@ export default function Profile() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <KeyRound className="h-5 w-5" />
-              Alterar Senha
+              {t('profile.changePassword', 'Alterar Senha')}
             </CardTitle>
             <CardDescription>
-              Atualize sua senha de acesso
+              {t('profile.updateAccessPassword', 'Atualize sua senha de acesso')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="newPassword">Nova Senha</Label>
+                <Label htmlFor="newPassword">{t('profile.newPassword', 'Nova Senha')}</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -544,7 +306,7 @@ export default function Profile() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                <Label htmlFor="confirmPassword">{t('profile.confirmNewPassword', 'Confirmar Nova Senha')}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -561,12 +323,12 @@ export default function Profile() {
                 {changingPassword ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Alterando...
+                    {t('profile.changing', 'Alterando...')}
                   </>
                 ) : (
                   <>
                     <KeyRound className="mr-2 h-4 w-4" />
-                    Alterar Senha
+                    {t('profile.changePassword', 'Alterar Senha')}
                   </>
                 )}
               </Button>
@@ -575,404 +337,18 @@ export default function Profile() {
         </Card>
       </div>
 
-      {/* Appearance Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sun className="h-5 w-5" />
-            Aparência
-          </CardTitle>
-          <CardDescription>
-            Personalize a aparência da plataforma
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Tema</Label>
-                <p className="text-sm text-muted-foreground">
-                  Escolha entre modo claro, escuro ou automático
-                </p>
-              </div>
-              <ToggleGroup 
-                type="single" 
-                value={theme} 
-                onValueChange={(value) => value && setTheme(value)}
-                className="bg-muted rounded-lg p-1"
-              >
-                <ToggleGroupItem 
-                  value="light" 
-                  aria-label="Modo claro"
-                  className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
-                >
-                  <Sun className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem 
-                  value="dark" 
-                  aria-label="Modo escuro"
-                  className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
-                >
-                  <Moon className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem 
-                  value="system" 
-                  aria-label="Seguir sistema"
-                  className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
-                >
-                  <Monitor className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Idioma
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Selecione o idioma da interface
-                </p>
-              </div>
-              <Select 
-                value={language} 
-                onValueChange={handleSaveLanguage}
-                disabled={savingLanguage}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Selecionar idioma" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      <span className="flex items-center gap-2">
-                        <span>{lang.flag}</span>
-                        <span>{lang.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Voice Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Volume2 className="h-5 w-5" />
-            {t('profile.voiceSettings', 'Voice Settings')}
-          </CardTitle>
-          <CardDescription>
-            {t('profile.voiceSettingsDescription', 'Configure speech recognition and text-to-speech preferences')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Voice Language */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="flex items-center gap-2">
-                  <Mic className="h-4 w-4" />
-                  {t('profile.voiceLanguage', 'Voice Language')}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('profile.voiceLanguageDescription', 'Language for speech recognition and synthesis')}
-                </p>
-              </div>
-              <Select 
-                value={voiceSettings.voice_language} 
-                onValueChange={(v) => handleSaveVoiceSetting('voice_language', v)}
-                disabled={savingVoice}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      <span className="flex items-center gap-2">
-                        <span>{lang.flag}</span>
-                        <span>{lang.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Voice Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t('profile.preferredVoice', 'Preferred Voice')}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('profile.preferredVoiceDescription', 'Select a voice for text-to-speech')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                <Select 
-                  value={voiceSettings.voice_name || 'auto'} 
-                  onValueChange={(v) => handleSaveVoiceSetting('voice_name', v === 'auto' ? null : v)}
-                  disabled={savingVoice}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder={t('profile.selectVoice', 'Select voice')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">
-                      {t('profile.autoSelectVoice', 'Auto (System Default)')}
-                    </SelectItem>
-                      {filteredVoices.length > 0 ? (
-                        filteredVoices.map((voice) => (
-                          <SelectItem key={voice.name} value={voice.name}>
-                            {voice.name} ({voice.lang})
-                          </SelectItem>
-                        ))
-                      ) : (
-                        voices.slice(0, 10).map((voice) => (
-                          <SelectItem key={voice.name} value={voice.name}>
-                            {voice.name} ({voice.lang})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={testVoice}
-                    className={isSpeaking ? 'text-primary' : ''}
-                  >
-                    <Play className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Speech Rate */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t('profile.speechRate', 'Speech Rate')}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('profile.speechRateDescription', 'How fast the voice speaks')}
-                  </p>
-                </div>
-                <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_rate.toFixed(1)}x</span>
-              </div>
-              <Slider
-                value={[voiceSettings.voice_rate]}
-                min={0.5}
-                max={2}
-                step={0.1}
-                onValueCommit={(value) => handleSaveVoiceSetting('voice_rate', value[0])}
-                onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_rate: value[0] }))}
-                disabled={savingVoice}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{t('profile.slower', 'Slower')}</span>
-                <span>{t('profile.normal', 'Normal')}</span>
-                <span>{t('profile.faster', 'Faster')}</span>
-              </div>
-            </div>
-
-            {/* Pitch */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t('profile.voicePitch', 'Voice Pitch')}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('profile.voicePitchDescription', 'How high or low the voice sounds')}
-                  </p>
-                </div>
-                <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_pitch.toFixed(1)}</span>
-              </div>
-              <Slider
-                value={[voiceSettings.voice_pitch]}
-                min={0.5}
-                max={2}
-                step={0.1}
-                onValueCommit={(value) => handleSaveVoiceSetting('voice_pitch', value[0])}
-                onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_pitch: value[0] }))}
-                disabled={savingVoice}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{t('profile.lower', 'Lower')}</span>
-                <span>{t('profile.default', 'Default')}</span>
-                <span>{t('profile.higher', 'Higher')}</span>
-              </div>
-            </div>
-
-            {/* Volume */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t('profile.voiceVolume', 'Voice Volume')}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('profile.voiceVolumeDescription', 'Volume level for text-to-speech')}
-                  </p>
-                </div>
-                <span className="text-sm font-medium w-12 text-right">{Math.round(voiceSettings.voice_volume * 100)}%</span>
-              </div>
-              <Slider
-                value={[voiceSettings.voice_volume]}
-                min={0}
-                max={1}
-                step={0.1}
-                onValueCommit={(value) => handleSaveVoiceSetting('voice_volume', value[0])}
-                onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_volume: value[0] }))}
-                disabled={savingVoice}
-                className="w-full"
-              />
-            </div>
-
-            {/* Auto-speak */}
-            <div className="flex items-center justify-between pt-2 border-t">
-              <div className="space-y-0.5">
-                <Label htmlFor="voice_auto_speak" className="flex items-center gap-2">
-                  <Volume2 className="h-4 w-4" />
-                  {t('profile.autoSpeak', 'Auto-speak AI Responses')}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('profile.autoSpeakDescription', 'Automatically read AI assistant responses aloud')}
-                </p>
-              </div>
-              <Switch
-                id="voice_auto_speak"
-                checked={voiceSettings.voice_auto_speak}
-                onCheckedChange={(checked) => handleSaveVoiceSetting('voice_auto_speak', checked)}
-                disabled={savingVoice}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* STT Configuration */}
-      <STTConfigurationCard
-        settings={sttSettings}
-        onSave={handleSaveSTTSetting}
-        isSaving={savingSTT}
-      />
-
-      {/* Voice Profile (Speaker Recognition) */}
-      <VoiceProfileCard language={voiceSettings.voice_language} />
-
-      {/* Notification Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Preferências de Notificação
-          </CardTitle>
-          <CardDescription>
-            Gerencie como e quando você recebe notificações por email
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="notify_assessment_updates">Atualizações de Avaliação</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba notificações quando suas avaliações forem atualizadas
-                </p>
-              </div>
-              <Switch
-                id="notify_assessment_updates"
-                checked={notifications.notify_assessment_updates}
-                onCheckedChange={(checked) => handleSaveNotifications('notify_assessment_updates', checked)}
-                disabled={savingNotifications}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="notify_security_alerts">Alertas de Segurança</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba alertas importantes sobre segurança e compliance
-                </p>
-              </div>
-              <Switch
-                id="notify_security_alerts"
-                checked={notifications.notify_security_alerts}
-                onCheckedChange={(checked) => handleSaveNotifications('notify_security_alerts', checked)}
-                disabled={savingNotifications}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="notify_weekly_digest">Resumo Semanal</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba um resumo semanal do seu progresso e métricas
-                </p>
-              </div>
-              <Switch
-                id="notify_weekly_digest"
-                checked={notifications.notify_weekly_digest}
-                onCheckedChange={(checked) => handleSaveNotifications('notify_weekly_digest', checked)}
-                disabled={savingNotifications}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="notify_new_features">Novidades e Recursos</Label>
-                <p className="text-sm text-muted-foreground">
-                  Fique por dentro de novos recursos e melhorias da plataforma
-                </p>
-              </div>
-              <Switch
-                id="notify_new_features"
-                checked={notifications.notify_new_features}
-                onCheckedChange={(checked) => handleSaveNotifications('notify_new_features', checked)}
-                disabled={savingNotifications}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Status da Conta
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">ID do Usuário</p>
-              <p className="font-mono text-sm">{user?.id?.slice(0, 8)}...</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Email Verificado</p>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm">Sim</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Último Acesso</p>
-              <p className="text-sm">
-                {user?.last_sign_in_at 
-                  ? new Date(user.last_sign_in_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : 'N/A'}
+      {/* Info card pointing to Settings */}
+      <Card className="bg-muted/30 border-dashed">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-start gap-3">
+            <Settings className="h-5 w-5 text-primary mt-0.5" />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">{t('profile.lookingForSettings', 'Procurando configurações?')}</p>
+              <p>
+                {t('profile.settingsInfo', 'Configurações de aparência, idioma, voz e notificações foram movidas para a página de')}{' '}
+                <Link to="/settings" className="text-primary hover:underline font-medium">
+                  {t('settings.title', 'Configurações')}
+                </Link>.
               </p>
             </div>
           </div>

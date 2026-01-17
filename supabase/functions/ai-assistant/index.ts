@@ -39,26 +39,39 @@ interface AssessmentContext {
   coverage?: number;
   evidenceReadiness?: number;
   criticalGaps?: number;
-  securityDomain?: string;
+  currentSecurityDomain?: string;
+  securityDomain?: string; // backwards compat
   frameworks?: string[];
   domainMetrics?: { domainName: string; score: number; criticalGaps: number }[];
   topGaps?: { question: string; domain: string }[];
+  // NEW: All security domains data
+  allSecurityDomains?: {
+    domainId: string;
+    domainName: string;
+    overallScore: number;
+    coverage: number;
+    criticalGaps: number;
+    frameworks: string[];
+    topGaps: { question: string; domain: string }[];
+  }[];
 }
 
 function buildEnrichedSystemPrompt(basePrompt: string, context?: AssessmentContext): string {
   let enrichedPrompt = basePrompt;
   
   if (context) {
+    const currentDomain = context.currentSecurityDomain || context.securityDomain || 'AI Security';
+    
     enrichedPrompt += `\n\nCurrent Assessment Context:
+- Currently Viewing: ${currentDomain}
 - Overall Security Score: ${context.overallScore?.toFixed(1) || 'N/A'}%
 - Maturity Level: ${context.maturityLevel || 'N/A'}
 - Coverage: ${context.coverage?.toFixed(1) || 'N/A'}%
 - Evidence Readiness: ${context.evidenceReadiness?.toFixed(1) || 'N/A'}%
 - Critical Gaps: ${context.criticalGaps || 0}
-- Security Domain: ${context.securityDomain || 'AI Security'}
 - Active Frameworks: ${context.frameworks?.join(', ') || 'None selected'}
 
-Domain Breakdown:
+Domain Breakdown (Current View):
 ${context.domainMetrics?.map((d) => 
   `- ${d.domainName}: ${d.score?.toFixed(1)}% (${d.criticalGaps} gaps)`
 ).join('\n') || 'No domain data available'}
@@ -67,6 +80,25 @@ Top Critical Gaps:
 ${context.topGaps?.slice(0, 5).map((g) => 
   `- [${g.domain}] ${g.question}`
 ).join('\n') || 'No gaps identified'}`;
+
+    // Include ALL security domains metrics if available
+    if (context.allSecurityDomains && context.allSecurityDomains.length > 0) {
+      enrichedPrompt += `\n\n=== ALL SECURITY DOMAINS OVERVIEW ===
+The user may ask about ANY of these security domains. Here is the complete data:
+
+${context.allSecurityDomains.map(d => `
+### ${d.domainName} (${d.domainId})
+- Overall Score: ${d.overallScore?.toFixed(1) || 0}%
+- Coverage: ${d.coverage?.toFixed(1) || 0}%
+- Critical Gaps: ${d.criticalGaps || 0}
+- Frameworks: ${d.frameworks?.join(', ') || 'None'}
+- Top Gaps: ${d.topGaps?.length > 0 ? d.topGaps.map(g => `[${g.domain}] ${g.question}`).join('; ') : 'None'}
+`).join('\n')}
+
+IMPORTANT: When the user asks about a specific security domain (AI Security, Cloud Security, or DevSecOps), 
+use the data from the "ALL SECURITY DOMAINS OVERVIEW" section above, NOT just the "Current View" metrics.
+The "Current View" only shows what the user is currently viewing in the dashboard.`;
+    }
   }
 
   return enrichedPrompt;

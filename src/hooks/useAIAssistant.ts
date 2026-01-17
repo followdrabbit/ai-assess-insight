@@ -2,6 +2,11 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDashboardMetrics } from './useDashboardMetrics';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { getEnabledSecurityDomains, SecurityDomain } from '@/lib/securityDomains';
+import { questions as defaultQuestions } from '@/lib/dataset';
+import { calculateOverallMetrics, getCriticalGaps, ActiveQuestion } from '@/lib/scoring';
+import { useAnswersStore } from '@/lib/stores';
+import { getFrameworksBySecurityDomain } from '@/lib/frameworks';
 
 export interface ChatMessage {
   id: string;
@@ -15,6 +20,16 @@ interface ProviderInfo {
   name: string;
   modelId: string;
   providerType: string;
+}
+
+interface SecurityDomainMetrics {
+  domainId: string;
+  domainName: string;
+  overallScore: number;
+  coverage: number;
+  criticalGaps: number;
+  frameworks: string[];
+  topGaps: { question: string; domain: string }[];
 }
 
 interface UseAIAssistantReturn {
@@ -35,10 +50,66 @@ export function useAIAssistant(): UseAIAssistantReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentProvider, setCurrentProvider] = useState<ProviderInfo | null>(null);
+  const [allDomainsMetrics, setAllDomainsMetrics] = useState<SecurityDomainMetrics[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
   
   const { user } = useAuth();
   const { metrics, criticalGaps, enabledFrameworks, currentDomainInfo } = useDashboardMetrics();
+  const { answers } = useAnswersStore();
+
+  // Load metrics for ALL security domains (not just selected)
+  useEffect(() => {
+    async function loadAllDomainsMetrics() {
+      try {
+        const enabledDomains = await getEnabledSecurityDomains();
+        
+        const metricsPromises = enabledDomains.map(async (domain: SecurityDomain) => {
+          // Get questions for this domain
+          const domainQuestions: ActiveQuestion[] = defaultQuestions
+            .filter(q => {
+              // Check if question belongs to frameworks of this security domain
+              const domainFrameworks = getFrameworksBySecurityDomain(domain.domainId);
+              const domainFrameworkIds = new Set(domainFrameworks.map(f => f.frameworkId));
+              return (q.frameworks || []).some((fw: string) => domainFrameworkIds.has(fw));
+            })
+            .map(q => ({
+              questionId: q.questionId,
+              questionText: q.questionText,
+              subcatId: q.subcatId,
+              domainId: q.domainId,
+              ownershipType: q.ownershipType,
+              frameworks: q.frameworks || []
+            }));
+          
+          if (domainQuestions.length === 0) return null;
+
+          const domainMetrics = calculateOverallMetrics(answers, domainQuestions);
+          const domainGaps = getCriticalGaps(answers, 0.5, domainQuestions);
+          const domainFrameworks = getFrameworksBySecurityDomain(domain.domainId);
+          
+          return {
+            domainId: domain.domainId,
+            domainName: domain.domainName,
+            overallScore: domainMetrics.overallScore,
+            coverage: domainMetrics.coverage,
+            criticalGaps: domainMetrics.criticalGaps,
+            frameworks: domainFrameworks.map(f => f.shortName),
+            topGaps: domainGaps.slice(0, 5).map(g => ({
+              question: g.questionText,
+              domain: g.domainName,
+            })),
+          };
+        });
+
+        const results = await Promise.all(metricsPromises);
+        setAllDomainsMetrics(results.filter((m): m is SecurityDomainMetrics => m !== null));
+      } catch (error) {
+        console.error('Error loading all domains metrics:', error);
+      }
+    }
+
+    loadAllDomainsMetrics();
+  }, [answers]);
 
   // Load the default provider info
   useEffect(() => {
@@ -89,12 +160,13 @@ export function useAIAssistant(): UseAIAssistantReturn {
 
   const buildContext = useCallback(() => {
     return {
+      // Current selected domain metrics (for backwards compatibility)
       overallScore: metrics.overallScore,
       maturityLevel: metrics.maturityLevel,
       coverage: metrics.coverage,
       evidenceReadiness: metrics.evidenceReadiness,
       criticalGaps: metrics.criticalGaps,
-      securityDomain: currentDomainInfo?.domainName || 'AI Security',
+      currentSecurityDomain: currentDomainInfo?.domainName || 'AI Security',
       frameworks: enabledFrameworks.map(f => f.shortName),
       domainMetrics: metrics.domainMetrics.map(d => ({
         domainName: d.domainName,
@@ -105,8 +177,18 @@ export function useAIAssistant(): UseAIAssistantReturn {
         question: g.questionText,
         domain: g.domainName,
       })),
+      // NEW: All security domains metrics (AI Security, Cloud Security, DevSecOps)
+      allSecurityDomains: allDomainsMetrics.map(d => ({
+        domainId: d.domainId,
+        domainName: d.domainName,
+        overallScore: d.overallScore,
+        coverage: d.coverage,
+        criticalGaps: d.criticalGaps,
+        frameworks: d.frameworks,
+        topGaps: d.topGaps,
+      })),
     };
-  }, [metrics, criticalGaps, enabledFrameworks, currentDomainInfo]);
+  }, [metrics, criticalGaps, enabledFrameworks, currentDomainInfo, allDomainsMetrics]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;

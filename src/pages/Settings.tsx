@@ -35,6 +35,7 @@ import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
 import { SettingsSearch } from '@/components/settings/SettingsSearch';
 import { AnimatedCard, AnimatedSectionCard, AnimatedStatsCard } from '@/components/settings/AnimatedCard';
+import { StaggerContainer, StaggerItem, staggerItemVariants } from '@/components/settings/AnimatedTabContent';
 import { 
   Layers, 
   BookMarked, 
@@ -697,720 +698,782 @@ export default function Settings() {
 
         {/* ========== CONTENT TAB ========== */}
         <TabsContent value="content" className="space-y-6">
-          <motion.div
-            key={`content-${activeTab === 'content'}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-6"
-          >
+          <StaggerContainer className="space-y-6">
           {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <BookMarked className="h-5 w-5 text-primary" />
+          <StaggerItem>
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <BookMarked className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-semibold">{t('settings.manageContent')}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.manageContentDesc')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold">{t('settings.manageContent')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.manageContentDesc')}
-              </p>
-            </div>
-          </div>
+          </StaggerItem>
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <AnimatedStatsCard
-              icon={Layers}
-              iconClassName="bg-purple-500/10 text-purple-600"
-              label={t('settings.domains')}
-              value={3}
-            />
-            <AnimatedStatsCard
-              icon={Shield}
-              iconClassName="bg-blue-500/10 text-blue-600"
-              label={t('settings.frameworks')}
-              value={frameworks.length}
-            />
-            <AnimatedStatsCard
-              icon={BookOpen}
-              iconClassName="bg-green-500/10 text-green-600"
-              label={t('settings.questions')}
-              value={questions.length}
-            />
-          </div>
+          <StaggerItem>
+            <motion.div 
+              className="grid gap-4 md:grid-cols-3"
+              variants={{
+                animate: {
+                  transition: { staggerChildren: 0.05 }
+                }
+              }}
+            >
+              <motion.div variants={staggerItemVariants}>
+                <AnimatedStatsCard
+                  icon={Layers}
+                  iconClassName="bg-purple-500/10 text-purple-600"
+                  label={t('settings.domains')}
+                  value={3}
+                />
+              </motion.div>
+              <motion.div variants={staggerItemVariants}>
+                <AnimatedStatsCard
+                  icon={Shield}
+                  iconClassName="bg-blue-500/10 text-blue-600"
+                  label={t('settings.frameworks')}
+                  value={frameworks.length}
+                />
+              </motion.div>
+              <motion.div variants={staggerItemVariants}>
+                <AnimatedStatsCard
+                  icon={BookOpen}
+                  iconClassName="bg-green-500/10 text-green-600"
+                  label={t('settings.questions')}
+                  value={questions.length}
+                />
+              </motion.div>
+            </motion.div>
+          </StaggerItem>
 
           {/* Domain Management */}
-          <AnimatedSectionCard
-            ref={setSectionRef('domains')}
-            id="domains"
-            title={t('settings.securityDomains')}
-            description={t('settings.createEditManage')}
-            icon={Layers}
-            isHighlighted={highlightedSection === 'domains'}
-          >
-            <DomainManagement />
-          </AnimatedSectionCard>
+          <StaggerItem>
+            <AnimatedSectionCard
+              ref={setSectionRef('domains')}
+              id="domains"
+              title={t('settings.securityDomains')}
+              description={t('settings.createEditManage')}
+              icon={Layers}
+              isHighlighted={highlightedSection === 'domains'}
+            >
+              <DomainManagement />
+            </AnimatedSectionCard>
+          </StaggerItem>
 
           {/* Framework Management */}
-          <AnimatedSectionCard
-            ref={setSectionRef('frameworks-management')}
-            id="frameworks-management"
-            title={t('settings.frameworks')}
-            description={t('settings.createEditDelete')}
-            icon={Shield}
-            isHighlighted={highlightedSection === 'frameworks-management'}
-          >
-            <FrameworkManagement />
-          </AnimatedSectionCard>
+          <StaggerItem>
+            <AnimatedSectionCard
+              ref={setSectionRef('frameworks-management')}
+              id="frameworks-management"
+              title={t('settings.frameworks')}
+              description={t('settings.createEditDelete')}
+              icon={Shield}
+              isHighlighted={highlightedSection === 'frameworks-management'}
+            >
+              <FrameworkManagement />
+            </AnimatedSectionCard>
+          </StaggerItem>
 
           {/* Question Management */}
-          <AnimatedSectionCard
-            ref={setSectionRef('questions-management')}
-            id="questions-management"
-            title={t('settings.questions')}
-            description={t('settings.createEditImport')}
-            icon={BookOpen}
-            isHighlighted={highlightedSection === 'questions-management'}
-          >
-            <QuestionManagement />
-          </AnimatedSectionCard>
-          </motion.div>
+          <StaggerItem>
+            <AnimatedSectionCard
+              ref={setSectionRef('questions-management')}
+              id="questions-management"
+              title={t('settings.questions')}
+              description={t('settings.createEditImport')}
+              icon={BookOpen}
+              isHighlighted={highlightedSection === 'questions-management'}
+            >
+              <QuestionManagement />
+            </AnimatedSectionCard>
+          </StaggerItem>
+          </StaggerContainer>
         </TabsContent>
 
         {/* ========== ASSESSMENT TAB ========== */}
         <TabsContent value="assessment" className="space-y-6">
-          <motion.div
-            key={`assessment-${activeTab === 'assessment'}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-6"
-          >
+          <StaggerContainer className="space-y-6">
           {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-500/5 to-transparent rounded-lg border border-amber-500/10">
-            <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-              <ClipboardList className="h-5 w-5 text-amber-600" />
+          <StaggerItem>
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-500/5 to-transparent rounded-lg border border-amber-500/10">
+              <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                <ClipboardList className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="font-semibold">{t('settings.configureAssessment')}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.configureAssessmentDesc')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold">{t('settings.configureAssessment')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.configureAssessmentDesc')}
-              </p>
-            </div>
-          </div>
+          </StaggerItem>
 
           {/* Current Assessment Summary */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card className="md:col-span-2 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('settings.activeFrameworks')}</p>
-                    <p className="text-3xl font-bold text-primary">{pendingFrameworks.length}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">{t('settings.ofAvailable', { count: frameworks.length })}</p>
-                    <p className="text-sm font-medium text-primary mt-1">
-                      {totalQuestions} {t('settings.questions').toLowerCase()}
+          <StaggerItem>
+            <motion.div 
+              className="grid gap-4 md:grid-cols-4"
+              variants={{
+                animate: {
+                  transition: { staggerChildren: 0.04 }
+                }
+              }}
+            >
+              <motion.div variants={staggerItemVariants} className="md:col-span-2">
+                <Card className="h-full bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <CardContent className="pt-4 pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('settings.activeFrameworks')}</p>
+                        <p className="text-3xl font-bold text-primary">{pendingFrameworks.length}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">{t('settings.ofAvailable', { count: frameworks.length })}</p>
+                        <p className="text-sm font-medium text-primary mt-1">
+                          {totalQuestions} {t('settings.questions').toLowerCase()}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={staggerItemVariants}>
+                <Card className="h-full">
+                  <CardContent className="pt-4 pb-3 text-center">
+                    <p className="text-xs text-muted-foreground">{t('assessment.answered')}</p>
+                    <p className="text-2xl font-bold">{totalAnswered}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={staggerItemVariants}>
+                <Card className="h-full">
+                  <CardContent className="pt-4 pb-3 text-center">
+                    <p className="text-xs text-muted-foreground">{t('settings.lastUpdate')}</p>
+                    <p className="text-sm font-medium">
+                      {lastUpdated 
+                        ? lastUpdated.toLocaleDateString()
+                        : 'N/A'
+                      }
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-xs text-muted-foreground">{t('assessment.answered')}</p>
-                <p className="text-2xl font-bold">{totalAnswered}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-xs text-muted-foreground">{t('settings.lastUpdate')}</p>
-                <p className="text-sm font-medium">
-                  {lastUpdated 
-                    ? lastUpdated.toLocaleDateString()
-                    : 'N/A'
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          </StaggerItem>
 
           {/* Assessment Info */}
-          <AnimatedSectionCard
-            ref={setSectionRef('assessment-info')}
-            id="assessment-info"
-            title={t('settings.assessmentInfo')}
-            icon={Building2}
-            isHighlighted={highlightedSection === 'assessment-info'}
-          >
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="assessmentName">{t('settings.assessmentName')}</Label>
-                <Input
-                  id="assessmentName"
-                  value={assessmentName}
-                  onChange={(e) => setAssessmentName(e.target.value)}
-                  placeholder={t('settings.assessmentNamePlaceholder')}
-                />
+          <StaggerItem>
+            <AnimatedSectionCard
+              ref={setSectionRef('assessment-info')}
+              id="assessment-info"
+              title={t('settings.assessmentInfo')}
+              icon={Building2}
+              isHighlighted={highlightedSection === 'assessment-info'}
+            >
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="assessmentName">{t('settings.assessmentName')}</Label>
+                  <Input
+                    id="assessmentName"
+                    value={assessmentName}
+                    onChange={(e) => setAssessmentName(e.target.value)}
+                    placeholder={t('settings.assessmentNamePlaceholder')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="organizationName">{t('profile.organization')}</Label>
+                  <Input
+                    id="organizationName"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    placeholder={t('settings.organizationPlaceholder')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reassessmentInterval">{t('settings.reassessmentCadence')}</Label>
+                  <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
+                    <SelectTrigger id="reassessmentInterval">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">{t('settings.monthly')}</SelectItem>
+                      <SelectItem value="quarterly">{t('settings.quarterly')}</SelectItem>
+                      <SelectItem value="semiannual">{t('settings.semiannual')}</SelectItem>
+                      <SelectItem value="annual">{t('settings.annual')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="organizationName">{t('profile.organization')}</Label>
-                <Input
-                  id="organizationName"
-                  value={organizationName}
-                  onChange={(e) => setOrganizationName(e.target.value)}
-                  placeholder={t('settings.organizationPlaceholder')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reassessmentInterval">{t('settings.reassessmentCadence')}</Label>
-                <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
-                  <SelectTrigger id="reassessmentInterval">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">{t('settings.monthly')}</SelectItem>
-                    <SelectItem value="quarterly">{t('settings.quarterly')}</SelectItem>
-                    <SelectItem value="semiannual">{t('settings.semiannual')}</SelectItem>
-                    <SelectItem value="annual">{t('settings.annual')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </AnimatedSectionCard>
+            </AnimatedSectionCard>
+          </StaggerItem>
 
           {/* Framework Selection */}
-          <div ref={setSectionRef('framework-selection')}>
-            <Card className={cn(
-              "transition-all duration-500",
-              highlightedSection === 'framework-selection' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      {t('settings.selectFrameworksForAssessment')}
-                    </CardTitle>
-                    <CardDescription>
-                      {t('settings.chooseFrameworksDesc')}
-                    </CardDescription>
+          <StaggerItem>
+            <div ref={setSectionRef('framework-selection')}>
+              <Card className={cn(
+                "transition-all duration-500",
+                highlightedSection === 'framework-selection' && "ring-2 ring-primary ring-offset-2"
+              )}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        {t('settings.selectFrameworksForAssessment')}
+                      </CardTitle>
+                      <CardDescription>
+                        {t('settings.chooseFrameworksDesc')}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={selectAll}>{t('common.all')}</Button>
+                      <Button variant="ghost" size="sm" onClick={selectDefaults}>{t('common.default')}</Button>
+                      <Button variant="ghost" size="sm" onClick={selectNone}>{t('settings.clear')}</Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={selectAll}>{t('common.all')}</Button>
-                    <Button variant="ghost" size="sm" onClick={selectDefaults}>{t('common.default')}</Button>
-                    <Button variant="ghost" size="sm" onClick={selectNone}>{t('settings.clear')}</Button>
+                </CardHeader>
+                <CardContent>
+                  <motion.div 
+                    className="grid gap-3 md:grid-cols-2 lg:grid-cols-3"
+                    variants={{
+                      animate: {
+                        transition: { staggerChildren: 0.03 }
+                      }
+                    }}
+                  >
+                    {frameworks.map(fw => (
+                      <motion.div key={fw.frameworkId} variants={staggerItemVariants}>
+                        <FrameworkCard fw={fw} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </CardContent>
+              </Card>
+            </div>
+          </StaggerItem>
+
+          {/* Info Card */}
+          <StaggerItem>
+            <Card className="bg-muted/30 border-dashed">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">{t('settings.howItWorks')}:</p>
+                    <ul className="space-y-1">
+                      <li>• {t('settings.howItWorksItem1')}</li>
+                      <li>• {t('settings.howItWorksItem2')}</li>
+                      <li>• {t('settings.howItWorksItem3')}</li>
+                    </ul>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {frameworks.map(fw => (
-                    <FrameworkCard key={fw.frameworkId} fw={fw} />
-                  ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Info Card */}
-          <Card className="bg-muted/30 border-dashed">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground mb-1">{t('settings.howItWorks')}:</p>
-                  <ul className="space-y-1">
-                    <li>• {t('settings.howItWorksItem1')}</li>
-                    <li>• {t('settings.howItWorksItem2')}</li>
-                    <li>• {t('settings.howItWorksItem3')}</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          </motion.div>
+          </StaggerItem>
+          </StaggerContainer>
         </TabsContent>
 
         {/* ========== PREFERENCES TAB ========== */}
         <TabsContent value="preferences" className="space-y-6">
-          <motion.div
-            key={`preferences-${activeTab === 'preferences'}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-6"
-          >
+          <StaggerContainer className="space-y-6">
           {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-pink-500/5 to-transparent rounded-lg border border-pink-500/10">
-            <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
-              <Palette className="h-5 w-5 text-pink-600" />
+          <StaggerItem>
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-pink-500/5 to-transparent rounded-lg border border-pink-500/10">
+              <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                <Palette className="h-5 w-5 text-pink-600" />
+              </div>
+              <div>
+                <h2 className="font-semibold">{t('settings.preferencesTab')}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.preferencesDesc')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold">{t('settings.preferencesTab')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.preferencesDesc')}
-              </p>
-            </div>
-          </div>
+          </StaggerItem>
 
           {preferencesLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <div className="space-y-6">
+            <>
               {/* Appearance Settings */}
-              <motion.div
-                ref={setSectionRef('appearance')}
-                initial={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
-              >
-                <Card className={cn(
-                  "transition-all duration-300",
-                  highlightedSection === 'appearance' && "ring-2 ring-primary ring-offset-2"
-                )}>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Sun className="h-4 w-4" />
-                      {t('profile.appearance')}
-                    </CardTitle>
-                    <CardDescription>
-                      {t('profile.appearanceDescription')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>{t('profile.theme')}</Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.themeDescription')}
-                          </p>
+              <StaggerItem>
+                <motion.div
+                  ref={setSectionRef('appearance')}
+                  initial={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+                >
+                  <Card className={cn(
+                    "transition-all duration-300",
+                    highlightedSection === 'appearance' && "ring-2 ring-primary ring-offset-2"
+                  )}>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Sun className="h-4 w-4" />
+                        {t('profile.appearance')}
+                      </CardTitle>
+                      <CardDescription>
+                        {t('profile.appearanceDescription')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>{t('profile.theme')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.themeDescription')}
+                            </p>
+                          </div>
+                          <ToggleGroup
+                            type="single"
+                            value={theme}
+                            onValueChange={(value) => value && setTheme(value)}
+                            className="bg-muted rounded-lg p-1"
+                          >
+                            <ToggleGroupItem
+                              value="light"
+                              aria-label="Modo claro"
+                              className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                            >
+                              <Sun className="h-4 w-4" />
+                            </ToggleGroupItem>
+                            <ToggleGroupItem
+                              value="dark"
+                              aria-label="Modo escuro"
+                              className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                            >
+                              <Moon className="h-4 w-4" />
+                            </ToggleGroupItem>
+                            <ToggleGroupItem
+                              value="system"
+                              aria-label="Seguir sistema"
+                              className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
+                            >
+                              <Monitor className="h-4 w-4" />
+                            </ToggleGroupItem>
+                          </ToggleGroup>
                         </div>
-                        <ToggleGroup
-                          type="single"
-                          value={theme}
-                          onValueChange={(value) => value && setTheme(value)}
-                          className="bg-muted rounded-lg p-1"
-                        >
-                          <ToggleGroupItem
-                            value="light"
-                            aria-label="Modo claro"
-                            className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
-                          >
-                            <Sun className="h-4 w-4" />
-                          </ToggleGroupItem>
-                          <ToggleGroupItem
-                            value="dark"
-                            aria-label="Modo escuro"
-                            className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
-                          >
-                            <Moon className="h-4 w-4" />
-                          </ToggleGroupItem>
-                          <ToggleGroupItem
-                            value="system"
-                            aria-label="Seguir sistema"
-                            className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
-                          >
-                            <Monitor className="h-4 w-4" />
-                          </ToggleGroupItem>
-                        </ToggleGroup>
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label className="flex items-center gap-2">
-                            <Globe className="h-4 w-4" />
-                            {t('profile.language')}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.languageDescription')}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label className="flex items-center gap-2">
+                              <Globe className="h-4 w-4" />
+                              {t('profile.language')}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.languageDescription')}
+                            </p>
+                          </div>
+                          <Select
+                            value={language}
+                            onValueChange={handleSaveLanguage}
+                            disabled={savingLanguage}
+                          >
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue placeholder="Selecionar idioma" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LANGUAGES.map((lang) => (
+                                <SelectItem key={lang.code} value={lang.code}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{lang.flag}</span>
+                                    <span>{lang.name}</span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <Select
-                          value={language}
-                          onValueChange={handleSaveLanguage}
-                          disabled={savingLanguage}
-                        >
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Selecionar idioma" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {LANGUAGES.map((lang) => (
-                              <SelectItem key={lang.code} value={lang.code}>
-                                <span className="flex items-center gap-2">
-                                  <span>{lang.flag}</span>
-                                  <span>{lang.name}</span>
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </StaggerItem>
 
               {/* Voice Settings */}
-              <motion.div
-                ref={setSectionRef('voice-settings')}
-                initial={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
-              >
-                <Card className={cn(
-                  "transition-all duration-300",
-                  highlightedSection === 'voice-settings' && "ring-2 ring-primary ring-offset-2"
-                )}>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Volume2 className="h-4 w-4" />
-                      {t('profile.voiceSettings')}
-                    </CardTitle>
-                    <CardDescription>
-                      {t('profile.voiceSettingsDescription')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Voice Language */}
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label className="flex items-center gap-2">
-                            <Mic className="h-4 w-4" />
-                            {t('profile.voiceLanguage')}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.voiceLanguageDescription')}
-                          </p>
-                        </div>
-                        <Select
-                          value={voiceSettings.voice_language}
-                          onValueChange={(v) => handleSaveVoiceSetting('voice_language', v)}
-                          disabled={savingVoice}
-                        >
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Selecionar idioma" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {LANGUAGES.map((lang) => (
-                              <SelectItem key={lang.code} value={lang.code}>
-                                <span className="flex items-center gap-2">
-                                  <span>{lang.flag}</span>
-                                  <span>{lang.name}</span>
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Voice Selection */}
-                      <div className="space-y-2">
+              <StaggerItem>
+                <motion.div
+                  ref={setSectionRef('voice-settings')}
+                  initial={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+                >
+                  <Card className={cn(
+                    "transition-all duration-300",
+                    highlightedSection === 'voice-settings' && "ring-2 ring-primary ring-offset-2"
+                  )}>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Volume2 className="h-4 w-4" />
+                        {t('profile.voiceSettings')}
+                      </CardTitle>
+                      <CardDescription>
+                        {t('profile.voiceSettingsDescription')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {/* Voice Language */}
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <Label>{t('profile.preferredVoice')}</Label>
+                            <Label className="flex items-center gap-2">
+                              <Mic className="h-4 w-4" />
+                              {t('profile.voiceLanguage')}
+                            </Label>
                             <p className="text-sm text-muted-foreground">
-                              {t('profile.preferredVoiceDescription')}
+                              {t('profile.voiceLanguageDescription')}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Select
-                              value={voiceSettings.voice_name || 'auto'}
-                              onValueChange={(v) => handleSaveVoiceSetting('voice_name', v === 'auto' ? null : v)}
-                              disabled={savingVoice}
-                            >
-                              <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder={t('profile.selectVoice')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="auto">
-                                  {t('profile.autoSelectVoice')}
+                          <Select
+                            value={voiceSettings.voice_language}
+                            onValueChange={(v) => handleSaveVoiceSetting('voice_language', v)}
+                            disabled={savingVoice}
+                          >
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue placeholder="Selecionar idioma" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LANGUAGES.map((lang) => (
+                                <SelectItem key={lang.code} value={lang.code}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{lang.flag}</span>
+                                    <span>{lang.name}</span>
+                                  </span>
                                 </SelectItem>
-                                {filteredVoices.length > 0 ? (
-                                  filteredVoices.map((voice) => (
-                                    <SelectItem key={voice.name} value={voice.name}>
-                                      {voice.name} ({voice.lang})
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  voices.slice(0, 10).map((voice) => (
-                                    <SelectItem key={voice.name} value={voice.name}>
-                                      {voice.name} ({voice.lang})
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={testVoice}
-                              className={isSpeaking ? 'text-primary' : ''}
-                            >
-                              <Play className="h-4 w-4" />
-                            </Button>
-                          </div>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      </div>
 
-                      {/* Speech Rate */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <Label>{t('profile.speechRate')}</Label>
-                            <p className="text-sm text-muted-foreground">
-                              {t('profile.speechRateDescription')}
-                            </p>
+                        {/* Voice Selection */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label>{t('profile.preferredVoice')}</Label>
+                              <p className="text-sm text-muted-foreground">
+                                {t('profile.preferredVoiceDescription')}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={voiceSettings.voice_name || 'auto'}
+                                onValueChange={(v) => handleSaveVoiceSetting('voice_name', v === 'auto' ? null : v)}
+                                disabled={savingVoice}
+                              >
+                                <SelectTrigger className="w-[200px]">
+                                  <SelectValue placeholder={t('profile.selectVoice')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="auto">
+                                    {t('profile.autoSelectVoice')}
+                                  </SelectItem>
+                                  {filteredVoices.length > 0 ? (
+                                    filteredVoices.map((voice) => (
+                                      <SelectItem key={voice.name} value={voice.name}>
+                                        {voice.name} ({voice.lang})
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    voices.slice(0, 10).map((voice) => (
+                                      <SelectItem key={voice.name} value={voice.name}>
+                                        {voice.name} ({voice.lang})
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={testVoice}
+                                className={isSpeaking ? 'text-primary' : ''}
+                              >
+                                <Play className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_rate.toFixed(1)}x</span>
                         </div>
-                        <Slider
-                          value={[voiceSettings.voice_rate]}
-                          min={0.5}
-                          max={2}
-                          step={0.1}
-                          onValueCommit={(value) => handleSaveVoiceSetting('voice_rate', value[0])}
-                          onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_rate: value[0] }))}
-                          disabled={savingVoice}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{t('profile.slower')}</span>
-                          <span>{t('profile.normal')}</span>
-                          <span>{t('profile.faster')}</span>
-                        </div>
-                      </div>
 
-                      {/* Pitch */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <Label>{t('profile.voicePitch')}</Label>
-                            <p className="text-sm text-muted-foreground">
-                              {t('profile.voicePitchDescription')}
-                            </p>
+                        {/* Speech Rate */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label>{t('profile.speechRate')}</Label>
+                              <p className="text-sm text-muted-foreground">
+                                {t('profile.speechRateDescription')}
+                              </p>
+                            </div>
+                            <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_rate.toFixed(1)}x</span>
                           </div>
-                          <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_pitch.toFixed(1)}</span>
+                          <Slider
+                            value={[voiceSettings.voice_rate]}
+                            min={0.5}
+                            max={2}
+                            step={0.1}
+                            onValueCommit={(value) => handleSaveVoiceSetting('voice_rate', value[0])}
+                            onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_rate: value[0] }))}
+                            disabled={savingVoice}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{t('profile.slower')}</span>
+                            <span>{t('profile.normal')}</span>
+                            <span>{t('profile.faster')}</span>
+                          </div>
                         </div>
-                        <Slider
-                          value={[voiceSettings.voice_pitch]}
-                          min={0.5}
-                          max={2}
-                          step={0.1}
-                          onValueCommit={(value) => handleSaveVoiceSetting('voice_pitch', value[0])}
-                          onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_pitch: value[0] }))}
-                          disabled={savingVoice}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{t('profile.lower')}</span>
-                          <span>{t('profile.default')}</span>
-                          <span>{t('profile.higher')}</span>
-                        </div>
-                      </div>
 
-                      {/* Volume */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <Label>{t('profile.voiceVolume')}</Label>
-                            <p className="text-sm text-muted-foreground">
-                              {t('profile.voiceVolumeDescription')}
-                            </p>
+                        {/* Pitch */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label>{t('profile.voicePitch')}</Label>
+                              <p className="text-sm text-muted-foreground">
+                                {t('profile.voicePitchDescription')}
+                              </p>
+                            </div>
+                            <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_pitch.toFixed(1)}</span>
                           </div>
-                          <span className="text-sm font-medium w-12 text-right">{Math.round(voiceSettings.voice_volume * 100)}%</span>
+                          <Slider
+                            value={[voiceSettings.voice_pitch]}
+                            min={0.5}
+                            max={2}
+                            step={0.1}
+                            onValueCommit={(value) => handleSaveVoiceSetting('voice_pitch', value[0])}
+                            onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_pitch: value[0] }))}
+                            disabled={savingVoice}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{t('profile.lower')}</span>
+                            <span>{t('profile.default')}</span>
+                            <span>{t('profile.higher')}</span>
+                          </div>
                         </div>
-                        <Slider
-                          value={[voiceSettings.voice_volume]}
-                          min={0}
-                          max={1}
-                          step={0.1}
-                          onValueCommit={(value) => handleSaveVoiceSetting('voice_volume', value[0])}
-                          onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_volume: value[0] }))}
-                          disabled={savingVoice}
-                          className="w-full"
-                        />
-                      </div>
+
+                        {/* Volume */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label>{t('profile.voiceVolume')}</Label>
+                              <p className="text-sm text-muted-foreground">
+                                {t('profile.voiceVolumeDescription')}
+                              </p>
+                            </div>
+                            <span className="text-sm font-medium w-12 text-right">{Math.round(voiceSettings.voice_volume * 100)}%</span>
+                          </div>
+                          <Slider
+                            value={[voiceSettings.voice_volume]}
+                            min={0}
+                            max={1}
+                            step={0.1}
+                            onValueCommit={(value) => handleSaveVoiceSetting('voice_volume', value[0])}
+                            onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice_volume: value[0] }))}
+                            disabled={savingVoice}
+                            className="w-full"
+                          />
+                        </div>
 
                         <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="voice_auto_speak" className="flex items-center gap-2">
-                            <Volume2 className="h-4 w-4" />
-                            {t('profile.autoSpeak')}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.autoSpeakDescription')}
-                          </p>
+                          <div className="space-y-0.5">
+                            <Label htmlFor="voice_auto_speak" className="flex items-center gap-2">
+                              <Volume2 className="h-4 w-4" />
+                              {t('profile.autoSpeak')}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.autoSpeakDescription')}
+                            </p>
+                          </div>
+                          <Switch
+                            id="voice_auto_speak"
+                            checked={voiceSettings.voice_auto_speak}
+                            onCheckedChange={(checked) => handleSaveVoiceSetting('voice_auto_speak', checked)}
+                            disabled={savingVoice}
+                          />
                         </div>
-                        <Switch
-                          id="voice_auto_speak"
-                          checked={voiceSettings.voice_auto_speak}
-                          onCheckedChange={(checked) => handleSaveVoiceSetting('voice_auto_speak', checked)}
-                          disabled={savingVoice}
-                        />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </StaggerItem>
 
               {/* STT Configuration */}
-              <div ref={setSectionRef('stt-config')}>
-                <STTConfigurationCard
-                  settings={sttSettings}
-                  onSave={handleSaveSTTSetting}
-                  isSaving={savingSTT}
-                />
-              </div>
+              <StaggerItem>
+                <div ref={setSectionRef('stt-config')}>
+                  <STTConfigurationCard
+                    settings={sttSettings}
+                    onSave={handleSaveSTTSetting}
+                    isSaving={savingSTT}
+                  />
+                </div>
+              </StaggerItem>
 
               {/* Voice Profile (Speaker Recognition) */}
-              <div ref={setSectionRef('voice-profile')}>
-                <VoiceProfileCard language={voiceSettings.voice_language} />
-              </div>
+              <StaggerItem>
+                <div ref={setSectionRef('voice-profile')}>
+                  <VoiceProfileCard language={voiceSettings.voice_language} />
+                </div>
+              </StaggerItem>
 
               {/* Notification Preferences */}
-              <motion.div
-                ref={setSectionRef('notifications')}
-                initial={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
-              >
-                <Card className={cn(
-                  "transition-all duration-300",
-                  highlightedSection === 'notifications' && "ring-2 ring-primary ring-offset-2"
-                )}>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Bell className="h-4 w-4" />
-                      {t('profile.notificationPreferences')}
-                    </CardTitle>
-                    <CardDescription>
-                      {t('profile.notificationDescription')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="notify_assessment_updates">{t('profile.assessmentUpdates')}</Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.assessmentUpdatesDescription')}
-                          </p>
+              <StaggerItem>
+                <motion.div
+                  ref={setSectionRef('notifications')}
+                  initial={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+                >
+                  <Card className={cn(
+                    "transition-all duration-300",
+                    highlightedSection === 'notifications' && "ring-2 ring-primary ring-offset-2"
+                  )}>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        {t('profile.notificationPreferences')}
+                      </CardTitle>
+                      <CardDescription>
+                        {t('profile.notificationDescription')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="notify_assessment_updates">{t('profile.assessmentUpdates')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.assessmentUpdatesDescription')}
+                            </p>
+                          </div>
+                          <Switch
+                            id="notify_assessment_updates"
+                            checked={notifications.notify_assessment_updates}
+                            onCheckedChange={(checked) => handleSaveNotifications('notify_assessment_updates', checked)}
+                            disabled={savingNotifications}
+                          />
                         </div>
-                        <Switch
-                          id="notify_assessment_updates"
-                          checked={notifications.notify_assessment_updates}
-                          onCheckedChange={(checked) => handleSaveNotifications('notify_assessment_updates', checked)}
-                          disabled={savingNotifications}
-                        />
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="notify_security_alerts">{t('profile.securityAlerts')}</Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.securityAlertsDescription')}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="notify_security_alerts">{t('profile.securityAlerts')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.securityAlertsDescription')}
+                            </p>
+                          </div>
+                          <Switch
+                            id="notify_security_alerts"
+                            checked={notifications.notify_security_alerts}
+                            onCheckedChange={(checked) => handleSaveNotifications('notify_security_alerts', checked)}
+                            disabled={savingNotifications}
+                          />
                         </div>
-                        <Switch
-                          id="notify_security_alerts"
-                          checked={notifications.notify_security_alerts}
-                          onCheckedChange={(checked) => handleSaveNotifications('notify_security_alerts', checked)}
-                          disabled={savingNotifications}
-                        />
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="notify_weekly_digest">{t('profile.weeklyDigest')}</Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.weeklyDigestDescription')}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="notify_weekly_digest">{t('profile.weeklyDigest')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.weeklyDigestDescription')}
+                            </p>
+                          </div>
+                          <Switch
+                            id="notify_weekly_digest"
+                            checked={notifications.notify_weekly_digest}
+                            onCheckedChange={(checked) => handleSaveNotifications('notify_weekly_digest', checked)}
+                            disabled={savingNotifications}
+                          />
                         </div>
-                        <Switch
-                          id="notify_weekly_digest"
-                          checked={notifications.notify_weekly_digest}
-                          onCheckedChange={(checked) => handleSaveNotifications('notify_weekly_digest', checked)}
-                          disabled={savingNotifications}
-                        />
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="notify_new_features">{t('profile.newFeatures')}</Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t('profile.newFeaturesDescription')}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="notify_new_features">{t('profile.newFeatures')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('profile.newFeaturesDescription')}
+                            </p>
+                          </div>
+                          <Switch
+                            id="notify_new_features"
+                            checked={notifications.notify_new_features}
+                            onCheckedChange={(checked) => handleSaveNotifications('notify_new_features', checked)}
+                            disabled={savingNotifications}
+                          />
                         </div>
-                        <Switch
-                          id="notify_new_features"
-                          checked={notifications.notify_new_features}
-                          onCheckedChange={(checked) => handleSaveNotifications('notify_new_features', checked)}
-                          disabled={savingNotifications}
-                        />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </StaggerItem>
+            </>
           )}
-          </motion.div>
+          </StaggerContainer>
         </TabsContent>
 
         {/* ========== SYSTEM TAB ========== */}
         <TabsContent value="system" className="space-y-6">
-          <motion.div
-            key={`system-${activeTab === 'system'}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-6"
-          >
+          <StaggerContainer className="space-y-6">
           {/* Tab Header */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-500/5 to-transparent rounded-lg border border-gray-500/10">
-            <div className="h-10 w-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
-              <Cog className="h-5 w-5 text-gray-600" />
+          <StaggerItem>
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-500/5 to-transparent rounded-lg border border-gray-500/10">
+              <div className="h-10 w-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
+                <Cog className="h-5 w-5 text-gray-600" />
+              </div>
+              <div>
+                <h2 className="font-semibold">{t('settings.systemTab')}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.exportAndGeneralDesc')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold">{t('settings.systemTab')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.exportAndGeneralDesc')}
-              </p>
-            </div>
-          </div>
+          </StaggerItem>
 
           {/* System Stats */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">{t('settings.version')}</p>
-                <p className="text-xl font-bold">2.0.0</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">{t('settings.frameworks')}</p>
-                <p className="text-xl font-bold">{frameworks.length}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">{t('settings.questions')}</p>
-                <p className="text-xl font-bold">{questions.length}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-sm text-muted-foreground">{t('settings.update')}</p>
-                <p className="text-xl font-bold">Jan/25</p>
-              </CardContent>
-            </Card>
-          </div>
+          <StaggerItem>
+            <motion.div 
+              className="grid gap-4 md:grid-cols-4"
+              variants={{
+                animate: {
+                  transition: { staggerChildren: 0.04 }
+                }
+              }}
+            >
+              <motion.div variants={staggerItemVariants}>
+                <Card className="h-full">
+                  <CardContent className="pt-4 pb-3 text-center">
+                    <p className="text-sm text-muted-foreground">{t('settings.version')}</p>
+                    <p className="text-xl font-bold">2.0.0</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={staggerItemVariants}>
+                <Card className="h-full">
+                  <CardContent className="pt-4 pb-3 text-center">
+                    <p className="text-sm text-muted-foreground">{t('settings.frameworks')}</p>
+                    <p className="text-xl font-bold">{frameworks.length}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={staggerItemVariants}>
+                <Card className="h-full">
+                  <CardContent className="pt-4 pb-3 text-center">
+                    <p className="text-sm text-muted-foreground">{t('settings.questions')}</p>
+                    <p className="text-xl font-bold">{questions.length}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={staggerItemVariants}>
+                <Card className="h-full">
+                  <CardContent className="pt-4 pb-3 text-center">
+                    <p className="text-sm text-muted-foreground">{t('settings.update')}</p>
+                    <p className="text-xl font-bold">Jan/25</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          </StaggerItem>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <StaggerItem>
             {/* Export */}
             <motion.div
               ref={setSectionRef('export')}

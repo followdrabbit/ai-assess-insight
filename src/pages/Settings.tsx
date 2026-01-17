@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAnswersStore } from '@/lib/stores';
 import { frameworks, Framework } from '@/lib/frameworks';
 import { questions } from '@/lib/dataset';
@@ -67,6 +68,30 @@ import { AuditLogsPanel } from '@/components/settings/AuditLogsPanel';
 import { SIEMIntegrationsPanel } from '@/components/settings/SIEMIntegrationsPanel';
 import { SIEMHealthPanel } from '@/components/settings/SIEMHealthPanel';
 import { AIProvidersPanel } from '@/components/settings/AIProvidersPanel';
+
+// Animation variants for tab content
+const tabContentVariants = {
+  initial: {
+    opacity: 0,
+    y: 12,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.25,
+      ease: [0.4, 0, 0.2, 1] as const,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    transition: {
+      duration: 0.15,
+      ease: [0.4, 0, 1, 1] as const,
+    },
+  },
+};
 
 const LANGUAGES = [
   { code: 'pt-BR', name: 'Português (Brasil)', flag: '🇧🇷' },
@@ -660,6 +685,13 @@ export default function Settings() {
 
         {/* ========== CONTENT TAB ========== */}
         <TabsContent value="content" className="space-y-6">
+          <motion.div
+            key={`content-${activeTab === 'content'}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -778,10 +810,18 @@ export default function Settings() {
               </CardContent>
             </Card>
           </div>
+          </motion.div>
         </TabsContent>
 
         {/* ========== ASSESSMENT TAB ========== */}
         <TabsContent value="assessment" className="space-y-6">
+          <motion.div
+            key={`assessment-${activeTab === 'assessment'}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-500/5 to-transparent rounded-lg border border-amber-500/10">
             <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
@@ -933,10 +973,18 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         </TabsContent>
 
         {/* ========== PREFERENCES TAB ========== */}
         <TabsContent value="preferences" className="space-y-6">
+          <motion.div
+            key={`preferences-${activeTab === 'preferences'}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-pink-500/5 to-transparent rounded-lg border border-pink-500/10">
             <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
@@ -1340,10 +1388,18 @@ export default function Settings() {
               </div>
             </div>
           )}
+          </motion.div>
         </TabsContent>
 
         {/* ========== SYSTEM TAB ========== */}
         <TabsContent value="system" className="space-y-6">
+          <motion.div
+            key={`system-${activeTab === 'system'}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-500/5 to-transparent rounded-lg border border-gray-500/10">
             <div className="h-10 w-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
@@ -1592,10 +1648,18 @@ export default function Settings() {
               </CardContent>
             </Card>
           </div>
+          </motion.div>
         </TabsContent>
 
         {/* ========== AUDIT LOGS TAB ========== */}
         <TabsContent value="audit" className="space-y-6">
+          <motion.div
+            key={`audit-${activeTab === 'audit'}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1610,10 +1674,18 @@ export default function Settings() {
           </div>
 
           <AuditLogsPanel />
+          </motion.div>
         </TabsContent>
 
         {/* ========== SIEM INTEGRATIONS TAB ========== */}
         <TabsContent value="siem" className="space-y-6">
+          <motion.div
+            key={`siem-${activeTab === 'siem'}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1631,10 +1703,18 @@ export default function Settings() {
 
           {/* Health Monitoring */}
           <SIEMHealthPanel />
+          </motion.div>
         </TabsContent>
 
         {/* ========== AI PROVIDERS TAB ========== */}
         <TabsContent value="ai" className="space-y-6">
+          <motion.div
+            key={`ai-${activeTab === 'ai'}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
           {/* Tab Header */}
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/10">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1649,6 +1729,7 @@ export default function Settings() {
           </div>
 
           <AIProvidersPanel />
+          </motion.div>
         </TabsContent>
       </Tabs>
     </div>

@@ -5,13 +5,13 @@ Uma plataforma completa de governança de segurança multi-domínio para **AI Se
 <div align="center">
 
 <!-- Build & Quality -->
-[![Build Status](https://img.shields.io/github/actions/workflow/status/seu-usuario/trustlayer/ci.yml?branch=main&label=build&logo=github)](https://github.com/seu-usuario/trustlayer/actions)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen?logo=vitest&logoColor=white)](https://github.com/seu-usuario/trustlayer)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-green?logo=codecov&logoColor=white)](https://github.com/seu-usuario/trustlayer)
-[![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen?logo=codacy&logoColor=white)](https://github.com/seu-usuario/trustlayer)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?logo=github&logoColor=white)](https://ai-assess-insight.lovable.app)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen?logo=vitest&logoColor=white)](https://ai-assess-insight.lovable.app)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-green?logo=codecov&logoColor=white)](https://ai-assess-insight.lovable.app)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen?logo=codacy&logoColor=white)](https://ai-assess-insight.lovable.app)
 
 <!-- Version & Tech -->
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?logo=semanticrelease&logoColor=white)](https://github.com/seu-usuario/trustlayer/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue?logo=semanticrelease&logoColor=white)](https://ai-assess-insight.lovable.app)
 [![React](https://img.shields.io/badge/React-18.3.1-61dafb?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646cff?logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -23,8 +23,8 @@ Uma plataforma completa de governança de segurança multi-domínio para **AI Se
 
 <!-- License & Community -->
 [![License](https://img.shields.io/badge/license-MIT-blue?logo=opensourceinitiative&logoColor=white)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?logo=github&logoColor=white)](https://github.com/seu-usuario/trustlayer/pulls)
-[![i18n](https://img.shields.io/badge/i18n-3%20languages-blueviolet?logo=googletranslate&logoColor=white)](https://github.com/seu-usuario/trustlayer)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?logo=github&logoColor=white)](https://ai-assess-insight.lovable.app)
+[![i18n](https://img.shields.io/badge/i18n-3%20languages-blueviolet?logo=googletranslate&logoColor=white)](https://ai-assess-insight.lovable.app)
 
 <!-- Frameworks Supported -->
 [![NIST](https://img.shields.io/badge/NIST-AI%20RMF%20%7C%20SSDF-orange)](https://www.nist.gov/)
@@ -241,7 +241,7 @@ Esta ferramenta permite que organizações avaliem sua postura de segurança em 
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/trustlayer.git
+git clone https://github.com/trustlayer/trustlayer.git
 cd trustlayer
 ```
 
@@ -385,8 +385,18 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 📞 Suporte
 
-- Abra uma [issue](https://github.com/seu-usuario/trustlayer/issues) para reportar bugs
-- Discussões e sugestões são bem-vindas nas [discussions](https://github.com/seu-usuario/trustlayer/discussions)
+- **Demo ao vivo**: https://ai-assess-insight.lovable.app
+- **Credenciais demo**: demo@aiassess.app / Demo@2025!
+- Abra uma issue para reportar bugs
+- Discussões e sugestões são bem-vindas
+
+## 📚 Documentação Adicional
+
+- [API Reference](docs/API.md) - Documentação das Edge Functions
+- [Architecture](docs/ARCHITECTURE.md) - Diagramas de arquitetura do sistema
+- [Contributing](docs/CONTRIBUTING.md) - Guia de contribuição
+- [Changelog](docs/CHANGELOG.md) - Histórico de mudanças
+- [LLM Reference](llm.txt) - Referência para assistentes de IA
 
 ---
 

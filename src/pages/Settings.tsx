@@ -110,9 +110,9 @@ export default function Settings() {
       description: t('settings.configureAssessmentDesc')
     },
     preferences: {
-      label: t('settings.preferencesTab', 'Preferências'),
+      label: t('settings.preferencesTab'),
       icon: Palette,
-      description: t('settings.preferencesDesc', 'Aparência, idioma, voz e notificações')
+      description: t('settings.preferencesDesc')
     },
     system: { 
       label: t('settings.systemTab'), 
@@ -943,9 +943,9 @@ export default function Settings() {
               <Palette className="h-5 w-5 text-pink-600" />
             </div>
             <div>
-              <h2 className="font-semibold">{t('settings.preferencesTab', 'Preferências')}</h2>
+              <h2 className="font-semibold">{t('settings.preferencesTab')}</h2>
               <p className="text-sm text-muted-foreground">
-                {t('settings.preferencesDesc', 'Aparência, idioma, voz e notificações')}
+                {t('settings.preferencesDesc')}
               </p>
             </div>
           </div>
@@ -965,19 +965,19 @@ export default function Settings() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Sun className="h-4 w-4" />
-                      {t('profile.appearance', 'Aparência')}
+                      {t('profile.appearance')}
                     </CardTitle>
                     <CardDescription>
-                      {t('profile.appearanceDescription', 'Personalize a aparência da plataforma')}
+                      {t('profile.appearanceDescription')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label>{t('profile.theme', 'Tema')}</Label>
+                          <Label>{t('profile.theme')}</Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.themeDescription', 'Escolha entre modo claro, escuro ou automático')}
+                            {t('profile.themeDescription')}
                           </p>
                         </div>
                         <ToggleGroup
@@ -1014,10 +1014,10 @@ export default function Settings() {
                         <div className="space-y-0.5">
                           <Label className="flex items-center gap-2">
                             <Globe className="h-4 w-4" />
-                            {t('profile.language', 'Idioma')}
+                            {t('profile.language')}
                           </Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.languageDescription', 'Selecione o idioma da interface')}
+                            {t('profile.languageDescription')}
                           </p>
                         </div>
                         <Select
@@ -1054,10 +1054,10 @@ export default function Settings() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Volume2 className="h-4 w-4" />
-                      {t('profile.voiceSettings', 'Configurações de Voz')}
+                      {t('profile.voiceSettings')}
                     </CardTitle>
                     <CardDescription>
-                      {t('profile.voiceSettingsDescription', 'Configure reconhecimento de voz e síntese de fala')}
+                      {t('profile.voiceSettingsDescription')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1067,10 +1067,10 @@ export default function Settings() {
                         <div className="space-y-0.5">
                           <Label className="flex items-center gap-2">
                             <Mic className="h-4 w-4" />
-                            {t('profile.voiceLanguage', 'Idioma da Voz')}
+                            {t('profile.voiceLanguage')}
                           </Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.voiceLanguageDescription', 'Idioma para reconhecimento e síntese de fala')}
+                            {t('profile.voiceLanguageDescription')}
                           </p>
                         </div>
                         <Select
@@ -1098,9 +1098,9 @@ export default function Settings() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <Label>{t('profile.preferredVoice', 'Voz Preferida')}</Label>
+                            <Label>{t('profile.preferredVoice')}</Label>
                             <p className="text-sm text-muted-foreground">
-                              {t('profile.preferredVoiceDescription', 'Selecione uma voz para síntese de fala')}
+                              {t('profile.preferredVoiceDescription')}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1110,11 +1110,11 @@ export default function Settings() {
                               disabled={savingVoice}
                             >
                               <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder={t('profile.selectVoice', 'Selecionar voz')} />
+                                <SelectValue placeholder={t('profile.selectVoice')} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="auto">
-                                  {t('profile.autoSelectVoice', 'Auto (Padrão do Sistema)')}
+                                  {t('profile.autoSelectVoice')}
                                 </SelectItem>
                                 {filteredVoices.length > 0 ? (
                                   filteredVoices.map((voice) => (
@@ -1147,9 +1147,9 @@ export default function Settings() {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <Label>{t('profile.speechRate', 'Velocidade da Fala')}</Label>
+                            <Label>{t('profile.speechRate')}</Label>
                             <p className="text-sm text-muted-foreground">
-                              {t('profile.speechRateDescription', 'Quão rápido a voz fala')}
+                              {t('profile.speechRateDescription')}
                             </p>
                           </div>
                           <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_rate.toFixed(1)}x</span>
@@ -1165,9 +1165,9 @@ export default function Settings() {
                           className="w-full"
                         />
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{t('profile.slower', 'Mais Lento')}</span>
-                          <span>{t('profile.normal', 'Normal')}</span>
-                          <span>{t('profile.faster', 'Mais Rápido')}</span>
+                          <span>{t('profile.slower')}</span>
+                          <span>{t('profile.normal')}</span>
+                          <span>{t('profile.faster')}</span>
                         </div>
                       </div>
 
@@ -1175,9 +1175,9 @@ export default function Settings() {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <Label>{t('profile.voicePitch', 'Tom da Voz')}</Label>
+                            <Label>{t('profile.voicePitch')}</Label>
                             <p className="text-sm text-muted-foreground">
-                              {t('profile.voicePitchDescription', 'Quão agudo ou grave a voz soa')}
+                              {t('profile.voicePitchDescription')}
                             </p>
                           </div>
                           <span className="text-sm font-medium w-12 text-right">{voiceSettings.voice_pitch.toFixed(1)}</span>
@@ -1193,9 +1193,9 @@ export default function Settings() {
                           className="w-full"
                         />
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{t('profile.lower', 'Mais Grave')}</span>
-                          <span>{t('profile.default', 'Padrão')}</span>
-                          <span>{t('profile.higher', 'Mais Agudo')}</span>
+                          <span>{t('profile.lower')}</span>
+                          <span>{t('profile.default')}</span>
+                          <span>{t('profile.higher')}</span>
                         </div>
                       </div>
 
@@ -1203,9 +1203,9 @@ export default function Settings() {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <Label>{t('profile.voiceVolume', 'Volume da Voz')}</Label>
+                            <Label>{t('profile.voiceVolume')}</Label>
                             <p className="text-sm text-muted-foreground">
-                              {t('profile.voiceVolumeDescription', 'Nível de volume para síntese de fala')}
+                              {t('profile.voiceVolumeDescription')}
                             </p>
                           </div>
                           <span className="text-sm font-medium w-12 text-right">{Math.round(voiceSettings.voice_volume * 100)}%</span>
@@ -1222,15 +1222,14 @@ export default function Settings() {
                         />
                       </div>
 
-                      {/* Auto-speak */}
-                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="flex items-center justify-between pt-2 border-t">
                         <div className="space-y-0.5">
                           <Label htmlFor="voice_auto_speak" className="flex items-center gap-2">
                             <Volume2 className="h-4 w-4" />
-                            {t('profile.autoSpeak', 'Falar Respostas Automaticamente')}
+                            {t('profile.autoSpeak')}
                           </Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.autoSpeakDescription', 'Ler automaticamente respostas do assistente IA')}
+                            {t('profile.autoSpeakDescription')}
                           </p>
                         </div>
                         <Switch
@@ -1268,19 +1267,19 @@ export default function Settings() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Bell className="h-4 w-4" />
-                      {t('profile.notificationPreferences', 'Preferências de Notificação')}
+                      {t('profile.notificationPreferences')}
                     </CardTitle>
                     <CardDescription>
-                      {t('profile.notificationDescription', 'Gerencie como e quando você recebe notificações')}
+                      {t('profile.notificationDescription')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="notify_assessment_updates">{t('profile.assessmentUpdates', 'Atualizações de Avaliação')}</Label>
+                          <Label htmlFor="notify_assessment_updates">{t('profile.assessmentUpdates')}</Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.assessmentUpdatesDescription', 'Receba notificações quando suas avaliações forem atualizadas')}
+                            {t('profile.assessmentUpdatesDescription')}
                           </p>
                         </div>
                         <Switch
@@ -1293,9 +1292,9 @@ export default function Settings() {
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="notify_security_alerts">{t('profile.securityAlerts', 'Alertas de Segurança')}</Label>
+                          <Label htmlFor="notify_security_alerts">{t('profile.securityAlerts')}</Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.securityAlertsDescription', 'Receba alertas importantes sobre segurança e compliance')}
+                            {t('profile.securityAlertsDescription')}
                           </p>
                         </div>
                         <Switch
@@ -1308,9 +1307,9 @@ export default function Settings() {
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="notify_weekly_digest">{t('profile.weeklyDigest', 'Resumo Semanal')}</Label>
+                          <Label htmlFor="notify_weekly_digest">{t('profile.weeklyDigest')}</Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.weeklyDigestDescription', 'Receba um resumo semanal do seu progresso e métricas')}
+                            {t('profile.weeklyDigestDescription')}
                           </p>
                         </div>
                         <Switch
@@ -1323,9 +1322,9 @@ export default function Settings() {
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="notify_new_features">{t('profile.newFeatures', 'Novidades e Recursos')}</Label>
+                          <Label htmlFor="notify_new_features">{t('profile.newFeatures')}</Label>
                           <p className="text-sm text-muted-foreground">
-                            {t('profile.newFeaturesDescription', 'Receba novidades sobre recursos e atualizações da plataforma')}
+                            {t('profile.newFeaturesDescription')}
                           </p>
                         </div>
                         <Switch

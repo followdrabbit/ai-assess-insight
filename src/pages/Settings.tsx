@@ -34,6 +34,7 @@ import { FrameworkManagement } from '@/components/settings/FrameworkManagement';
 import { QuestionManagement } from '@/components/settings/QuestionManagement';
 import { DomainManagement } from '@/components/settings/DomainManagement';
 import { SettingsSearch } from '@/components/settings/SettingsSearch';
+import { AnimatedCard, AnimatedSectionCard, AnimatedStatsCard } from '@/components/settings/AnimatedCard';
 import { 
   Layers, 
   BookMarked, 
@@ -707,109 +708,61 @@ export default function Settings() {
 
           {/* Stats */}
           <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <Layers className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t('settings.domains')}</p>
-                    <p className="text-xl font-bold">3</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t('settings.frameworks')}</p>
-                    <p className="text-xl font-bold">{frameworks.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t('settings.questions')}</p>
-                    <p className="text-xl font-bold">{questions.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <AnimatedStatsCard
+              icon={Layers}
+              iconClassName="bg-purple-500/10 text-purple-600"
+              label={t('settings.domains')}
+              value={3}
+            />
+            <AnimatedStatsCard
+              icon={Shield}
+              iconClassName="bg-blue-500/10 text-blue-600"
+              label={t('settings.frameworks')}
+              value={frameworks.length}
+            />
+            <AnimatedStatsCard
+              icon={BookOpen}
+              iconClassName="bg-green-500/10 text-green-600"
+              label={t('settings.questions')}
+              value={questions.length}
+            />
           </div>
 
           {/* Domain Management */}
-          <div ref={setSectionRef('domains')}>
-            <Card className={cn(
-              "transition-all duration-500",
-              highlightedSection === 'domains' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Layers className="h-4 w-4" />
-                  {t('settings.securityDomains')}
-                </CardTitle>
-                <CardDescription>
-                  {t('settings.createEditManage')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DomainManagement />
-              </CardContent>
-            </Card>
-          </div>
+          <AnimatedSectionCard
+            ref={setSectionRef('domains')}
+            id="domains"
+            title={t('settings.securityDomains')}
+            description={t('settings.createEditManage')}
+            icon={Layers}
+            isHighlighted={highlightedSection === 'domains'}
+          >
+            <DomainManagement />
+          </AnimatedSectionCard>
 
           {/* Framework Management */}
-          <div ref={setSectionRef('frameworks-management')}>
-            <Card className={cn(
-              "transition-all duration-500",
-              highlightedSection === 'frameworks-management' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  {t('settings.frameworks')}
-                </CardTitle>
-                <CardDescription>
-                  {t('settings.createEditDelete')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FrameworkManagement />
-              </CardContent>
-            </Card>
-          </div>
+          <AnimatedSectionCard
+            ref={setSectionRef('frameworks-management')}
+            id="frameworks-management"
+            title={t('settings.frameworks')}
+            description={t('settings.createEditDelete')}
+            icon={Shield}
+            isHighlighted={highlightedSection === 'frameworks-management'}
+          >
+            <FrameworkManagement />
+          </AnimatedSectionCard>
 
           {/* Question Management */}
-          <div ref={setSectionRef('questions-management')}>
-            <Card className={cn(
-              "transition-all duration-500",
-              highlightedSection === 'questions-management' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  {t('settings.questions')}
-                </CardTitle>
-                <CardDescription>
-                  {t('settings.createEditImport')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <QuestionManagement />
-              </CardContent>
-            </Card>
-          </div>
+          <AnimatedSectionCard
+            ref={setSectionRef('questions-management')}
+            id="questions-management"
+            title={t('settings.questions')}
+            description={t('settings.createEditImport')}
+            icon={BookOpen}
+            isHighlighted={highlightedSection === 'questions-management'}
+          >
+            <QuestionManagement />
+          </AnimatedSectionCard>
           </motion.div>
         </TabsContent>
 
@@ -873,55 +826,48 @@ export default function Settings() {
           </div>
 
           {/* Assessment Info */}
-          <div ref={setSectionRef('assessment-info')}>
-            <Card className={cn(
-              "transition-all duration-500",
-              highlightedSection === 'assessment-info' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  {t('settings.assessmentInfo')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="assessmentName">{t('settings.assessmentName')}</Label>
-                    <Input
-                      id="assessmentName"
-                      value={assessmentName}
-                      onChange={(e) => setAssessmentName(e.target.value)}
-                      placeholder={t('settings.assessmentNamePlaceholder')}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="organizationName">{t('profile.organization')}</Label>
-                    <Input
-                      id="organizationName"
-                      value={organizationName}
-                      onChange={(e) => setOrganizationName(e.target.value)}
-                      placeholder={t('settings.organizationPlaceholder')}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reassessmentInterval">{t('settings.reassessmentCadence')}</Label>
-                    <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
-                      <SelectTrigger id="reassessmentInterval">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="monthly">{t('settings.monthly')}</SelectItem>
-                        <SelectItem value="quarterly">{t('settings.quarterly')}</SelectItem>
-                        <SelectItem value="semiannual">{t('settings.semiannual')}</SelectItem>
-                        <SelectItem value="annual">{t('settings.annual')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <AnimatedSectionCard
+            ref={setSectionRef('assessment-info')}
+            id="assessment-info"
+            title={t('settings.assessmentInfo')}
+            icon={Building2}
+            isHighlighted={highlightedSection === 'assessment-info'}
+          >
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="assessmentName">{t('settings.assessmentName')}</Label>
+                <Input
+                  id="assessmentName"
+                  value={assessmentName}
+                  onChange={(e) => setAssessmentName(e.target.value)}
+                  placeholder={t('settings.assessmentNamePlaceholder')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="organizationName">{t('profile.organization')}</Label>
+                <Input
+                  id="organizationName"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  placeholder={t('settings.organizationPlaceholder')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reassessmentInterval">{t('settings.reassessmentCadence')}</Label>
+                <Select value={reassessmentInterval} onValueChange={setReassessmentInterval}>
+                  <SelectTrigger id="reassessmentInterval">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">{t('settings.monthly')}</SelectItem>
+                    <SelectItem value="quarterly">{t('settings.quarterly')}</SelectItem>
+                    <SelectItem value="semiannual">{t('settings.semiannual')}</SelectItem>
+                    <SelectItem value="annual">{t('settings.annual')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </AnimatedSectionCard>
 
           {/* Framework Selection */}
           <div ref={setSectionRef('framework-selection')}>

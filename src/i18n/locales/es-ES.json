@@ -1364,5 +1364,85 @@
     "loginError": "Ocurrió un error al iniciar sesión",
     "signupError": "Ocurrió un error al crear cuenta",
     "resetError": "Ocurrió un error al enviar el correo de recuperación"
+  },
+  "settingsSearch": {
+    "placeholder": "Buscar configuración...",
+    "noResults": "Sin resultados para \"{{query}}\"",
+    "tryTerms": "Prueba términos como \"framework\", \"exportar\" o \"voz\"",
+    "domains": {
+      "title": "Dominios de Seguridad",
+      "description": "Gestionar dominios como AI Security, Cloud Security, DevSecOps",
+      "section": "Dominios de Seguridad"
+    },
+    "frameworks": {
+      "title": "Frameworks",
+      "description": "Crear, editar, importar y eliminar frameworks de evaluación",
+      "section": "Frameworks"
+    },
+    "questions": {
+      "title": "Preguntas",
+      "description": "Crear, editar, importar, versionar y buscar preguntas",
+      "section": "Preguntas"
+    },
+    "assessmentInfo": {
+      "title": "Información de la Evaluación",
+      "description": "Nombre de la evaluación, organización y cadencia de reevaluación",
+      "section": "Información de la Evaluación"
+    },
+    "frameworkSelection": {
+      "title": "Seleccionar Frameworks",
+      "description": "Elegir frameworks activos para la evaluación actual",
+      "section": "Seleccionar Frameworks para Evaluación"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Tema (claro, oscuro, sistema) e idioma de la interfaz",
+      "section": "Apariencia"
+    },
+    "voiceSettings": {
+      "title": "Configuración de Voz",
+      "description": "Idioma, velocidad, tono y volumen de la síntesis de voz",
+      "section": "Configuración de Voz"
+    },
+    "sttConfig": {
+      "title": "Reconocimiento de Voz (STT)",
+      "description": "Configurar proveedor de Speech-to-Text y clave API",
+      "section": "Speech-to-Text"
+    },
+    "voiceProfile": {
+      "title": "Perfil de Voz",
+      "description": "Registrar y gestionar biometría vocal para autenticación",
+      "section": "Perfil de Voz"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "Configurar alertas de seguridad, actualizaciones y resumen semanal",
+      "section": "Preferencias de Notificación"
+    },
+    "export": {
+      "title": "Exportar Datos",
+      "description": "Exportar respuestas y configuraciones a Excel",
+      "section": "Exportar y Respaldo"
+    },
+    "demoData": {
+      "title": "Datos de Demostración",
+      "description": "Generar datos de ejemplo para explorar los dashboards",
+      "section": "Exportar y Respaldo"
+    },
+    "clearAnswers": {
+      "title": "Limpiar Respuestas",
+      "description": "Eliminar todas las respuestas de la evaluación",
+      "section": "Zona de Peligro"
+    },
+    "restoreDefaults": {
+      "title": "Restaurar Valores por Defecto",
+      "description": "Restablecer configuraciones y datos al estado inicial",
+      "section": "Zona de Peligro"
+    },
+    "about": {
+      "title": "Acerca de la Plataforma",
+      "description": "Información sobre versión, metodología y frameworks soportados",
+      "section": "Acerca de la Plataforma"
+    }
   }
 }

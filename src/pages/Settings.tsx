@@ -1474,225 +1474,229 @@ export default function Settings() {
           </StaggerItem>
 
           <StaggerItem>
-            {/* Export */}
-            <motion.div
-              ref={setSectionRef('export')}
-              initial={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.01, y: -3, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
-            >
-              <Card className={cn(
-                "transition-all duration-300 h-full",
-                highlightedSection === 'export' && "ring-2 ring-primary ring-offset-2"
-              )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileDown className="h-4 w-4" />
-                  {t('settings.exportBackup')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {t('settings.exportDescription')}
-                </p>
-                <Button variant="outline" onClick={handleExportData} className="w-full justify-start">
-                  <FileDown className="h-4 w-4 mr-2" />
-                  {t('settings.exportToExcel')}
-                </Button>
-                <Separator />
-                <div ref={setSectionRef('demo-data')}>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {t('settings.generateDemoDescription')}
-                  </p>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start">
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        {t('settings.generateDemoData')}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('settings.generateDemoTitle')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('settings.generateDemoDescription2')}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleGenerateDemo}>
-                          {t('settings.generateData')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-            {/* Danger Zone */}
-            <motion.div
-              ref={setSectionRef('clear-answers')}
-              initial={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.01, y: -3, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
-            >
-              <Card className={cn(
-                "transition-all duration-300 h-full",
-                (highlightedSection === 'clear-answers' || highlightedSection === 'restore-defaults') && "ring-2 ring-primary ring-offset-2"
-              )}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Trash2 className="h-4 w-4" />
-                  {t('settings.dangerZone')}
-                </CardTitle>
-                <CardDescription>
-                  {t('settings.dangerZoneDesc')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                  <div>
-                    <div className="font-medium text-sm">{t('settings.clearAnswers')}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {t('settings.removesAllAnswers', { count: totalAnswered })}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Export */}
+              <motion.div
+                ref={setSectionRef('export')}
+                initial={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.01, y: -3, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+              >
+                <Card className={cn(
+                  "transition-all duration-300 h-full",
+                  highlightedSection === 'export' && "ring-2 ring-primary ring-offset-2"
+                )}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileDown className="h-4 w-4" />
+                      {t('settings.exportBackup')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      {t('settings.exportDescription')}
+                    </p>
+                    <Button variant="outline" onClick={handleExportData} className="w-full justify-start">
+                      <FileDown className="h-4 w-4 mr-2" />
+                      {t('settings.exportToExcel')}
+                    </Button>
+                    <Separator />
+                    <div ref={setSectionRef('demo-data')}>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {t('settings.generateDemoDescription')}
+                      </p>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start">
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            {t('settings.generateDemoData')}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t('settings.generateDemoTitle')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t('settings.generateDemoDescription2')}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleGenerateDemo}>
+                              {t('settings.generateData')}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                        {t('settings.clear')}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('settings.clearAllAnswersTitle')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('settings.clearAllAnswersDesc', { count: totalAnswered })}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={handleClearAnswers}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {t('settings.clearAnswers')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-
-                <div ref={setSectionRef('restore-defaults')} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                  <div>
-                    <div className="font-medium text-sm">{t('settings.restoreDefaults')}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {t('settings.resetsSettingsAndData')}
-                    </div>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                        {t('settings.restore')}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('settings.restoreDefaultsTitle')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('settings.restoreDefaultsDesc')}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={async () => {
-                            await clearAnswers();
-                            await setEnabledFrameworks(
-                              frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
-                            );
-                            setPendingFrameworks(
-                              frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
-                            );
-                            toast.success(t('settings.settingsRestored'));
-                          }}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {t('settings.restoreDefaults')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-          {/* About */}
-          <motion.div
-            ref={setSectionRef('about')}
-            initial={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
-          >
-            <Card className={cn(
-              "transition-all duration-300",
-              highlightedSection === 'about' && "ring-2 ring-primary ring-offset-2"
-            )}>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Info className="h-4 w-4" />
-                  {t('settings.aboutPlatform')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm mb-2">{t('settings.supportedFrameworks')}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {frameworks.map(fw => (
-                      <Badge key={fw.frameworkId} variant="outline" className="text-xs">
-                        {fw.shortName}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h4 className="font-medium text-sm mb-2">{t('settings.assessmentMethodology')}</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1.5">
-                    <li className="flex items-start gap-2">
-                      <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">1</span>
-                      <span>{t('settings.methodologyItem1')}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">2</span>
-                      <span>{t('settings.methodologyItem2')}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">3</span>
-                      <span>{t('settings.methodologyItem3')}</span>
-                    </li>
-                  </ul>
-                </div>
-                
-                <Separator />
-                
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-4 pb-4">
-                    <h4 className="font-medium mb-2 text-sm">{t('settings.privacyStorage')}</h4>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• {t('settings.privacyItem1')}</li>
-                      <li>• {t('settings.privacyItem2')}</li>
-                      <li>• {t('settings.privacyItem3')}</li>
-                    </ul>
                   </CardContent>
                 </Card>
-              </CardContent>
-            </Card>
-          </motion.div>
-          </motion.div>
+              </motion.div>
+
+              {/* Danger Zone */}
+              <motion.div
+                ref={setSectionRef('clear-answers')}
+                initial={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.01, y: -3, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+              >
+                <Card className={cn(
+                  "transition-all duration-300 h-full",
+                  (highlightedSection === 'clear-answers' || highlightedSection === 'restore-defaults') && "ring-2 ring-primary ring-offset-2"
+                )}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      {t('settings.dangerZone')}
+                    </CardTitle>
+                    <CardDescription>
+                      {t('settings.dangerZoneDesc')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                      <div>
+                        <div className="font-medium text-sm">{t('settings.clearAnswers')}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {t('settings.removesAllAnswers', { count: totalAnswered })}
+                        </div>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            {t('settings.clear')}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t('settings.clearAllAnswersTitle')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t('settings.clearAllAnswersDesc', { count: totalAnswered })}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={handleClearAnswers}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {t('settings.clearAnswers')}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+
+                    <div ref={setSectionRef('restore-defaults')} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                      <div>
+                        <div className="font-medium text-sm">{t('settings.restoreDefaults')}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {t('settings.resetsSettingsAndData')}
+                        </div>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            {t('settings.restore')}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t('settings.restoreDefaultsTitle')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t('settings.restoreDefaultsDesc')}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={async () => {
+                                await clearAnswers();
+                                await setEnabledFrameworks(
+                                  frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
+                                );
+                                setPendingFrameworks(
+                                  frameworks.filter(f => f.defaultEnabled).map(f => f.frameworkId)
+                                );
+                                toast.success(t('settings.settingsRestored'));
+                              }}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {t('settings.restoreDefaults')}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </StaggerItem>
+
+          {/* About */}
+          <StaggerItem>
+            <motion.div
+              ref={setSectionRef('about')}
+              initial={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+            >
+              <Card className={cn(
+                "transition-all duration-300",
+                highlightedSection === 'about' && "ring-2 ring-primary ring-offset-2"
+              )}>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    {t('settings.aboutPlatform')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">{t('settings.supportedFrameworks')}</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {frameworks.map(fw => (
+                        <Badge key={fw.frameworkId} variant="outline" className="text-xs">
+                          {fw.shortName}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">{t('settings.assessmentMethodology')}</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1.5">
+                      <li className="flex items-start gap-2">
+                        <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">1</span>
+                        <span>{t('settings.methodologyItem1')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">2</span>
+                        <span>{t('settings.methodologyItem2')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">3</span>
+                        <span>{t('settings.methodologyItem3')}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4 pb-4">
+                      <h4 className="font-medium mb-2 text-sm">{t('settings.privacyStorage')}</h4>
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        <li>• {t('settings.privacyItem1')}</li>
+                        <li>• {t('settings.privacyItem2')}</li>
+                        <li>• {t('settings.privacyItem3')}</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </StaggerItem>
+          </StaggerContainer>
         </TabsContent>
 
         {/* ========== AUDIT LOGS TAB ========== */}

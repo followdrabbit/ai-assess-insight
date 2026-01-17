@@ -558,58 +558,69 @@ export default function Settings() {
     const answeredCount = answeredCountByFramework[fw.frameworkId] || 0;
     
     return (
-      <Card 
-        className={cn(
-          "transition-all cursor-pointer",
-          isEnabled 
-            ? "border-primary bg-primary/5" 
-            : "border-border opacity-60 hover:opacity-100"
-        )}
+      <motion.div
+        initial={{ opacity: 1, scale: 1 }}
+        whileHover={{ 
+          scale: 1.02, 
+          y: -2,
+          transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const }
+        }}
+        whileTap={{ scale: 0.98 }}
+        className="cursor-pointer"
         onClick={() => toggleFramework(fw.frameworkId)}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1">
-              <CardTitle className="text-base flex items-center gap-2">
-                {fw.shortName}
-                {fw.defaultEnabled && (
-                  <Badge variant="secondary" className="text-xs font-normal">
-                    {t('common.default')}
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription className="text-xs mt-1">
-                v{fw.version}
-              </CardDescription>
+        <Card 
+          className={cn(
+            "transition-colors h-full",
+            isEnabled 
+              ? "border-primary bg-primary/5 shadow-md" 
+              : "border-border opacity-70 hover:opacity-100 hover:border-primary/50"
+          )}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <CardTitle className="text-base flex items-center gap-2">
+                  {fw.shortName}
+                  {fw.defaultEnabled && (
+                    <Badge variant="secondary" className="text-xs font-normal">
+                      {t('common.default')}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription className="text-xs mt-1">
+                  v{fw.version}
+                </CardDescription>
+              </div>
+              <Switch
+                checked={isEnabled}
+                onCheckedChange={() => toggleFramework(fw.frameworkId)}
+                onClick={(e) => e.stopPropagation()}
+              />
             </div>
-            <Switch
-              checked={isEnabled}
-              onCheckedChange={() => toggleFramework(fw.frameworkId)}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-            {fw.description}
-          </p>
-          
-          <div className="flex flex-wrap gap-1 mb-3">
-            {fw.targetAudience.map(audience => (
-              <Badge key={audience} variant="outline" className="text-xs">
-                {audienceLabels[audience] || audience}
-              </Badge>
-            ))}
-          </div>
-          
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{questionCount} {t('settings.questions').toLowerCase()}</span>
-            {answeredCount > 0 && (
-              <span className="text-primary">{answeredCount} {t('common.answered')}</span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+              {fw.description}
+            </p>
+            
+            <div className="flex flex-wrap gap-1 mb-3">
+              {fw.targetAudience.map(audience => (
+                <Badge key={audience} variant="outline" className="text-xs">
+                  {audienceLabels[audience] || audience}
+                </Badge>
+              ))}
+            </div>
+            
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{questionCount} {t('settings.questions').toLowerCase()}</span>
+              {answeredCount > 0 && (
+                <span className="text-primary">{answeredCount} {t('common.answered')}</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   };
 
@@ -951,9 +962,13 @@ export default function Settings() {
           ) : (
             <div className="space-y-6">
               {/* Appearance Settings */}
-              <div ref={setSectionRef('appearance')}>
+              <motion.div
+                ref={setSectionRef('appearance')}
+                initial={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+              >
                 <Card className={cn(
-                  "transition-all duration-500",
+                  "transition-all duration-300",
                   highlightedSection === 'appearance' && "ring-2 ring-primary ring-offset-2"
                 )}>
                   <CardHeader>
@@ -1037,12 +1052,16 @@ export default function Settings() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
 
               {/* Voice Settings */}
-              <div ref={setSectionRef('voice-settings')}>
+              <motion.div
+                ref={setSectionRef('voice-settings')}
+                initial={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+              >
                 <Card className={cn(
-                  "transition-all duration-500",
+                  "transition-all duration-300",
                   highlightedSection === 'voice-settings' && "ring-2 ring-primary ring-offset-2"
                 )}>
                   <CardHeader>
@@ -1236,7 +1255,7 @@ export default function Settings() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
 
               {/* STT Configuration */}
               <div ref={setSectionRef('stt-config')}>
@@ -1253,9 +1272,13 @@ export default function Settings() {
               </div>
 
               {/* Notification Preferences */}
-              <div ref={setSectionRef('notifications')}>
+              <motion.div
+                ref={setSectionRef('notifications')}
+                initial={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+              >
                 <Card className={cn(
-                  "transition-all duration-500",
+                  "transition-all duration-300",
                   highlightedSection === 'notifications' && "ring-2 ring-primary ring-offset-2"
                 )}>
                   <CardHeader>
@@ -1331,7 +1354,7 @@ export default function Settings() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
             </div>
           )}
           </motion.div>
@@ -1389,9 +1412,13 @@ export default function Settings() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Export */}
-            <div ref={setSectionRef('export')}>
+            <motion.div
+              ref={setSectionRef('export')}
+              initial={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.01, y: -3, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+            >
               <Card className={cn(
-                "transition-all duration-500 h-full",
+                "transition-all duration-300 h-full",
                 highlightedSection === 'export' && "ring-2 ring-primary ring-offset-2"
               )}>
               <CardHeader className="pb-3">
@@ -1438,12 +1465,16 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
 
             {/* Danger Zone */}
-            <div ref={setSectionRef('clear-answers')}>
+            <motion.div
+              ref={setSectionRef('clear-answers')}
+              initial={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.01, y: -3, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+            >
               <Card className={cn(
-                "transition-all duration-500 h-full",
+                "transition-all duration-300 h-full",
                 (highlightedSection === 'clear-answers' || highlightedSection === 'restore-defaults') && "ring-2 ring-primary ring-offset-2"
               )}>
               <CardHeader className="pb-3">
@@ -1532,13 +1563,17 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </div>
 
           {/* About */}
-          <div ref={setSectionRef('about')}>
+          <motion.div
+            ref={setSectionRef('about')}
+            initial={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.005, y: -2, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } }}
+          >
             <Card className={cn(
-              "transition-all duration-500",
+              "transition-all duration-300",
               highlightedSection === 'about' && "ring-2 ring-primary ring-offset-2"
             )}>
               <CardHeader>
@@ -1593,7 +1628,7 @@ export default function Settings() {
                 </Card>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
           </motion.div>
         </TabsContent>
 
